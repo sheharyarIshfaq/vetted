@@ -1,13 +1,6 @@
 import { browser } from "wxt/browser";
 import { defineContentScript } from "wxt/utils/define-content-script";
-
-type Verdict = "recalled" | "check_label" | "clear";
-type CheckResult = {
-  id: string;
-  verdict: Verdict;
-  evidence: { fact: string; matched: boolean; source: string }[];
-  recall: { productName: string; url: string; sourceRef: string } | null;
-};
+import { resultUrl, toCheckResponse, type CheckResponse, type CheckResult, type Verdict } from "../utils/check";
 
 export default defineContentScript({
   matches: ["https://www.leboncoin.fr/ad/*", "https://www.vinted.fr/items/*"],
@@ -85,6 +78,8 @@ style.textContent = `
   a, button { font: 600 13px Onest, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-decoration: none; border-radius: 10px; padding: 10px 13px; min-height: 40px; cursor: pointer; }
   a { background: #16202B; color: #fff; }
   button { background: #fff; color: #16202B; border: 1px solid #CBD2CC; }
+  .message { padding: 16px 44px 16px 16px; }
+  .message p { margin: 0 0 12px; }
   .close { position: absolute; right: 10px; top: 10px; width: 28px; height: 28px; min-height: auto; padding: 0; border: 0; background: transparent; color: #6B7684; font-size: 20px; }
   .fallback { position: fixed; right: 24px; bottom: 24px; z-index: 2147483647; border: 0; border-radius: 10px; padding: 12px 16px; background: #0F6B4F; color: #fff; font: 600 14px Onest, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; box-shadow: 0 4px 16px #16202b33; cursor: pointer; }
   .photo-sticker { position: fixed; width: 32px; height: 32px; pointer-events: none; z-index: 2147483647; filter: drop-shadow(0 2px 6px #16202b33); }
@@ -152,15 +147,13 @@ function showResult(result: CheckResult) {
   description.textContent = result.recall?.productName || "Tiko checked official recall lists from France and the EU.";
   summary.append(eyebrow, title, description);
   head.append(summary);
-  const close = document.createElement("button"); close.className = "close"; close.type = "button"; close.setAttribute("aria-label", "Close panel"); close.textContent = "×";
-  close.addEventListener("click", () => panel.remove());
-  head.append(close);
+  head.append(closeButton(panel));
   const body = document.createElement("div"); body.className = "body"; body.style.setProperty("--color", colors.color);
   for (const evidence of result.evidence.slice(0, 2)) {
     const fact = document.createElement("div"); fact.className = "fact"; fact.textContent = evidence.fact; body.append(fact);
   }
   const actions = document.createElement("div"); actions.className = "actions";
-  const link = document.createElement("a"); link.href = `${__TIKO_API_BASE_URL__}/check/${encodeURIComponent(result.id)}`; link.target = "_blank"; link.rel = "noopener noreferrer"; link.textContent = "Full result";
+  const link = document.createElement("a"); link.href = resultUrl(result); link.target = "_blank"; link.rel = "noopener noreferrer"; link.textContent = "Full result";
   actions.append(link);
   const retry = document.createElement("button"); retry.type = "button"; retry.textContent = "Check again"; retry.addEventListener("click", () => void runCheck(true)); actions.append(retry);
   body.append(actions);
@@ -190,9 +183,27 @@ function placePhotoSticker(verdict: Verdict) {
   window.addEventListener("resize", position);
 }
 
-async function runCheck(forceFallback = false) {
+function closeButton(panel: HTMLElement) {
+  const close = document.createElement("button"); close.className = "close"; close.type = "button"; close.setAttribute("aria-label", "Close panel"); close.textContent = "×";
+  close.addEventListener("click", () => panel.remove());
+  return close;
+}
+
+function showError(message: string) {
+  removeChildren();
+  const panel = document.createElement("section"); panel.className = "panel message"; panel.setAttribute("role", "alert");
+  const text = document.createElement("p"); text.textContent = message;
+  const retry = document.createElement("button"); retry.type = "button"; retry.textContent = "Try again"; retry.addEventListener("click", () => void runCheck(true));
+  panel.append(text, retry, closeButton(panel));
+  shadow.append(panel);
+}
+
+async function runCheck(forceFallback = false): Promise<CheckResponse | undefined> {
   const page = readPage();
-  if (!page && !forceFallback) return showFallback();
+  if (!page && !forceFallback) {
+    showFallback();
+    return undefined;
+  }
   const payload = page || {
     pageUrl: location.href,
     title: document.title,
@@ -201,16 +212,15 @@ async function runCheck(forceFallback = false) {
   };
   removeChildren();
   const loading = document.createElement("section"); loading.className = "panel"; loading.textContent = "Checking this listing…"; shadow.append(loading);
+  let outcome: CheckResponse;
   try {
-    const result = await browser.runtime.sendMessage({ type: "TIKO_RUN_CHECK", payload }) as CheckResult;
-    showResult(result);
-    await browser.storage.local.set({ [`result:${location.href}`]: result });
-    return result;
-  } catch (error) {
-    const panel = document.createElement("section"); panel.className = "panel";
-    const text = document.createElement("p"); text.style.padding = "16px"; text.textContent = error instanceof Error ? error.message : "The check failed. Please try again.";
-    panel.replaceChildren(text); shadow.replaceChildren(style, panel);
+    outcome = toCheckResponse(await browser.runtime.sendMessage({ type: "TIKO_RUN_CHECK", payload }), "The check failed. Please try again.");
+  } catch {
+    outcome = { ok: false, error: "Tiko stopped responding. Reload the page and try again." };
   }
+  if (outcome.ok) showResult(outcome.result);
+  else showError(outcome.error);
+  return outcome;
 }
 
 browser.runtime.onMessage.addListener((message) => {

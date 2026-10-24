@@ -1,27 +1,14 @@
 import { browser } from "wxt/browser";
 import { defineBackground } from "wxt/utils/define-background";
+import { isCheckResult, type CheckResponse, type ListingPayload, type Verdict } from "../utils/check";
 
-type ListingPayload = {
-  pageUrl: string;
-  title: string;
-  description: string;
-  imageUrls: string[];
-};
-
-type CheckResult = {
-  id: string;
-  verdict: "recalled" | "check_label" | "clear";
-  evidence: { fact: string; matched: boolean; source: string }[];
-  recall: { productName: string; url: string; sourceRef: string } | null;
-};
-
-const colors: Record<CheckResult["verdict"], string> = {
+const colors: Record<Verdict, string> = {
   recalled: "#C2362B",
   check_label: "#B86A00",
   clear: "#1E7F55",
 };
 
-function icon(verdict: CheckResult["verdict"]): ImageData {
+function icon(verdict: Verdict): ImageData {
   const canvas = new OffscreenCanvas(32, 32);
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Could not draw the toolbar icon");
@@ -62,24 +49,33 @@ function icon(verdict: CheckResult["verdict"]): ImageData {
   return context.getImageData(0, 0, 32, 32);
 }
 
+async function check(payload: ListingPayload): Promise<CheckResponse> {
+  let response: Response;
+  try {
+    response = await fetch(`${__TIKO_API_BASE_URL__}/api/extension/check`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    return { ok: false, error: "Tiko can't be reached right now. Check your connection and try again." };
+  }
+  const data: unknown = await response.json().catch(() => null);
+  if (response.ok && isCheckResult(data)) return { ok: true, result: data };
+  const message = (data as { error?: unknown } | null)?.error;
+  return { ok: false, error: typeof message === "string" && message ? message : "The check failed. Please try again." };
+}
+
 export default defineBackground(() => {
   browser.runtime.onMessage.addListener(async (message, sender) => {
     if (message?.type === "TIKO_RUN_CHECK") {
-      const payload = message.payload as ListingPayload;
-      const response = await fetch(`${__TIKO_API_BASE_URL__}/api/extension/check`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "The check failed. Please try again.");
+      const outcome = await check(message.payload as ListingPayload);
       const tabId = sender.tab?.id;
-      if (tabId !== undefined) {
-        const result = data as CheckResult;
-        await browser.action.setIcon({ tabId, imageData: { 16: icon(result.verdict), 32: icon(result.verdict) } });
-        await browser.storage.local.set({ [`result:${tabId}`]: result });
+      if (outcome.ok && tabId !== undefined) {
+        await browser.action.setIcon({ tabId, imageData: { 16: icon(outcome.result.verdict), 32: icon(outcome.result.verdict) } });
+        await browser.storage.local.set({ [`result:${tabId}`]: outcome.result });
       }
-      return data;
+      return outcome;
     }
 
     if (message?.type === "TIKO_GET_RESULT") {
