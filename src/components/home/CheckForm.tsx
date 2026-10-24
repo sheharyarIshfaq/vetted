@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { EXAMPLES } from "./examples";
@@ -15,8 +16,10 @@ const STAGES = [
 ];
 
 function isLink(value: string) {
-  return /^https?:\/\//i.test(value.trim());
+  return /^https?:\/\/\S+$/i.test(value.trim());
 }
+
+type CheckError = { message: string; extensionLink?: boolean };
 
 function Progress({ withPhotos }: { withPhotos: boolean }) {
   const [elapsed, setElapsed] = useState(0);
@@ -48,11 +51,20 @@ export function CheckForm() {
   const [value, setValue] = useState("");
   const [photos, setPhotos] = useState<File[]>([]);
   const [running, setRunning] = useState<{ withPhotos: boolean } | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<CheckError | null>(null);
+  const textarea = useRef<HTMLTextAreaElement>(null);
+
+  // The box grows with what's pasted, up to a limit after which it scrolls.
+  useEffect(() => {
+    const box = textarea.current;
+    if (!box) return;
+    box.style.height = "auto";
+    box.style.height = `${Math.min(box.scrollHeight, 320)}px`;
+  }, [value]);
 
   async function run(input: string, files: File[]) {
     if (!input.trim() && files.length === 0) {
-      setError("Paste a listing link or its text, or add a photo.");
+      setError({ message: "Paste a listing link or its text, or add a photo." });
       return;
     }
     setError(null);
@@ -62,18 +74,18 @@ export function CheckForm() {
     for (const file of files) body.append("photos", file);
 
     const response = await fetch("/api/check", { method: "POST", body }).catch(() => null);
-    const result = (await response?.json().catch(() => null)) as { id?: string; error?: string } | null;
+    const result = (await response?.json().catch(() => null)) as { id?: string; error?: string; code?: string } | null;
     if (response?.ok && result?.id) {
       router.push(`/check/${result.id}`);
       return;
     }
-    setError(result?.error ?? "The check failed. Please try again.");
+    setError({ message: result?.error ?? "The check failed. Please try again.", extensionLink: result?.code === "link_blocked" });
     setRunning(null);
   }
 
   function addPhotos(files: FileList | null) {
     const picked = [...(files ?? [])].filter((file) => file.type.startsWith("image/"));
-    if (picked.some((file) => file.size > MAX_BYTES)) setError("Each photo must be 8 MB or less.");
+    if (picked.some((file) => file.size > MAX_BYTES)) setError({ message: "Each photo must be 8 MB or less." });
     setPhotos((current) => [...current, ...picked.filter((file) => file.size <= MAX_BYTES)].slice(0, MAX_PHOTOS));
   }
 
@@ -92,15 +104,23 @@ export function CheckForm() {
         <label htmlFor="listing" className="sr-only">
           Listing link or text
         </label>
-        <input
+        <textarea
           id="listing"
-          type="text"
+          ref={textarea}
+          rows={2}
           value={value}
           onChange={(event) => setValue(event.target.value)}
-          placeholder="Paste a Leboncoin or Vinted link, or the listing title"
+          onKeyDown={(event) => {
+            // Enter checks, as in a search box; Shift+Enter adds a line.
+            if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+              event.preventDefault();
+              event.currentTarget.form?.requestSubmit();
+            }
+          }}
+          placeholder="Paste the listing title and description, or a Vinted link"
           maxLength={5000}
           disabled={running !== null}
-          className="min-w-0 flex-[999_1_280px] border-0 bg-transparent px-3.5 py-3.5 text-[17px] text-ink outline-none"
+          className="min-w-0 flex-[999_1_280px] resize-none self-center border-0 bg-transparent px-3.5 py-3.5 text-[17px] leading-snug text-ink outline-none"
         />
         <button
           type="button"
@@ -173,7 +193,15 @@ export function CheckForm() {
 
       {error && (
         <p role="alert" className="m-0 text-[15px] text-recalled-text">
-          {error}
+          {error.message}
+          {error.extensionLink && (
+            <>
+              {" "}
+              <Link href="/how-it-works#extension" className="font-semibold text-recalled-text underline">
+                How to install it
+              </Link>
+            </>
+          )}
         </p>
       )}
     </div>

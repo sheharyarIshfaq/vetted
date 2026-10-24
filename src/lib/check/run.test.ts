@@ -1,6 +1,10 @@
 import sharp from "sharp";
-import { describe, expect, it } from "vitest";
-import { CheckInputError, readInput } from "./run";
+import { describe, expect, it, vi } from "vitest";
+
+// Link reading fails the way a site that blocks it does.
+vi.mock("./listing-page", () => ({ readListingPage: () => Promise.reject(new Error("HTTP 403 text/html")) }));
+
+const { CheckInputError, readInput } = await import("./run");
 
 const photo = () => sharp({ create: { width: 40, height: 40, channels: 3, background: "#0f6b4f" } }).webp().toBuffer();
 const broken = new TextEncoder().encode("<html>not a photo</html>");
@@ -26,5 +30,12 @@ describe("readInput", () => {
   it("refuses only when nothing at all can be read", async () => {
     await expect(readInput({ text: "", photos: [broken] })).rejects.toThrow(CheckInputError);
     await expect(readInput({ text: "", photos: [broken] })).rejects.toThrow("The photos could not be read");
+  });
+
+  it("says Leboncoin blocks link reading, and points to the extension", async () => {
+    const blocked = readInput({ url: "https://www.leboncoin.fr/ad/velos/3293929400", photos: [] });
+    await expect(blocked).rejects.toMatchObject({ code: "link_blocked", message: expect.stringContaining("Leboncoin blocks link reading") });
+    const other = readInput({ url: "https://www.vinted.fr/items/1", photos: [] });
+    await expect(other).rejects.toMatchObject({ code: undefined, message: expect.stringContaining("couldn't read that page") });
   });
 });

@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     const result = await runCheck({ text: parsed.data.text, url: parsed.data.url, photos }, log);
     return Response.json(result);
   } catch (error) {
-    if (error instanceof CheckInputError) return Response.json({ error: error.message }, { status: 422 });
+    if (error instanceof CheckInputError) return Response.json({ error: error.message, code: error.code }, { status: 422 });
     log(`[check] failed: ${error instanceof Error ? error.message : String(error)}`);
     return Response.json({ error: "The check failed. Please try again." }, { status: 500 });
   }

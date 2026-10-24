@@ -14,8 +14,17 @@ import { readListingPage, type ListingPage } from "./listing-page";
 const MAX_PHOTOS = 3;
 const MAX_TEXT_LENGTH = 5000;
 
-// A problem with what the user sent; the message is shown to them as is.
-export class CheckInputError extends Error {}
+// A problem with what the user sent; the message is shown to them as is. "link_blocked": the site refuses link reading.
+export class CheckInputError extends Error {
+  constructor(
+    message: string,
+    readonly code?: "link_blocked",
+  ) {
+    super(message);
+  }
+}
+
+const BLOCKS_LINK_READING = /(^|\.)leboncoin\.fr$/;
 
 // unreadPhotos: photos the caller could not download, so the check can say they weren't seen.
 export type CheckInput = { text?: string; url?: string; photos: Uint8Array[]; unreadPhotos?: number };
@@ -77,6 +86,9 @@ export async function readInput(input: CheckInput, log: Log = () => {}) {
       page = await readListingPage(input.url);
     } catch {
       if (!input.text?.trim() && input.photos.length === 0) {
+        if (BLOCKS_LINK_READING.test(new URL(input.url).hostname)) {
+          throw new CheckInputError("Leboncoin blocks link reading. Paste the text, or use the Chrome extension.", "link_blocked");
+        }
         throw new CheckInputError("We couldn't read that page. Paste the listing title and description instead.");
       }
     }
