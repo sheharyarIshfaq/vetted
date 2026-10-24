@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: tiko
+      POSTGRES_PASSWORD: tiko
+      POSTGRES_DB: tiko
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tiko -d tiko"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    # MinIO no longer publishes images on Docker Hub
+    image: cgr.dev/chainguard/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: tiko
+      MINIO_ROOT_PASSWORD: tiko-secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+
+  minio-setup:
+    image: cgr.dev/chainguard/minio-client
+    depends_on:
+      - minio
+    environment:
+      MC_HOST_local: http://tiko:tiko-secret@minio:9000
+    command: ["mb", "--ignore-existing", "local/tiko-uploads"]
+    # Retries until MinIO accepts connections
+    restart: on-failure
+
+volumes:
+  postgres-data:
+  minio-data:

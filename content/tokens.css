@@ -1,0 +1,25 @@
+:root {
+  --ink: #16202B;
+  --ink-2: #3A4552;
+  --muted: #6B7684;
+  --paper: #F7F8F6;
+  --surface: #FFFFFF;
+  --line: #E2E6E1;
+  --field: #CBD2CC;
+  --placeholder: #E4E7E4;
+  --brand: #0F6B4F;
+  --brand-dark: #0A4F3A;
+  --brand-soft: #E7F1EC;
+  --safe: #1E7F55;
+  --safe-text: #135C3D;
+  --check: #B86A00;
+  --check-soft: #FBF1E3;
+  --check-text: #7A4700;
+  --recalled: #C2362B;
+  --recalled-soft: #FBE9E7;
+  --recalled-text: #8F2219;
+  --radius-card: 16px;
+  --radius-button: 10px;
+  --font-sans: "Onest", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
