@@ -5,7 +5,7 @@ import { ListingSummary } from "@/components/check/ListingSummary";
 import { PhotoPair } from "@/components/check/PhotoPair";
 import { ReportWrongMatch } from "@/components/check/ReportWrongMatch";
 import { VerdictPanel } from "@/components/check/VerdictPanel";
-import { eyebrow, headline, recalledSummary, sellerMessage, sourcesLabel } from "@/lib/check/copy";
+import { capitalize, eyebrow, headline, recalledSummary, sellerMessage, sourcesLabel } from "@/lib/check/copy";
 import type { Recall } from "@/db/schema";
 import type { RecallLimits } from "@/lib/verdict";
 import { Breadcrumb } from "./Breadcrumb";
@@ -64,7 +64,7 @@ export function RecalledLayout({ check }: Props) {
             {recall.reason && (
               <p lang="fr" className="mt-2 mb-0 text-[15px] text-ink-2">
                 <span className="text-muted">Official reason: </span>
-                {recall.reason}
+                {capitalize(recall.reason)}
               </p>
             )}
           </VerdictPanel>

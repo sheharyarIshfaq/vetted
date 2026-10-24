@@ -17,10 +17,16 @@ const RISKS: [RegExp, string][] = [
 
 const MONTH = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
 const DAY = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+const SHORT_DAY = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
 
 export function riskLabel(risk: string | null) {
   if (!risk) return null;
   return RISKS.find(([pattern]) => pattern.test(risk))?.[1] ?? null;
+}
+
+// "choking risk" -> "choking", for compact card meta.
+export function riskWord(risk: string | null) {
+  return riskLabel(risk)?.replace(/ risk$/, "") ?? null;
 }
 
 // "2020-03" or "2020-03-15" -> "March 2020"
@@ -31,6 +37,11 @@ export function monthName(date: string) {
 // "2026-10-19" -> "19 Oct 2026"
 export function dayName(date: string) {
   return DAY.format(new Date(`${date.slice(0, 10)}T00:00:00Z`));
+}
+
+// "2026-10-19" -> "19 Oct"
+export function shortDay(date: string) {
+  return SHORT_DAY.format(new Date(`${date.slice(0, 10)}T00:00:00Z`));
 }
 
 // "2020-03" -> "03/2020"

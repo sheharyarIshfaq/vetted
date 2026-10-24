@@ -87,8 +87,11 @@ export function recallsPublishedSince(since: string, limit = 8) {
     .limit(limit);
 }
 
-export async function countRecalls() {
-  const [{ total }] = await db().select({ total: count() }).from(recalls);
+export async function countRecalls(category?: string) {
+  const [{ total }] = await db()
+    .select({ total: count() })
+    .from(recalls)
+    .where(category ? eq(recalls.category, category) : undefined);
   return total;
 }
 

@@ -11,8 +11,10 @@ import {
   rangePhrase,
   recalledSummary,
   riskLabel,
+  riskWord,
   searchedSummary,
   sellerMessage,
+  shortDay,
   titleCase,
 } from "./copy";
 
@@ -37,6 +39,9 @@ describe("labels", () => {
 
   it("formats dates and ranges", () => {
     expect(dayName("2026-10-19")).toBe("19 Oct 2026");
+    expect(shortDay("2026-10-19")).toBe("19 Oct");
+    expect(riskWord("étouffement")).toBe("choking");
+    expect(riskWord(null)).toBeNull();
     expect(rangePhrase("2019-09-01", "2020-05-31")).toBe("between September 2019 and May 2020");
     expect(rangePhrase("2022-01-01", null)).toBe("from January 2022 onwards");
     expect(rangePhrase(null, "2020-05-31")).toBe("up to May 2020");
