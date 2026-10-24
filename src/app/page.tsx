@@ -2,11 +2,22 @@ import { Suspense } from "react";
 import { CheckForm } from "@/components/home/CheckForm";
 import { ExampleCards } from "@/components/home/ExampleCards";
 import { RecentRecalls } from "@/components/home/RecentRecalls";
+import { Lists, Regions } from "@/components/home/sources";
 import { StatsStrip } from "@/components/home/StatsStrip";
 
 const STEPS = [
   { title: "Reads the listing", text: "Brand, model and references from the title, description and photos." },
-  { title: "Searches official lists", text: "RappelConso for France and EU Safety Gate, refreshed every night." },
+  {
+    title: "Searches official lists",
+    text: (
+      <>
+        <Suspense fallback="Official recall lists">
+          <Lists />
+        </Suspense>
+        , refreshed every night.
+      </>
+    ),
+  },
   { title: "Compares photos and dates", text: "Same product? Made inside the recalled period? Fixed rules decide." },
   { title: "Shows the proof", text: "Every verdict links to the government notice it comes from." },
 ];
@@ -21,8 +32,11 @@ export default function Home() {
             Check it before you buy it.
           </h1>
           <p className="m-0 max-w-[560px] text-[19px] leading-[1.55] text-ink-2">
-            Tiko checks second-hand listings against the official recall lists of France and the EU, and tells you in
-            seconds if that car seat, stroller or toy was recalled.
+            Tiko checks second-hand listings against the official recall lists
+            <Suspense>
+              <Regions />
+            </Suspense>
+            , and tells you in seconds if that car seat, stroller or toy was recalled.
           </p>
           <CheckForm />
         </div>

@@ -28,7 +28,6 @@ export function StatsStrip() {
         </div>
         <div className="grid min-w-0 flex-[1_1_520px] grid-cols-1 gap-4 sm:grid-cols-3">
           <Stat value="321">Leboncoin results for a child bike seat recalled four days earlier (23 Oct 2026)</Stat>
-          <Stat value="124">Leboncoin results for &ldquo;britax smile&rdquo;, mostly models recalled in June 2026 (23 Oct 2026)</Stat>
           <Stat
             value={
               <Suspense fallback={<span className="text-[#C9D1CC]">…</span>}>
@@ -38,7 +37,19 @@ export function StatsStrip() {
           >
             baby and child product entries in France&apos;s recall list
           </Stat>
+          <Stat value="4,671">EU Safety Gate alerts in 2025, a record year</Stat>
         </div>
+        <p className="m-0 w-full text-xs text-[#9AA59F]">
+          Source:{" "}
+          <a
+            href="https://commission.europa.eu/news-and-media/news/increased-action-against-dangerous-products-eu-2025-2026-03-09_en"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#9AA59F] underline hover:text-white"
+          >
+            European Commission, March 2026
+          </a>
+        </p>
       </div>
     </section>
   );

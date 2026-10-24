@@ -9,7 +9,9 @@ import {
   labelTargets,
   madeLabel,
   rangePhrase,
+  listsPhrase,
   recalledSummary,
+  regionsPhrase,
   riskLabel,
   riskWord,
   searchedSummary,
@@ -49,6 +51,17 @@ describe("labels", () => {
     expect(titleCase("britax römer")).toBe("Britax Römer");
     expect(capitalize("châssis de poussette smile iii")).toBe("Châssis de poussette smile iii");
     expect(capitalize("")).toBe("");
+  });
+});
+
+describe("source phrases", () => {
+  it("names only the lists that are loaded", () => {
+    expect(regionsPhrase(["rappelconso"])).toBe(" of France");
+    expect(regionsPhrase(["rappelconso", "safetygate"])).toBe(" of France and the EU");
+    expect(regionsPhrase([])).toBe("");
+    expect(listsPhrase(["rappelconso"])).toBe("RappelConso for France");
+    expect(listsPhrase(["safetygate", "rappelconso"])).toBe("RappelConso for France and EU Safety Gate");
+    expect(listsPhrase([])).toBe("Official recall lists");
   });
 });
 

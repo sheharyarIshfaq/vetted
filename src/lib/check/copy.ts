@@ -103,6 +103,20 @@ export function checkLabelSummary({ brand, productLabel, publishedAt, limits }: 
   return `${recalled} Only some batches are affected, and the listing doesn't give the batch number.`;
 }
 
+type Source = "rappelconso" | "safetygate";
+
+// " of France and the EU", or "" when no recalls are loaded yet.
+export function regionsPhrase(sources: readonly Source[]) {
+  const regions = [sources.includes("rappelconso") && "France", sources.includes("safetygate") && "the EU"].filter(Boolean);
+  return regions.length ? ` of ${regions.join(" and ")}` : "";
+}
+
+// "RappelConso for France and EU Safety Gate", naming only the lists that are loaded.
+export function listsPhrase(sources: readonly Source[]) {
+  const lists = [sources.includes("rappelconso") && "RappelConso for France", sources.includes("safetygate") && "EU Safety Gate"].filter(Boolean);
+  return lists.length ? lists.join(" and ") : "Official recall lists";
+}
+
 export function sourcesLabel(sources: readonly string[]) {
   const names = [sources.includes("rappelconso") && "French", sources.includes("safetygate") && "EU"].filter(Boolean);
   return names.length ? names.join(" and ") : "official";
