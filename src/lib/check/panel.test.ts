@@ -143,7 +143,7 @@ describe("panelSummaryFr", () => {
     const panel = panelSummaryFr({ verdict: "check_label", recall: hamax, extracted: buddy, listingTitle: "Siège enfant HAMAX BUDDY", searched });
     expect(panel).toMatchObject({
       title: "Hamax Buddy",
-      line: "Seules certaines unités de ce modèle sont rappelées. Vérifiez l'étiquette avant d'acheter.",
+      line: "Seules certaines unités de ce modèle sont rappelées.",
       lookFor: ["Rappelé si fabriqué entre 01/2022 et 08/2026", "Codes 4091054 / 8591602"],
     });
     expect(panel.source?.label).toMatch(/^RappelConso · 19 oct\.? 2026$/);

@@ -65,8 +65,8 @@ export function panelSummaryFr(input: PanelInput): PanelSummary {
     title,
     line:
       verdict === "recalled"
-        ? "Cet article correspond aux unités rappelées. Ne l'achetez pas en l'état."
-        : "Seules certaines unités de ce modèle sont rappelées. Vérifiez l'étiquette avant d'acheter.",
+        ? "Cet article correspond aux unités rappelées."
+        : "Seules certaines unités de ce modèle sont rappelées.",
     risk: recall.risk && recall.risk.length <= 60 ? `Risque : ${recall.risk.toLowerCase()}` : null,
     source: sourceOf(recall),
     lookFor: [

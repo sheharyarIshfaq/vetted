@@ -98,8 +98,8 @@ export function panelSummary(input: PanelInput): PanelSummary {
     title,
     line:
       verdict === "recalled"
-        ? "This item matches the recalled units. Don't buy it as it is."
-        : "Only some units of this model are recalled. Check the label before you buy.",
+        ? "This item matches the recalled units."
+        : "Only some units of this model are recalled.",
     risk: risk ? `Risk: ${risk}` : null,
     source: sourceOf(recall),
     lookFor: lookFor(input, recall),
