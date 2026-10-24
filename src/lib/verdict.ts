@@ -460,10 +460,21 @@ export function decideBest({
     photoSaysNo: photos.get(candidate.recall.id)?.sameProduct === "no",
     result: decideVerdict({ item, candidate, photo: photos.get(candidate.recall.id) ?? { sameProduct: null } }),
   }));
-  // On equal verdicts, a recall the photos agree with comes before one they don't.
-  const order = (entry: (typeof results)[number]) =>
-    rank(entry.result) * 4 + (entry.photoSaysNo ? 2 : 0) + (entry.source === "rappelconso" ? 0 : 1);
-  const best = results.reduce((top, entry) => (order(entry) < order(top) ? entry : top));
+  // On equal verdicts, a recall the photos agree with comes before one they don't. Among near misses the closest
+  // is the one that matched most (brand and model named beats brand alone), so every clear names the same one.
+  const matchedFacts = (entry: (typeof results)[number]) =>
+    entry.result.verdict === "clear" ? entry.result.evidence.filter((fact) => fact.matched).length : 0;
+  const order = (entry: (typeof results)[number]) => [
+    rank(entry.result),
+    -matchedFacts(entry),
+    entry.photoSaysNo ? 1 : 0,
+    entry.source === "rappelconso" ? 0 : 1,
+  ];
+  const before = (a: number[], b: number[]) => {
+    const i = a.findIndex((value, j) => value !== b[j]);
+    return i !== -1 && a[i] < b[i];
+  };
+  const best = results.reduce((top, entry) => (before(order(entry), order(top)) ? entry : top));
   if (best.result.verdict === "clear") return { ...best.result, alsoMatched: [] };
   const also = results.find(
     (entry) =>

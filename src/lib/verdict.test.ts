@@ -432,6 +432,27 @@ describe("decideBest", () => {
     expect(result.recall).toEqual({ id: "rc:22625", relation: "other_dates" });
   });
 
+  it("names the nearest miss as the closest recall: the one that names the model, even with a photo 'no'", () => {
+    const genericSeat: CandidateRecall = {
+      ...bebeConfortSeat,
+      id: "sg:OR/00070/26",
+      source: "safetygate",
+      productName: "Siège de voiture",
+      models: [],
+      refs: [],
+      gtins: [],
+      batches: [],
+      modelRanges: [],
+    };
+    const result = decideBest({
+      item: { ...bebeConfort, model: "Sunlite", category: "stroller", title: "Poussette Bébé Confort Sunlite" },
+      candidates: [candidate(genericSeat, 0.3), candidate(bebeConfortSeat, 0.2)],
+      photos: new Map([[bebeConfortSeat.id, { sameProduct: "no" as const }]]),
+    });
+    expect(result.verdict).toBe("clear");
+    expect(result.recall).toEqual({ id: bebeConfortSeat.id, relation: "not_a_match" });
+  });
+
   it("is clear with no recall when there are no candidates", () => {
     expect(decideBest({ item: buddy, candidates: [], photos: new Map() })).toMatchObject({ verdict: "clear", recall: null });
   });
