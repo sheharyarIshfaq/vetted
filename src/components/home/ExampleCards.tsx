@@ -12,6 +12,17 @@ function period(from: string | null, to: string | null) {
   return to ? `up to ${monthNumber(to)}` : null;
 }
 
+// The clear example has no official photo, so it gets a drawing instead of an empty tile.
+function HighChair() {
+  return (
+    <div aria-hidden="true" className="flex size-[72px] shrink-0 items-center justify-center rounded-xl bg-placeholder">
+      <svg width="40" height="44" viewBox="0 0 40 44" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="text-muted">
+        <path d="M13 4v16M27 4v16M13 4h14M10 20h20M13 20l-6 22M27 20l6 22M9 32h22M30 20v-4h6" />
+      </svg>
+    </div>
+  );
+}
+
 // What the three examples look like as results, with dates and photos from the official notices.
 export async function ExampleCards() {
   const recalls = await getRecalls(["rc:22625", "rc:23843"]);
@@ -49,7 +60,7 @@ export async function ExampleCards() {
           {card.image ? (
             <RemoteImage src={card.image} alt="" className="size-[72px] shrink-0 rounded-xl bg-placeholder object-cover" />
           ) : (
-            <div aria-hidden="true" className="size-[72px] shrink-0 rounded-xl bg-placeholder" />
+            <HighChair />
           )}
           <div className="min-w-0 grow">
             <div className="font-bold">{card.title}</div>

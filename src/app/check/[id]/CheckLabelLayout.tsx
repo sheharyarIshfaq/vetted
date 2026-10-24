@@ -59,15 +59,29 @@ export function CheckLabelLayout({ check }: Props) {
           className="flex min-w-0 flex-[999_1_520px] flex-col gap-4 rounded-[18px] border border-line bg-surface p-[22px]"
         >
           <h2 className="m-0 text-xl font-bold">{check.fromRecall ? "Your label photo" : "Step 2: the label photo"}</h2>
-          {recall.images[0] && (
-            <figure className="m-0 flex flex-col gap-2">
-              <RemoteImage
-                src={recall.images[0]}
-                alt={`Photo from notice ${recall.sourceRef}`}
-                className="h-[200px] w-full rounded-[14px] bg-placeholder object-contain"
-              />
-              <figcaption className="text-[13px] text-muted">Photo from the official notice</figcaption>
-            </figure>
+          {(recall.images[0] || (check.listingPhoto && !check.fromRecall)) && (
+            <div className={check.listingPhoto && !check.fromRecall && recall.images[0] ? "grid grid-cols-2 gap-3 sm:gap-4" : "flex"}>
+              {check.listingPhoto && !check.fromRecall && (
+                <figure className="m-0 flex min-w-0 grow flex-col gap-2">
+                  <RemoteImage
+                    src={check.listingPhoto}
+                    alt="Photo from the listing"
+                    className="h-[200px] w-full rounded-[14px] bg-placeholder object-contain"
+                  />
+                  <figcaption className="text-[13px] text-muted">In the listing</figcaption>
+                </figure>
+              )}
+              {recall.images[0] && (
+                <figure className="m-0 flex min-w-0 grow flex-col gap-2">
+                  <RemoteImage
+                    src={recall.images[0]}
+                    alt={`Photo from notice ${recall.sourceRef}`}
+                    className="h-[200px] w-full rounded-[14px] bg-placeholder object-contain"
+                  />
+                  <figcaption className="text-[13px] text-muted">In the official notice</figcaption>
+                </figure>
+              )}
+            </div>
           )}
           <div className="text-sm leading-normal text-ink-2">Tiko looks for these on the label:</div>
           <div className="rounded-[10px] bg-[#F2F4F1] px-3 py-2.5 font-mono text-sm text-ink">{labelTargets(limits)}</div>
