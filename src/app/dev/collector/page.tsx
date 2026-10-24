@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BookmarkletLink } from "./BookmarkletLink";
 
-export const metadata: Metadata = { title: "Collector · Tiko dev" };
+export const metadata: Metadata = { title: "Collector · Vetted dev" };
 
 export default function CollectorPage() {
   if (process.env.NODE_ENV !== "development") notFound();

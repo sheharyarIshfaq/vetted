@@ -16,7 +16,7 @@ import {
   type RecallSource,
 } from "@/lib/recalls";
 
-export const metadata: Metadata = { title: "Recent recalls · Tiko" };
+export const metadata: Metadata = { title: "Recent recalls · Vetted" };
 
 const PAGE_SIZE = 24;
 

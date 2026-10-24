@@ -78,7 +78,7 @@ export function panelSummary(input: PanelInput): PanelSummary {
   if (verdict === "clear" || !recall) {
     const category = extracted.category?.trim().toLowerCase();
     const target = itemName(extracted) ?? (category ? `this ${category}` : "this listing");
-    const searchedLine = `Tiko searched ${searched.total.toLocaleString("en-GB")} ${sourcesLabel(searched.sources)} recalls for ${target} and found no match. That doesn't prove it's safe.`;
+    const searchedLine = `Vetted searched ${searched.total.toLocaleString("en-GB")} ${sourcesLabel(searched.sources)} recalls for ${target} and found no match. That doesn't prove it's safe.`;
     const why = input.evidence?.find((item) => !item.matched && item.fact.startsWith("Not this recall: "));
     const part = input.evidence?.find((item) => item.fact.startsWith(PART_OF_MODEL));
     const close = part ? part.fact : why ? capitalize(why.fact.slice("Not this recall: ".length)) : null;

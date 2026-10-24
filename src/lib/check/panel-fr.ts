@@ -45,7 +45,7 @@ export function panelSummaryFr(input: PanelInput): PanelSummary {
   if (verdict === "clear" || !recall) {
     const close = recall && input.evidence?.some((item) => !item.matched && item.fact.startsWith("Not this recall: "));
     const part = input.evidence?.some((item) => item.fact.startsWith(PART_OF_MODEL));
-    const searchedLine = `Tiko a cherché ${name ? `« ${name} »` : "cette annonce"} parmi ${searched.total.toLocaleString("fr-FR")} rappels ${sourcesPhrase(searched.sources)} sans trouver de correspondance. Cela ne prouve pas que le produit est sûr.`;
+    const searchedLine = `Vetted a cherché ${name ? `« ${name} »` : "cette annonce"} parmi ${searched.total.toLocaleString("fr-FR")} rappels ${sourcesPhrase(searched.sources)} sans trouver de correspondance. Cela ne prouve pas que le produit est sûr.`;
     return {
       title,
       line: recall && close

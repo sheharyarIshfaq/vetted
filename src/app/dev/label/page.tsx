@@ -6,7 +6,7 @@ import { Suspense } from "react";
 import { readListings } from "@/lib/eval/listings";
 import { LabelRow } from "./LabelRow";
 
-export const metadata: Metadata = { title: "Label test set · Tiko dev" };
+export const metadata: Metadata = { title: "Label test set · Vetted dev" };
 
 async function Listings() {
   await connection();

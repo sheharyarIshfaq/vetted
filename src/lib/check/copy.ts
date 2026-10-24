@@ -166,7 +166,7 @@ export function sourcesLabel(sources: readonly string[]) {
 
 export function searchedSummary({ total, sources, searchedFor }: { total: number; sources: string[]; searchedFor: string | null }) {
   const target = searchedFor ? `for ${searchedFor}` : "for this listing";
-  return `Tiko searched ${total.toLocaleString("en-GB")} ${sourcesLabel(sources)} recall entries ${target} and found no match. That doesn't prove an item is safe, so still check its condition before buying.`;
+  return `Vetted searched ${total.toLocaleString("en-GB")} ${sourcesLabel(sources)} recall entries ${target} and found no match. That doesn't prove an item is safe, so still check its condition before buying.`;
 }
 
 // What to look for on the label, from the recall's own codes and limits.

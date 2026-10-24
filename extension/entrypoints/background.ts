@@ -58,7 +58,7 @@ async function check(payload: ListingPayload): Promise<CheckResponse> {
       body: JSON.stringify(payload),
     });
   } catch {
-    return { ok: false, error: "Tiko can't be reached right now. Check your connection and try again." };
+    return { ok: false, error: "Vetted can't be reached right now. Check your connection and try again." };
   }
   const data: unknown = await response.json().catch(() => null);
   if (response.ok && isCheckResult(data)) return { ok: true, result: data };

@@ -9,7 +9,7 @@ export function SiteHeader() {
       <div className="mx-auto flex max-w-[1160px] flex-wrap items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
         <Link href="/" className="flex items-center gap-2.5 text-ink no-underline hover:text-ink">
           <VerdictSticker verdict="brand" size={34} decorative />
-          <span className="text-[26px] font-extrabold tracking-[-0.04em]">tiko</span>
+          <span className="text-[26px] font-extrabold tracking-[-0.04em]">vetted</span>
         </Link>
         <nav aria-label="Main" className="flex flex-wrap items-center gap-1">
           <Suspense fallback={<NavLinkList pathname={null} />}>

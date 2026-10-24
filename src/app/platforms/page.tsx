@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { BatchCheck } from "./BatchCheck";
 
-export const metadata: Metadata = { title: "For platforms · Tiko" };
+export const metadata: Metadata = { title: "For platforms · Vetted" };
 
 const CHECK_EXAMPLE = `POST /api/check
 text=Poussette Britax Smile III, fabriquée en 03/2020

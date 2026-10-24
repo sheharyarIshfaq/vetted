@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { Lists } from "@/components/home/sources";
 import { recallStats } from "@/lib/db/recalls";
 
-export const metadata: Metadata = { title: "How it works · Tiko" };
+export const metadata: Metadata = { title: "How it works · Vetted" };
 
 const UPDATED_AT = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "Europe/Paris" });
 
@@ -18,7 +18,7 @@ const STEPS = [
     title: "Find candidate recalls",
     text: (
       <>
-        A barcode is matched first. Otherwise Tiko searches by brand, then by model, across{" "}
+        A barcode is matched first. Otherwise Vetted searches by brand, then by model, across{" "}
         <Suspense fallback="the official recall lists">
           <Lists />
         </Suspense>
@@ -47,7 +47,7 @@ const SOURCES = [
   {
     source: "safetygate",
     name: "EU Safety Gate",
-    text: "The EU alert system for dangerous non-food products, including many items first bought online from outside the EU. Tiko keeps the categories people resell second-hand, from 2020 onwards.",
+    text: "The EU alert system for dangerous non-food products, including many items first bought online from outside the EU. Vetted keeps the categories people resell second-hand, from 2020 onwards.",
   },
 ] as const;
 
@@ -76,7 +76,7 @@ export default function HowItWorksPage() {
       <div className="flex max-w-[720px] flex-col gap-3">
         <h1 className="m-0 text-[36px] leading-[1.08] font-extrabold tracking-[-0.03em] sm:text-[44px]">AI reads. Official data decides.</h1>
         <p className="m-0 text-lg leading-[1.55] text-ink-2">
-          Tiko uses AI only for the messy parts: reading listings, photos and labels. Whether something is recalled comes from
+          Vetted uses AI only for the messy parts: reading listings, photos and labels. Whether something is recalled comes from
           government data and fixed rules, and every verdict shows its source.
         </p>
       </div>
@@ -102,11 +102,11 @@ export default function HowItWorksPage() {
         </section>
         <section aria-labelledby="limits" className="flex flex-col gap-3 rounded-[18px] border border-line bg-surface p-[22px]">
           <h2 id="limits" className="m-0 text-[22px] font-bold">
-            What Tiko won&apos;t do
+            What Vetted won&apos;t do
           </h2>
           <ul className="m-0 flex flex-col gap-2 pl-5 text-[15px] leading-normal text-ink-2">
             <li>Say an item is safe. &ldquo;No recall found&rdquo; only means no official recall matches.</li>
-            <li>Guess a production date. If it isn&apos;t known, Tiko asks for the label.</li>
+            <li>Guess a production date. If it isn&apos;t known, Vetted asks for the label.</li>
             <li>Collect listings in bulk. The extension only reads the page you&apos;re looking at.</li>
             <li>Replace the official notice. Every verdict links to it.</li>
           </ul>

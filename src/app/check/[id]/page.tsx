@@ -7,7 +7,7 @@ import { ClearLayout } from "./ClearLayout";
 import { loadCheck } from "./load-check";
 import { RecalledLayout } from "./RecalledLayout";
 
-export const metadata: Metadata = { title: "Check result · Tiko" };
+export const metadata: Metadata = { title: "Check result · Vetted" };
 
 async function CheckView({ params }: { params: PageProps<"/check/[id]">["params"] }) {
   const { id } = await params;

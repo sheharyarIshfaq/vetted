@@ -35,7 +35,7 @@ async function LiveStats() {
   return (
     <>
       <Stat value={stats.total.toLocaleString("en-GB")}>
-        official recalls Tiko checks against: {sourceSplitPhrase(stats.bySource)}
+        official recalls Vetted checks against: {sourceSplitPhrase(stats.bySource)}
       </Stat>
       <Stat value={thisWeek.toLocaleString("en-GB")}>new recalls published in the last 7 days</Stat>
     </>
@@ -69,7 +69,7 @@ export function StatsStrip() {
           <Suspense
             fallback={
               <>
-                <Stat value={<Pending />}>official recalls Tiko checks against</Stat>
+                <Stat value={<Pending />}>official recalls Vetted checks against</Stat>
                 <Stat value={<Pending />}>new recalls published in the last 7 days</Stat>
               </>
             }

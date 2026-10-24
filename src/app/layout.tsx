@@ -16,9 +16,9 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Tiko · Check it before you buy it",
+  title: "Vetted · Check it before you buy it",
   description:
-    "Tiko checks second-hand listings against the official recall lists of France and the EU, and tells you in seconds if a product was recalled.",
+    "Vetted checks second-hand listings against the official recall lists of France and the EU, and tells you in seconds if a product was recalled.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

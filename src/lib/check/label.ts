@@ -108,7 +108,7 @@ export async function runLabelCheck(id: string, bytes: Uint8Array, log: Log = ()
   log(`[label] read ${Math.round(performance.now() - started)}ms`);
   if (!read.references.length && !read.gtin && !read.batch && !read.productionDate) {
     throw new CheckInputError(
-      "Tiko couldn't read a production date, batch number or code on this label. Try a closer, sharper photo in good light.",
+      "Vetted couldn't read a production date, batch number or code on this label. Try a closer, sharper photo in good light.",
     );
   }
 

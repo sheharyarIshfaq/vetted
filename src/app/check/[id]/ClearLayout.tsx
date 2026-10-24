@@ -77,7 +77,7 @@ export function ClearLayout({ check }: { check: LoadedCheck }) {
         className="flex flex-wrap items-center gap-5 rounded-[18px] border border-line bg-surface p-[22px]"
       >
         <div className="flex min-w-0 flex-[999_1_420px] flex-col gap-1.5">
-          <h2 className="m-0 text-xl font-bold">Bought it? Tiko can keep watching.</h2>
+          <h2 className="m-0 text-xl font-bold">Bought it? Vetted can keep watching.</h2>
           <p className="m-0 text-[15px] leading-normal text-ink-2">
             Leave your email and we&apos;ll tell you if this model is recalled later.
           </p>

@@ -8,7 +8,7 @@ style.textContent = `*{box-sizing:border-box}body{margin:0;width:320px;backgroun
 app.append(style);
 
 const main = document.createElement("main");
-const brand = document.createElement("div"); brand.className = "brand"; brand.textContent = "tiko";
+const brand = document.createElement("div"); brand.className = "brand"; brand.textContent = "vetted";
 const subtitle = document.createElement("p"); subtitle.className = "sub"; subtitle.textContent = "Check this listing against official recalls.";
 const button = document.createElement("button"); button.className = "button"; button.textContent = "Check this page";
 const resultLink = document.createElement("a"); resultLink.hidden = true; resultLink.target = "_blank"; resultLink.rel = "noopener noreferrer"; resultLink.textContent = "Open full result";
@@ -60,7 +60,7 @@ button.addEventListener("click", async () => {
   try {
     const outcome = toCheckResponse(
       await browser.tabs.sendMessage(tab.id, { type: "TIKO_CHECK_PAGE" }),
-      "Tiko couldn't check this page. Try again.",
+      "Vetted couldn't check this page. Try again.",
     );
     if (outcome.ok) showVerdict(outcome.result);
     else showStatus(outcome.error, true);

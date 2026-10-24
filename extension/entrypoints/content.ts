@@ -183,13 +183,13 @@ function showResult(result: CheckResult) {
   const colors = PALETTE[result.verdict];
   const summary = panelFor(result, lang);
   const panel = element("section", "panel");
-  panel.setAttribute("aria-label", "Tiko recall check");
+  panel.setAttribute("aria-label", "Vetted recall check");
   panel.style.borderColor = colors.color;
 
   const head = element("div", "head");
   head.style.background = colors.soft;
   const text = element("div", "summary");
-  const eyebrow = element("div", "eyebrow", `tiko · ${strings[result.verdict]}`);
+  const eyebrow = element("div", "eyebrow", `vetted · ${strings[result.verdict]}`);
   eyebrow.style.color = colors.text;
   text.append(eyebrow, element("h2", "", summary?.title ?? result.recall?.productName ?? "This listing"));
   text.append(element("p", "", summary?.line ?? result.evidence[0]?.fact ?? ""));
@@ -269,12 +269,12 @@ async function runCheck(): Promise<CheckResponse> {
   const page = await waitForPage();
   let outcome: CheckResponse;
   if (!page) {
-    outcome = { ok: false, error: "Tiko couldn't read this listing. Try again once the page has loaded." };
+    outcome = { ok: false, error: "Vetted couldn't read this listing. Try again once the page has loaded." };
   } else {
     try {
       outcome = toCheckResponse(await browser.runtime.sendMessage({ type: "TIKO_RUN_CHECK", payload: page }), "The check failed. Please try again.");
     } catch {
-      outcome = { ok: false, error: "Tiko stopped responding. Reload the page and try again." };
+      outcome = { ok: false, error: "Vetted stopped responding. Reload the page and try again." };
     }
   }
   if (run !== latestRun) return outcome;

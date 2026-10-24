@@ -18,7 +18,7 @@ function Fact({ text }: { text: string }) {
 export function EvidenceList({ items, fromRecall = false, clear = false }: { items: Evidence[]; fromRecall?: boolean; clear?: boolean }) {
   return (
     <section className="flex flex-col gap-3 rounded-[18px] border border-line bg-surface px-5 py-5 sm:px-6">
-      <h2 className="m-0 text-lg font-bold">Why Tiko says so</h2>
+      <h2 className="m-0 text-lg font-bold">Why Vetted says so</h2>
       <ol className="m-0 flex list-none flex-col p-0">
         {items.map((item, i) => (
           <li key={i} className="flex items-center gap-3.5 border-t border-line py-2.5 last:border-b">

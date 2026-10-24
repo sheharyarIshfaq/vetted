@@ -15,7 +15,7 @@ export function BookmarkletLink() {
       onClick={(event) => event.preventDefault()}
       className="inline-flex min-h-11 cursor-grab items-center self-start rounded-[10px] bg-brand px-[18px] py-3 text-[15px] font-bold text-white no-underline hover:text-white"
     >
-      Tiko: collect listing
+      Vetted: collect listing
     </a>
   );
 }

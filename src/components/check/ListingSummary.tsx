@@ -24,7 +24,7 @@ export function ListingSummary({ title, photo, extracted, fromRecall = false }: 
           <div className="text-lg leading-[1.3] font-bold break-words">{title}</div>
         </div>
         <div className="flex flex-col border-t border-line">
-          <div className="pt-3 pb-1 text-[13px] text-muted">{fromRecall ? "From the recall and your label" : "What Tiko read"}</div>
+          <div className="pt-3 pb-1 text-[13px] text-muted">{fromRecall ? "From the recall and your label" : "What Vetted read"}</div>
           {extracted.category && <Row label="Category" value={titleCase(extracted.category)} />}
           {extracted.brand && <Row label="Brand" value={extracted.brand} />}
           {model && <Row label="Model" value={model} />}

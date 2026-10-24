@@ -83,7 +83,7 @@ export function CheckLabelLayout({ check }: Props) {
               )}
             </div>
           )}
-          <div className="text-sm leading-normal text-ink-2">Tiko looks for these on the label:</div>
+          <div className="text-sm leading-normal text-ink-2">Vetted looks for these on the label:</div>
           <div className="rounded-[10px] bg-[#F2F4F1] px-3 py-2.5 font-mono text-sm text-ink">{labelTargets(limits)}</div>
           {check.label && <LabelRead read={check.label.read} photo={check.labelPhoto} />}
           <LabelUpload checkId={check.id} />
@@ -124,7 +124,7 @@ export function CheckLabelLayout({ check }: Props) {
 
       <p className="m-0 text-[13px] text-muted">
         {matched ? `Matched on ${matched}. ` : ""}
-        {missing} is the one thing Tiko still needs.
+        {missing} is the one thing Vetted still needs.
       </p>
       <EvidenceList items={check.evidence.items} fromRecall={check.fromRecall} />
       <div className="flex">

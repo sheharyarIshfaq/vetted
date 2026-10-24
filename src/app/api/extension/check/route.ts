@@ -51,7 +51,7 @@ async function checkPage(text: string, imageUrls: string[], pageUrl: string, cac
 export async function POST(request: Request) {
   const origin = request.headers.get("origin");
   const headers = corsHeaders(origin);
-  if (origin !== extensionOrigin) return Response.json({ error: "This endpoint is for the Tiko extension." }, { status: 403, headers });
+  if (origin !== extensionOrigin) return Response.json({ error: "This endpoint is for the Vetted extension." }, { status: 403, headers });
   const limited = limitReached(request, "check", headers);
   if (limited) return limited;
 

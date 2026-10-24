@@ -11,7 +11,7 @@ import { batchInEnglish, remedyInEnglish } from "@/lib/official-text";
 import { SOURCE_BADGES, measuresTaken, type RecallSource } from "@/lib/recalls";
 import { checkLabelForRecall } from "./actions";
 
-export const metadata: Metadata = { title: "Recall · Tiko" };
+export const metadata: Metadata = { title: "Recall · Vetted" };
 
 // "09/2019 → 05/2020", "from 01/2022", "up to 05/2020"
 function madeBetween(from: string | null, to: string | null) {
@@ -134,7 +134,7 @@ function Affected({ recall, labelCheck }: { recall: Recall; labelCheck: boolean 
         note="This identifies the product the authorities tested. Other batches of the same product can be affected too."
       />
       {labelCheck && recall.modelRanges.length === 0 && (
-        <p className="m-0 text-sm text-ink-2">A photo of your item&apos;s label tells Tiko whether yours is one of them.</p>
+        <p className="m-0 text-sm text-ink-2">A photo of your item&apos;s label tells Vetted whether yours is one of them.</p>
       )}
     </section>
   );

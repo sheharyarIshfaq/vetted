@@ -29,7 +29,7 @@ export function defaultLang(hostname: string): Lang {
 
 export const STRINGS: Record<Lang, Record<"checking" | "lookFor" | "whatToDo" | "copy" | "copied" | "copyFailed" | "full" | "notice" | "close" | "retry" | Verdict, string>> = {
   en: {
-    checking: "Tiko is checking this listing against official recalls…",
+    checking: "Vetted is checking this listing against official recalls…",
     lookFor: "What to look for",
     whatToDo: "What the notice says to do",
     copy: "Copy a message for the seller",
@@ -44,7 +44,7 @@ export const STRINGS: Record<Lang, Record<"checking" | "lookFor" | "whatToDo" | 
     clear: "no recall found",
   },
   fr: {
-    checking: "Tiko compare cette annonce aux rappels officiels…",
+    checking: "Vetted compare cette annonce aux rappels officiels…",
     lookFor: "À vérifier",
     whatToDo: "Ce que dit la fiche de rappel",
     copy: "Copier un message pour le vendeur",

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Receiver } from "./Receiver";
 
-export const metadata: Metadata = { title: "Saving listing · Tiko dev" };
+export const metadata: Metadata = { title: "Saving listing · Vetted dev" };
 
 export default function ReceivePage() {
   if (process.env.NODE_ENV !== "development") notFound();

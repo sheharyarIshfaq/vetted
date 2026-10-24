@@ -72,7 +72,7 @@ export function reportMarkdown(result: Score, counts: { excluded: number; unlabe
     `- Flag precision: ${percent(result.precision)} (${result.rightFlags} of ${result.flagged} flags name the expected recall)`,
     `- Flag recall: ${percent(result.recall)} (${result.rightFlags} of ${result.expectedFlags} expected flags found)`,
     "",
-    "Flags are recalled and check_label verdicts. Rows are the expected verdict, columns what Tiko said.",
+    "Flags are recalled and check_label verdicts. Rows are the expected verdict, columns what Vetted said.",
     "",
     "| expected \\ got | recalled | check_label | clear | failed |",
     "|---|---:|---:|---:|---:|",

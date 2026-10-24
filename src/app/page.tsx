@@ -32,7 +32,7 @@ export default function Home() {
             Check it before you buy it.
           </h1>
           <p className="m-0 max-w-[560px] text-[19px] leading-[1.55] text-ink-2">
-            Tiko checks second-hand listings against the official recall lists
+            Vetted checks second-hand listings against the official recall lists
             <Suspense>
               <Regions />
             </Suspense>
@@ -48,7 +48,7 @@ export default function Home() {
       <StatsStrip />
 
       <section className="mx-auto flex max-w-[1160px] flex-col gap-7 px-4 py-16 sm:px-6">
-        <h2 className="m-0 text-[28px] font-bold tracking-[-0.02em] sm:text-[32px]">How Tiko checks</h2>
+        <h2 className="m-0 text-[28px] font-bold tracking-[-0.02em] sm:text-[32px]">How Vetted checks</h2>
         <ol className="m-0 grid list-none grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4 p-0">
           {STEPS.map((step, i) => (
             <li key={step.title} className="flex flex-col gap-2 rounded-2xl border border-line bg-surface p-[22px]">

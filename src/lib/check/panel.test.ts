@@ -115,7 +115,7 @@ describe("panelSummary", () => {
   it("clear: one line saying what was searched, never that it's safe", () => {
     const panel = panelSummary({ verdict: "clear", recall: null, extracted: extracted({ brand: "Safety 1st", category: "high chair" }), listingTitle: "Chaise haute", searched });
     expect(panel).toMatchObject({ title: "Safety 1st high chair", risk: null, source: null, lookFor: [], sellerMessage: null });
-    expect(panel.line).toBe("Tiko searched 14,433 French and EU recalls for Safety 1st and found no match. That doesn't prove it's safe.");
+    expect(panel.line).toBe("Vetted searched 14,433 French and EU recalls for Safety 1st and found no match. That doesn't prove it's safe.");
     const unbranded = panelSummary({ verdict: "clear", recall: null, extracted: extracted({ category: "High chair" }), listingTitle: "Chaise haute", searched });
     expect(unbranded.line).toContain("recalls for this high chair and found no match");
   });
@@ -153,7 +153,7 @@ describe("panelSummaryFr", () => {
   it("clear in French says what was searched", () => {
     const panel = panelSummaryFr({ verdict: "clear", recall: null, extracted: extracted({ brand: "Safety 1st" }), listingTitle: "Chaise haute", searched });
     expect(panel.line.replace(/\s/g, " ")).toBe(
-      "Tiko a cherché « Safety 1st » parmi 14 433 rappels français et européens sans trouver de correspondance. Cela ne prouve pas que le produit est sûr.",
+      "Vetted a cherché « Safety 1st » parmi 14 433 rappels français et européens sans trouver de correspondance. Cela ne prouve pas que le produit est sûr.",
     );
   });
 });

@@ -1,5 +1,5 @@
 // Runs on the listing page the user is viewing. It reads only the page URL, og tags, the description
-// and the listing's photos, then opens Tiko's local receive page with them in the URL fragment,
+// and the listing's photos, then opens Vetted's local receive page with them in the URL fragment,
 // which never leaves the browser and isn't affected by the marketplace's CSP.
 // Photos come from Leboncoin's page data (only ad.images, never the seller), else from the rendered gallery:
 // Leboncoin's images have alt "<title> (image 2)" and a "classified" size, Vinted's sit in item-photo.

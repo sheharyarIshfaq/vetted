@@ -94,7 +94,7 @@ describe("summaries", () => {
 
   it("says exactly what was searched for a clear result", () => {
     expect(searchedSummary({ total: 2935, sources: ["rappelconso"], searchedFor: "Ikea Antilop" })).toBe(
-      "Tiko searched 2,935 French recall entries for Ikea Antilop and found no match. That doesn't prove an item is safe, so still check its condition before buying.",
+      "Vetted searched 2,935 French recall entries for Ikea Antilop and found no match. That doesn't prove an item is safe, so still check its condition before buying.",
     );
     expect(searchedSummary({ total: 3200, sources: ["rappelconso", "safetygate"], searchedFor: null })).toContain(
       "French and EU recall entries for this listing",

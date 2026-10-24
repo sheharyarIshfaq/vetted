@@ -4,7 +4,7 @@ const STICKERS: Record<StickerKind, { fill: string; label: string }> = {
   recalled: { fill: "var(--recalled)", label: "Recalled" },
   check_label: { fill: "var(--check)", label: "Check the label" },
   clear: { fill: "var(--safe)", label: "No recall found" },
-  brand: { fill: "var(--brand)", label: "Tiko" },
+  brand: { fill: "var(--brand)", label: "Vetted" },
 };
 
 type Props = {
