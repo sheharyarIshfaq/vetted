@@ -828,3 +828,291 @@ describe("decideVerdict · electronics and mobility (long product names)", () =>
     expect(decideVerdict({ item: scooter, candidate: candidate(decathlon, 0.4), photo: { sameProduct: "no" } }).verdict).toBe("clear");
   });
 });
+
+describe("decideVerdict · clean recall fields", () => {
+  // A Safety Gate alert with no brand field and the whole product description as its "model".
+  const charger: CandidateRecall = {
+    id: "sg:SR/00001/26",
+    source: "safetygate",
+    brand: null,
+    brandNorm: null,
+    productName: "Chargeur USB",
+    models: ["Chargeur USB 2 ports noir 5V 2,1A"],
+    refs: [],
+    gtins: [],
+    batches: [],
+    sampleBatches: [],
+    productionFrom: null,
+    productionTo: null,
+    modelRanges: [],
+    cleanHash: "h",
+    brandCleanNorm: "voltix",
+    productType: "charger",
+    modelNames: ["QC-20"],
+    codes: ["VX-2201"],
+  };
+
+  it("uses the brand and model read from the description", () => {
+    const listing = item({ brand: "Voltix", brandNorm: "voltix", model: "QC-20", productType: "charger" });
+    expect(decideVerdict({ item: listing, candidate: candidate(charger, 0.1), photo: noPhoto }).verdict).toBe("recalled");
+  });
+
+  it("matches a code read from the description", () => {
+    const listing = item({ brand: "Voltix", brandNorm: "voltix", references: ["VX2201"], productType: "charger" });
+    expect(decideVerdict({ item: listing, candidate: candidate(charger, 0.1), photo: noPhoto }).verdict).toBe("recalled");
+  });
+
+  it("no longer takes the raw description for a model name", () => {
+    const listing = item({ brand: "Voltix", brandNorm: "voltix", model: "noir 5V", productType: "charger", title: "Chargeur USB noir 5V" });
+    expect(decideVerdict({ item: listing, candidate: candidate(charger, 0.2), photo: noPhoto }).verdict).toBe("clear");
+  });
+
+  it("compares the clean product types: a power bank is not a charger", () => {
+    const listing = item({ brand: "Voltix", brandNorm: "voltix", productType: "power bank" });
+    expect(decideVerdict({ item: listing, candidate: candidate(charger, 0.1), photo: noPhoto }).verdict).toBe("clear");
+    const sameType = item({ brand: "Voltix", brandNorm: "voltix", productType: "charger" });
+    expect(decideVerdict({ item: sameType, candidate: candidate(charger, 0.1), photo: noPhoto }).verdict).toBe("check_label");
+  });
+});
+
+describe("decideVerdict · recalls limited to some serial numbers", () => {
+  const vsett: CandidateRecall = {
+    id: "rc:13303",
+    source: "rappelconso",
+    brand: "vsett",
+    brandNorm: "vsett",
+    productName: "trottinette marque vsett modèle : v10+ 60v 28ah couleur : red pro",
+    models: ["v10+ 60v 28ah"],
+    refs: [],
+    gtins: ["3701107955343"],
+    batches: [],
+    sampleBatches: [],
+    productionFrom: null,
+    productionTo: null,
+    modelRanges: [],
+    unitLimit: "numéros de série : v10p60v332208401 ? v10p60v332208470",
+  };
+
+  it("a named model needs the label, and the evidence quotes the limit", () => {
+    const listing = item({ brand: "Vsett", brandNorm: "vsett", model: "V10+", productType: "e-scooter" });
+    const result = decideVerdict({ item: listing, candidate: candidate(vsett), photo: noPhoto });
+    expect(result.verdict).toBe("check_label");
+    expect(result.evidence).toContainEqual({
+      fact: "Only some units are recalled: “numéros de série : v10p60v332208401 ? v10p60v332208470”",
+      matched: false,
+      source: "official_data",
+    });
+    expect(result.evidence.map((fact) => fact.fact)).not.toContain("Every unit of this model is recalled");
+  });
+
+  it("even a matching barcode needs the label", () => {
+    const listing = item({ gtin: "3701107955343" });
+    expect(decideVerdict({ item: listing, candidate: candidate(vsett), photo: noPhoto }).verdict).toBe("check_label");
+  });
+});
+
+describe("decideVerdict · specs are compared apart from the model name", () => {
+  const dualtron: CandidateRecall = {
+    id: "rc:14786",
+    source: "rappelconso",
+    brand: "dualtron",
+    brandNorm: "dualtron",
+    productName: "trottinette électrique dualtron mini special 52v 13ah",
+    models: ["mini special 52v 13ah"],
+    refs: [],
+    gtins: [],
+    batches: [],
+    sampleBatches: [],
+    productionFrom: null,
+    productionTo: null,
+    modelRanges: [],
+  };
+  const listing = (title: string) => item({ brand: "Dualtron", brandNorm: "dualtron", model: "Mini Spécial", productType: "e-scooter", title });
+
+  it("the model without its battery needs the label", () => {
+    const result = decideVerdict({ item: listing("Dualtron Mini Spécial"), candidate: candidate(dualtron), photo: noPhoto });
+    expect(result.verdict).toBe("check_label");
+    expect(result.evidence).toContainEqual({
+      fact: "The recall is for the 52v 13ah version; the listing doesn't say which version this is",
+      matched: false,
+      source: "official_data",
+    });
+  });
+
+  it("the same battery is recalled, another one is not", () => {
+    expect(decideVerdict({ item: listing("Dualtron Mini Spécial 52V 13Ah"), candidate: candidate(dualtron), photo: noPhoto }).verdict).toBe("recalled");
+    const other = decideVerdict({ item: listing("Dualtron Mini Spécial 48V 13Ah"), candidate: candidate(dualtron), photo: noPhoto });
+    expect(other.verdict).toBe("clear");
+    expect(other.evidence[0].fact).toBe("Not this recall: the recall is for the 52v version, this one is 48v");
+  });
+
+  it("clean specs count too, and 20k is 20000 mAh", () => {
+    const belkin = { ...dualtron, id: "rc:20518", brand: "belkin", brandNorm: "belkin", productName: "batterie externe", models: ["boostcharge"], specs: ["20k"] };
+    const named = (title: string) => item({ brand: "Belkin", brandNorm: "belkin", model: "BoostCharge", title });
+    expect(decideVerdict({ item: named("Belkin BoostCharge 20000mAh"), candidate: candidate(belkin), photo: noPhoto }).verdict).toBe("recalled");
+    expect(decideVerdict({ item: named("Belkin BoostCharge 10 000 mAh"), candidate: candidate(belkin), photo: noPhoto }).verdict).toBe("clear");
+    expect(decideVerdict({ item: named("Belkin BoostCharge 20 000 mAh"), candidate: candidate(belkin), photo: noPhoto }).verdict).toBe("recalled");
+    expect(decideVerdict({ item: named("Belkin BoostCharge"), candidate: candidate(belkin), photo: noPhoto }).verdict).toBe("check_label");
+  });
+});
+
+describe("decideVerdict · a model named without its recalled version", () => {
+  const base = { refs: [], gtins: [], batches: [], sampleBatches: [], productionFrom: null, productionTo: null, modelRanges: [] };
+  const kaabo: CandidateRecall = {
+    ...base,
+    id: "rc:2896",
+    source: "rappelconso",
+    brand: "kaabo",
+    brandNorm: "kaabo",
+    productName: "trottinette électrique",
+    models: ["mantis lite", "mantis k800", "mantis gt", "mantis 8 plus"],
+  };
+  const speedtrott: CandidateRecall = {
+    ...base,
+    id: "rc:16725",
+    source: "rappelconso",
+    brand: "speedtrott",
+    brandNorm: "speedtrott",
+    productName: "trottinette électrique xt800 v1 / xt800 v2 / xt1200 v1",
+    models: ["xt800 v1", "xt800 v2", "xt1200 v1"],
+  };
+
+  it("Mantis and XT800 need the label", () => {
+    const mantis = decideVerdict({ item: item({ brand: "Kaabo", brandNorm: "kaabo", model: "Mantis" }), candidate: candidate(kaabo, 0.2), photo: noPhoto });
+    expect(mantis.verdict).toBe("check_label");
+    expect(mantis.evidence.map((fact) => fact.fact)).toContain("The recall names the mantis lite, mantis gt; the listing doesn't say which Mantis this is");
+    const xt800 = decideVerdict({ item: item({ brand: "Speedtrott", brandNorm: "speedtrott", model: "XT800" }), candidate: candidate(speedtrott, 0.3), photo: noPhoto });
+    expect(xt800.verdict).toBe("check_label");
+  });
+
+  it("another version stays clear", () => {
+    const mantis10 = item({ brand: "Kaabo", brandNorm: "kaabo", model: "Mantis 10" });
+    expect(decideVerdict({ item: mantis10, candidate: candidate(kaabo, 0.2), photo: noPhoto }).verdict).toBe("clear");
+  });
+});
+
+describe("decideVerdict · hand-checked mobility listings", () => {
+  const base = { refs: [], batches: [], sampleBatches: [], productionFrom: null, productionTo: null, modelRanges: [], cleanHash: "h" };
+  const tilgreen: CandidateRecall = {
+    ...base,
+    id: "rc:18131",
+    source: "rappelconso",
+    brand: "tilgreen",
+    brandNorm: "tilgreen",
+    productName: "hoverboard tilboard",
+    models: ["hoverboard tilboard"],
+    gtins: ["6941370001645"],
+    brandCleanNorm: "tilgreen",
+    productType: "hoverboard",
+    modelNames: ["tilboard"],
+    codes: ["164"],
+  };
+
+  it("brand and type without the recalled model is check_label, never recalled", () => {
+    const listing = item({ brand: "Tilgreen", brandNorm: "tilgreen", productType: "hoverboard", title: "Hoverboard Tilgreen" });
+    const result = decideVerdict({ item: listing, candidate: candidate(tilgreen, 0.7), photo: noPhoto });
+    expect(result.verdict).toBe("check_label");
+  });
+
+  it("a distinctive model only one brand uses matches without a brand, as check_label", () => {
+    const listing = item({ model: "TilBoard", productType: "hoverboard", title: "TilBoard" });
+    const result = decideBest({ item: listing, candidates: [candidate(tilgreen, 0.5)], photos: new Map() });
+    expect(result.verdict).toBe("check_label");
+    expect(result.evidence.map((fact) => fact.fact)).toContain("No brand given, and only a tilgreen recall names the TilBoard. Check the brand on the label");
+    const shared = { ...tilgreen, id: "rc:other", brand: "other", brandNorm: "other", brandCleanNorm: "other" };
+    expect(decideBest({ item: listing, candidates: [candidate(tilgreen, 0.5), candidate(shared, 0.5)], photos: new Map() }).verdict).toBe("clear");
+  });
+
+  it("clean codes with letters are model names: XT800 is a version family, V10+ is VSETT's 10+", () => {
+    const speedtrott = { ...tilgreen, id: "rc:16725", brand: "speedtrott", brandNorm: "speedtrott", brandCleanNorm: "speedtrott", productName: "trottinette", productType: "e-scooter", modelNames: [], codes: ["xt800 v1", "xt800 v2"] };
+    const xt800 = item({ brand: "Speedtrott", brandNorm: "speedtrott", model: "XT800", productType: "e-scooter" });
+    expect(decideVerdict({ item: xt800, candidate: candidate(speedtrott, 0.3), photo: noPhoto }).verdict).toBe("check_label");
+    const vsett = { ...tilgreen, id: "rc:13303", brand: "vsett", brandNorm: "vsett", brandCleanNorm: "vsett", productName: "trottinette", productType: "scooter", modelNames: [], codes: ["v10+"], specs: ["60v", "28ah"] };
+    const tenPlus = item({ brand: "VSETT", brandNorm: "vsett", model: "10+", modelVariant: "60V 28Ah", productType: "e-scooter", title: "VSETT 10+ 60V 28Ah" });
+    expect(decideVerdict({ item: tenPlus, candidate: candidate(vsett, 0.3), photo: noPhoto }).verdict).toBe("recalled");
+  });
+
+  it("a product line named in the recall counts as its brand", () => {
+    const smyths = { ...tilgreen, id: "rc:11386", brand: "smyths toys", brandNorm: "smyths toys", brandCleanNorm: "smyths toys", productName: "trottinette électrique 8.5 giro drive sdrive 250 w", productType: "e-scooter", modelNames: ["giro drive sdrive"], codes: ["217740"], specs: ["250 w"] };
+    const listing = item({ brand: "Giro Drive", brandNorm: "giro drive", model: "SDrive", productType: "e-scooter", title: "Smyths Toys Giro Drive SDrive 250W" });
+    expect(decideVerdict({ item: listing, candidate: candidate(smyths, 0.4), photo: noPhoto }).verdict).toBe("recalled");
+  });
+});
+
+describe("decideVerdict · no brand, but a distinctive code", () => {
+  const charger: CandidateRecall = {
+    id: "sg:SR/02190/25",
+    source: "safetygate",
+    brand: "Li-ion Charger",
+    brandNorm: "li ion charger",
+    productName: "Chargeur",
+    models: [],
+    refs: ["LP-60L"],
+    gtins: [],
+    batches: [],
+    sampleBatches: [],
+    productionFrom: null,
+    productionTo: null,
+    modelRanges: [],
+  };
+
+  it("an exact code only one brand's recalls give is check_label", () => {
+    const listing = item({ references: ["LP-60L"], productType: "charger" });
+    expect(decideBest({ item: listing, candidates: [candidate(charger, 0.2)], photos: new Map() }).verdict).toBe("check_label");
+  });
+
+  it("a short number is not enough", () => {
+    const short = { ...charger, refs: ["3910"] };
+    const listing = item({ references: ["3910"], productType: "charger" });
+    expect(decideBest({ item: listing, candidates: [candidate(short, 0.2)], photos: new Map() }).verdict).toBe("clear");
+  });
+});
+
+describe("decideBest · the same product in an EU alert and a French notice", () => {
+  const base = { sampleBatches: [], productionFrom: null, productionTo: null, modelRanges: [], refs: [] };
+  const french: CandidateRecall = {
+    ...base,
+    id: "rc:22017",
+    source: "rappelconso",
+    brand: "bébé confort",
+    brandNorm: "bebe confort",
+    productName: "siège auto bébé des sunlite duo, breeze trio et brume trio",
+    models: ["breeze trio"],
+    gtins: ["3220660011384"],
+    batches: ["inférieur ou égal à 1038653"],
+  };
+  const eu: CandidateRecall = { ...french, id: "sg:OR/00070/26", source: "safetygate", productName: "Siège de voiture", batches: [] };
+
+  it("keeps the French batch limit and shows the alert alongside", () => {
+    const listing = item({ brand: "Bébé Confort", brandNorm: "bebe confort", model: "Breeze Trio" });
+    const result = decideBest({ item: listing, candidates: [candidate(eu), candidate(french)], photos: new Map() });
+    expect(result.verdict).toBe("check_label");
+    expect(result.recall?.id).toBe("rc:22017");
+    expect(result.alsoMatched).toEqual(["sg:OR/00070/26"]);
+  });
+});
+
+describe("decideBest · a brand read as part of the model", () => {
+  const smyths: CandidateRecall = {
+    id: "rc:11386",
+    source: "rappelconso",
+    brand: "smyths toys",
+    brandNorm: "smyths toys",
+    productName: "trottinette électrique 8.5 giro drive sdrive 250 w",
+    models: ["giro drive sdrive"],
+    refs: ["217740"],
+    gtins: ["3569700019516"],
+    batches: [],
+    sampleBatches: [],
+    productionFrom: null,
+    productionTo: null,
+    modelRanges: [],
+  };
+
+  it("splits the brand off the model", () => {
+    const listing = item({ model: "Smyths Toys Giro Drive SDrive", title: "Smyths Toys Giro Drive SDrive 250W" });
+    const result = decideBest({ item: listing, candidates: [candidate(smyths, 0.4)], photos: new Map() });
+    expect(result.verdict).toBe("recalled");
+    expect(result.evidence).toContainEqual({ fact: "Model Giro Drive SDrive is named in the recall", matched: true, source: "listing_text" });
+  });
+});

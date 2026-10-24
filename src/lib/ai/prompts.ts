@@ -25,12 +25,14 @@ Rules:
 - refs: reference, article, type or model codes, as written ("bpb002", "aes015", "4000984-204346"). Codes contain a digit. Not barcodes (8 to 14 digits only), not batch or lot numbers, not dates.
 - specs: technical values with their unit, as written ("20k", "20000 mah", "52v", "6,5 pouces", "250w").`;
 
-export const LISTING_EXTRACTION_PROMPT = `You read a second-hand marketplace listing (French or English text, and up to 3 photos) and copy out what identifies the product.
+export const LISTING_EXTRACTION_PROMPT = `You read a second-hand marketplace listing (text in any language: mostly French, also German, Spanish, Italian or English; and up to 3 photos) and copy out what identifies the product. Sellers write casually, with typos and slang; read through them.
 
 Rules:
 - Only report what the text or the photos actually show. Never guess a brand, model, date or code from general knowledge. Unknown fields are null or an empty list.
 - category: a short product type in English, such as "stroller", "child bike seat", "car seat", "toy".
+- productType: the same, chosen from the allowed list; the most specific fitting entry, "other" when none fits, null when the listing doesn't say what the product is.
 - brand: as written. model: the model name without the brand or product type ("smile iii", "buddy"). modelVariant: a version or edition if one is named.
+- A product named only by a proper name or code ("TilBoard", "LP-60L") goes in model when you can't tell whether it is the brand or the model.
 - references: product reference or article codes. gtin: an EAN/UPC barcode number, digits only. batch: a lot or batch number.
 - productionDate: the manufacturing month as YYYY-MM, only when a manufacturing date is written in the text or readable on a label in a photo. The year of purchase is not a manufacturing date.
 - labelTextSeen: text you can read on a product label in the photos, copied as is, or null.
@@ -55,3 +57,13 @@ Rules:
 - batch: a lot, batch or serial number (Lot, Batch, LOT, S/N), as printed.
 - productionDate: the manufacturing month as YYYY-MM (MFG, Date of manufacture, Date de fabrication, Fabriqué le, Production date). Not an expiry, purchase or test date.
 - productionDateText: the exact characters on the label the production date was read from, such as "MFG 05/2023". null when productionDate is null.`;
+
+export const UNIT_LIMIT_PROMPT_VERSION = 1;
+
+export const UNIT_LIMIT_PROMPT = `You read an official product recall and say whether it covers only some units of the named models, identified by serial numbers: a list, a range ("de 5201000000 à 5542999999"), a prefix, or a list in an attached file.
+
+- limited: true only when the text limits the recall to some serial numbers or to units listed in an attachment.
+- Lot or batch numbers, manufacturing dates and barcodes are not serial limits; they are read elsewhere. "Tous les lots" or "tous les numéros de série" means no limit.
+- A sentence that only says where to find the serial number is not a limit on its own.
+- quote: when limited, the passage that states the limit, copied as written; otherwise null.`;
+

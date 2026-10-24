@@ -44,6 +44,20 @@ describe("typesConflict", () => {
     expect(typesConflict("e-bike", "helmet")).toBe(true);
   });
 
+  it("separates different electrical products and baby gear", () => {
+    expect(typesConflict("power bank", "charger")).toBe(true);
+    expect(typesConflict("stroller", "high chair")).toBe(true);
+  });
+
+  it("never separates a family, or a vague type from its kind", () => {
+    expect(typesConflict("soft toy", "toy")).toBe(false);
+    expect(typesConflict("lamp", "lighting chain")).toBe(false);
+    expect(typesConflict("other electrical", "power bank")).toBe(false);
+    expect(typesConflict("other", "stroller")).toBe(false);
+    expect(typesConflict("bicycle", "e-bike")).toBe(false);
+    expect(typesConflict("other electrical", "stroller")).toBe(true);
+  });
+
   it("never separates a vehicle from its variants, or an unknown type", () => {
     expect(typesConflict("e-bike", "motor vehicle")).toBe(false);
     expect(typesConflict("e-scooter", "moped")).toBe(false);

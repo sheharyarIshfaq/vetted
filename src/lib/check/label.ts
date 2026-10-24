@@ -116,7 +116,11 @@ export async function runLabelCheck(id: string, bytes: Uint8Array, log: Log = ()
       : listed;
   const [recalls, barcodeHits] = await Promise.all([
     getRecalls(stored.map((candidate) => candidate.recallId)),
-    read.gtin ? findCandidates({ brandNorm: extracted.brandNorm, model: null, gtin: read.gtin, searchText: "" }) : [],
+    read.gtin
+      ? findCandidates({ brandNorm: null, model: null, gtin: read.gtin, codes: [], productType: null, searchText: "", embeddingText: null }).then(
+          (found) => found.filter((candidate) => candidate.routes.includes("barcode")),
+        )
+      : [],
   ]);
   const byId = new Map(recalls.map((recall) => [recall.id, recall]));
   const known = new Set(stored.map((candidate) => candidate.recallId));

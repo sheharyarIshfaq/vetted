@@ -4,6 +4,8 @@ import { db } from "../src/lib/db/client";
 import { ingestEnv } from "../src/lib/env";
 import { sinceDate } from "../src/lib/ingest/dates";
 import { cleanRecalls } from "../src/lib/ingest/clean-fields";
+import { embedRecalls } from "../src/lib/ingest/embed-recalls";
+import { readUnitLimits } from "../src/lib/ingest/unit-limit";
 import { ingestRappelConso, type IngestPlan } from "../src/lib/ingest/rappelconso";
 import { ingestSafetyGate } from "../src/lib/ingest/safetygate";
 
@@ -75,6 +77,15 @@ try {
     log,
   });
   log(cleaned ? `Clean fields: ${cleaned.stored} recalls (${cleaned.failed} failed, $${cleaned.cost.toFixed(2)})` : "Clean fields: skipped");
+  const limits = await readUnitLimits({
+    updatedSince: started,
+    confirm: (plan) => confirm({ fetched: plan.recalls, recalls: plan.recalls, needModel: plan.recalls, cached: 0, calls: plan.recalls, estimatedCost: plan.estimatedCost }),
+    log,
+  });
+  if (limits) log(`Serial-number limits: ${limits.limited} of ${limits.read} recalls read`);
+  // Embeddings cost about $0.02 per million tokens, so they run without asking.
+  const embedded = await embedRecalls({ updatedSince: started, confirm: async () => true, log });
+  if (embedded) log(`Embeddings: ${embedded.stored} recalls ($${embedded.cost.toFixed(3)})`);
 } finally {
   await db().$client.end();
 }

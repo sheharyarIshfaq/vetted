@@ -4,6 +4,7 @@ import { groundExtraction } from "./extract";
 
 const empty: ListingExtraction = {
   category: null,
+  productType: null,
   brand: null,
   model: null,
   modelVariant: null,

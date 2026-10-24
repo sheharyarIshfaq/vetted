@@ -1,6 +1,6 @@
 import type { ModelRange } from "../db/schema";
-import { productType, typesConflict } from "./product-type";
-import { normalizeModelText } from "./text";
+import { isSpecificType, productType, typesConflict } from "./product-type";
+import { normalizeModelText, normalizeText } from "./text";
 
 export type Verdict = "recalled" | "check_label" | "clear";
 
@@ -17,7 +17,8 @@ export type ItemFacts = {
   gtin: string | null;
   batch: string | null;
   productionDate: string | null; // YYYY-MM
-  category?: string | null; // the product type read from the listing
+  category?: string | null; // the product type read from the listing, in free words
+  productType?: string | null; // the same, from the fixed type list
   title?: string | null; // the listing's title
   // Where each fact was read; listing text unless the label or a photo said otherwise.
   sources?: Partial<Record<"references" | "gtin" | "batch" | "productionDate", EvidenceSource>>;
@@ -37,12 +38,33 @@ export type CandidateRecall = {
   productionFrom: string | null;
   productionTo: string | null;
   modelRanges: ModelRange[];
+  // Clean fields read at ingestion; used instead of the raw ones once a recall has them (cleanHash set).
+  cleanHash?: string | null;
+  brandCleanNorm?: string | null;
+  productType?: string | null;
+  modelNames?: string[];
+  codes?: string[];
+  specs?: string[]; // "52v", "20k", read with the clean fields
+  unitLimit?: string | null; // the official passage limiting the recall to some serial numbers or a listed set
 };
+
+// The recall as the rules compare it: clean brand, model names and codes when it has them, the raw fields otherwise.
+function comparable(recall: CandidateRecall): CandidateRecall {
+  if (!recall.cleanHash) return recall;
+  return {
+    ...recall,
+    brandNorm: recall.brandCleanNorm ?? recall.brandNorm,
+    // Codes with letters are model names too ("xt800 v1", "v10+"); pure numbers stay references.
+    models: [...new Set([...(recall.modelNames ?? []), ...(recall.codes ?? []).filter((code) => /[a-z]/i.test(code))])],
+    refs: [...new Set([...recall.refs, ...(recall.codes ?? [])])],
+  };
+}
 
 export type Candidate = {
   recall: CandidateRecall;
   titleSimilarity: number; // pg_trgm similarity between the listing and the recall's search text
   brandSimilarity: number;
+  onlyBrandNamingModel?: boolean; // set by decideBest: no other brand among the candidates has a recall naming the listing's model
 };
 
 export type PhotoComparison = {
@@ -93,6 +115,42 @@ function specWord(word: string) {
   return /^\d+(?:mah|wh|w|v|ah)$/.test(word) ? word.replace(/[a-z]+$/, "") : word;
 }
 
+// A number and its unit, as a battery, power or size is written: "20k", "20000 mah", "60v", "6,5 pouces".
+const SPEC = /(\d+(?:[.,]\d+)?)\s*(mah|k|wh|ah|w|v|pouces?|inch(?:es)?|")(?![a-z0-9])/gi;
+const SPEC_UNITS: Record<string, string> = { k: "mah", mah: "mah", wh: "wh", ah: "ah", w: "w", v: "v", '"': "inch" };
+
+type Spec = { unit: string; value: number; text: string };
+
+function specsIn(value: string | null | undefined): Spec[] {
+  // "10 000 mAh" and "10.000 mAh" are 10000.
+  const text = (value ?? "").toLowerCase().replace(/(\d)[\s.](\d{3})(?!\d)/g, "$1$2");
+  return [...text.matchAll(SPEC)].map((match) => {
+    const unit = SPEC_UNITS[match[2]] ?? "inch";
+    const number = Number(match[1].replace(",", "."));
+    return { unit, value: match[2] === "k" ? number * 1000 : number, text: match[0].trim() };
+  });
+}
+
+// What the listing says about the recall's specs: a different value rules the recall out, a missing one leaves a doubt.
+function compareSpecs(recall: CandidateRecall, item: ItemFacts) {
+  const recallSpecs = [...recall.models, ...(recall.specs ?? [])].flatMap(specsIn);
+  const listed = specsIn([item.model, item.modelVariant, item.title].filter(Boolean).join(" "));
+  const units = [...new Set(recallSpecs.map((spec) => spec.unit))];
+  const conflict = units.flatMap((unit) => {
+    const given = listed.filter((spec) => spec.unit === unit);
+    const wanted = recallSpecs.filter((spec) => spec.unit === unit);
+    return given.length > 0 && !given.some((spec) => wanted.some((other) => other.value === spec.value)) ? [{ wanted: wanted[0], given: given[0] }] : [];
+  });
+  const missing = units.filter((unit) => !listed.some((spec) => spec.unit === unit));
+  return { conflict: conflict[0] ?? null, missing: recallSpecs.filter((spec) => missing.includes(spec.unit)).map((spec) => spec.text) };
+}
+
+// "giro drive" in "trottinette électrique 8.5 giro drive sdrive 250 w", as whole words.
+function containsWords(text: string | null | undefined, phrase: string) {
+  const wanted = normalizeText(phrase);
+  return wanted.length >= 4 && ` ${normalizeText(text ?? "")} `.includes(` ${wanted} `);
+}
+
 function words(value: string | null | undefined) {
   return new Set(normalizeModelText(value ?? "").split(" ").filter(Boolean).map(specWord));
 }
@@ -121,15 +179,49 @@ export function namesRecallModel(
   item: Pick<ItemFacts, "model" | "modelVariant" | "title">,
 ) {
   const brand = words(recallBrand);
-  const wanted = [...words(modelName(recallModel))].filter((word) => !FILLER.has(word) && !GENERIC.has(word) && !brand.has(word));
+  // Specs aren't part of the name: "v10+ 60v 28ah" is named by "V10+", and the specs are compared on their own.
+  const wanted = [...words(modelName(recallModel).replace(SPEC, " "))].filter((word) => !FILLER.has(word) && !GENERIC.has(word) && !brand.has(word));
   const model = words([item.model, item.modelVariant].filter(Boolean).join(" "));
   const title = words(item.title);
   // A short number in a title may be anything ("0-4 ans"); a long one is a spec ("20000").
   const fromTitle = (word: string) => title.has(word) && (!/\d/.test(word) || /^\d{4,}$/.test(word));
-  return wanted.length > 0 && wanted.every((word) => model.has(word) || fromTitle(word));
+  // Makers often put their initial before the number: VSETT's "10+" is written "v10+".
+  const initial = [...brand][0]?.[0];
+  const withoutInitial = (word: string) => initial !== undefined && word.startsWith(initial) && /^\d/.test(word.slice(1)) && model.has(word.slice(1));
+  return wanted.length > 0 && wanted.every((word) => model.has(word) || fromTitle(word) || withoutInitial(word));
 }
 
 type ModelFacts = Pick<ItemFacts, "model" | "modelVariant" | "references" | "title">;
+
+// A model name unlikely to be shared by chance: a long made-up word ("tilboard") or a code with letters and digits.
+function distinctiveModel(item: ItemFacts) {
+  return [...words([item.model, item.modelVariant].filter(Boolean).join(" "))].some(
+    (word) => !GENERIC.has(word) && !FILLER.has(word) && (/^[a-z]{6,}$/.test(word) || (/\d/.test(word) && /[a-z]/.test(word) && word.length >= 3)),
+  );
+}
+
+// A code unlikely to be shared by chance: letters and digits ("MR2-F-41"), or six digits or more.
+function distinctiveCode(code: string) {
+  const compact = normalizeCode(code);
+  return (/\d/.test(compact) && /[a-z]/.test(compact) && compact.length >= 4) || /^\d{6,}$/.test(compact);
+}
+
+// A trim or version of a model ("lite", "gt", "v2"), not another generation of it ("iii", "4", "5z").
+const TRIM = /^(?:[a-z]+|v\d+)$/;
+
+// The recalled models the listing's model is a shorter name of: "Mantis" for "mantis lite" or "mantis gt",
+// "XT800" for "xt800 v1". "Smile" stays a different model from "smile iii".
+function trimsOf(item: ItemFacts, recall: CandidateRecall) {
+  const brand = words(recall.brandNorm);
+  const distinctive = (value: string) => [...words(modelName(value).replace(SPEC, " "))].filter((word) => !FILLER.has(word) && !GENERIC.has(word) && !brand.has(word));
+  const listed = distinctive([item.model, item.modelVariant].filter(Boolean).join(" "));
+  if (listed.length === 0) return [];
+  return recall.models.filter((model) => {
+    const recalled = distinctive(model);
+    const extra = recalled.filter((word) => !listed.includes(word));
+    return listed.every((word) => recalled.includes(word)) && extra.length > 0 && extra.every((word) => TRIM.test(word));
+  });
+}
 
 function namesModel(recallModel: string, recall: CandidateRecall, item: ModelFacts) {
   return itemModels(item).has(normalizeModel(modelName(recallModel))) || namesRecallModel(recallModel, recall.brandNorm, item);
@@ -240,11 +332,21 @@ function identityEvidence(
 // A variant the recall never mentions ("V8 Ultra Max" against a recall for the "V8"): the recall may or may not cover it.
 // A barcode or reference match identifies the exact product, so it leaves no doubt.
 function unnamedVariant(item: ItemFacts, recall: CandidateRecall, exactCode: boolean) {
-  if (exactCode || !item.model || !item.modelVariant) return false;
+  if (exactCode || !item.model) return false;
+  if (!item.modelVariant) return extraModelWords(item, recall);
   const recallWords = words([recall.productName, ...recall.models, ...recall.refs, ...recall.modelRanges.map((r) => r.model)].join(" "));
   const brand = words(recall.brandNorm);
-  const variant = [...words(item.modelVariant)].filter((word) => !FILLER.has(word) && !brand.has(word));
+  // Specs are compared on their own (compareSpecs), so "60V 28Ah" is not an unnamed variant.
+  const variant = [...words(item.modelVariant?.replace(SPEC, " "))].filter((word) => !FILLER.has(word) && !brand.has(word));
   return variant.length > 0 && variant.some((word) => !recallWords.has(word));
+}
+
+// The listing's model says more than every recalled model it names: "my first fashion perfect" against "my first doll".
+function extraModelWords(item: ItemFacts, recall: CandidateRecall) {
+  const brand = words(recall.brandNorm);
+  const listed = [...words(item.model?.replace(SPEC, " "))].filter((word) => !FILLER.has(word) && !GENERIC.has(word) && !brand.has(word));
+  const named = recall.models.filter((model) => namesModel(model, recall, item));
+  return named.length > 0 && named.every((model) => listed.some((word) => !words(modelName(model).replace(SPEC, " ")).has(word)));
 }
 
 // A clear verdict next to a close recall always leads with why it isn't a match.
@@ -286,14 +388,19 @@ export function decideVerdict({
     return { verdict: "clear", recall: null, evidence, notes };
   }
 
-  const { recall } = candidate;
+  const recall = comparable(candidate.recall);
   if (photo.officialPhotoUnavailable) {
     evidence.push({ fact: "Official photo unavailable", matched: false, source: "official_data" });
   }
 
+  // The listing's brand can be a product line the recall names ("Giro Drive" by Smyths Toys) or part of its brand ("Geuther").
   const brandMatch =
     item.brandNorm !== null &&
-    (item.brandNorm === recall.brandNorm || candidate.brandSimilarity >= BRAND_MATCH_THRESHOLD);
+    (item.brandNorm === recall.brandNorm ||
+      item.brandNorm === candidate.recall.brandNorm ||
+      candidate.brandSimilarity >= BRAND_MATCH_THRESHOLD ||
+      containsWords(recall.productName, item.brandNorm) ||
+      containsWords(recall.brand, item.brandNorm));
   const range = matchingRange(item, recall);
   const refs = recallRefs(recall);
   // Safety Gate often gives the model only as the type reference ("V8"), so a listing's model can name it there too.
@@ -303,26 +410,35 @@ export function decideVerdict({
     recall.models.some((model) => namesModel(model, recall, item)) ||
     refs.some((ref) => models.has(normalizeModel(ref)));
   const refMatch = codeIn(refs, item.references);
+  // A different battery, power or size is another version of the model; an exact reference still wins.
+  const specs = compareSpecs(recall, item);
+  const specConflict = specs.conflict !== null && !refMatch;
   const sampleBatchMatch = item.batch !== null && codeIn(recall.sampleBatches, [item.batch]);
   // A close title stands in for the model only when the listing and the recall don't name different models.
   const otherModel = models.size > 0 && recall.models.length > 0 && !modelNameMatch;
   const modelMatch =
-    modelNameMatch ||
+    (modelNameMatch && !specConflict) ||
     refMatch ||
     sampleBatchMatch ||
-    (!otherModel && candidate.titleSimilarity >= TITLE_MATCH_THRESHOLD);
+    // A close title stands in for a model only when the recall names none: "Hoverboard Tilgreen" doesn't name the Tilboard.
+    (!otherModel && !specConflict && recall.models.length === 0 && candidate.titleSimilarity >= TITLE_MATCH_THRESHOLD);
   // Clearly different product types rule a match out: the Breeze stroller is not the Breeze car seat.
-  const itemType = productType(item.category ?? null) ?? productType(item.title ?? null);
-  const recallType = productType(recall.productName);
+  const itemType = item.productType ?? productType(item.category ?? null) ?? productType(item.title ?? null);
+  const recallType = recall.productType ?? productType(recall.productName);
   const otherType = typesConflict(itemType, recallType);
   // A barcode identifies the product like a model match does; date and batch limits still apply.
   const gtinMatch =
     item.gtin !== null && recall.gtins.some((gtin) => normalizeGtin(gtin) === normalizeGtin(item.gtin!));
   const variantInDoubt = unnamedVariant(item, recall, gtinMatch || refMatch);
+  const specsUnknown = modelNameMatch && !specConflict && !gtinMatch && !refMatch && specs.missing.length > 0;
 
   if (gtinMatch) {
     evidence.push({ fact: `Barcode ${item.gtin} is listed in the recall`, matched: true, source: source("gtin") });
   } else {
+    if (specConflict) {
+      const { wanted, given } = specs.conflict!;
+      evidence.push({ fact: `The recall is for the ${wanted.text} version, this one is ${given.text}`, matched: false, source: "listing_text" });
+    }
     evidence.push(...identityEvidence(item, recall, { brandMatch, modelNameMatch, refMatch, modelMatch, variantInDoubt }));
     if (otherType) {
       evidence.push({ fact: `The recall is for a ${recallType}, this is a ${itemType}`, matched: false, source: "listing_text" });
@@ -333,7 +449,7 @@ export function decideVerdict({
   }
 
   // The listing names the recalled brand and model, or its barcode or reference: photos alone can't overrule that.
-  const namedInRecall = gtinMatch || (brandMatch && (modelNameMatch || refMatch || sampleBatchMatch) && !otherType);
+  const namedInRecall = gtinMatch || (brandMatch && ((modelNameMatch && !specConflict) || refMatch || sampleBatchMatch) && !otherType);
   if (photo.sameProduct === "yes") {
     evidence.push({ fact: "Photos show the same product as the official photo", matched: true, source: "listing_photo" });
   } else if (photo.sameProduct === "no") {
@@ -347,7 +463,7 @@ export function decideVerdict({
   }
 
   // Without a brand, a similar title proves nothing ("peluche ours"): it takes a barcode, or a shared code and the photos.
-  const unbranded = recall.brandNorm === null;
+  const unbranded = recall.brandNorm === null && candidate.recall.brandNorm === null;
   const identified = unbranded
     ? gtinMatch || (sharedCode(item, recall) && photo.sameProduct === "yes" && !otherType)
     : gtinMatch || (brandMatch && modelMatch && !otherType);
@@ -358,9 +474,34 @@ export function decideVerdict({
       source: "official_data",
     });
   }
+  // The listing names the model but not which of its recalled versions: only the label can say.
+  // References that don't match the recall's say it is another product, whatever the model name.
+  const otherRefs = item.references.length > 0 && refs.length > 0 && !refMatch;
+  const trims = !identified && !unbranded && brandMatch && !otherType && !otherRefs && photo.sameProduct !== "no" ? trimsOf(item, recall) : [];
+  if (trims.length > 0) {
+    // It is named, only without its version, so the "not named" line would contradict the reason.
+    const notNamed = `Model ${[item.model, item.modelVariant].filter(Boolean).join(" ")} is not named in the recall`;
+    evidence.splice(0, evidence.length, ...evidence.filter((fact) => fact.fact !== notNamed));
+    evidence.push({
+      fact: `The recall names the ${trims.join(", ")}; the listing doesn't say which ${item.model} this is`,
+      matched: false,
+      source: "official_data",
+    });
+    return { verdict: "check_label", recall: { id: recall.id, relation: "match" }, evidence, notes };
+  }
+  // No brand, but a distinctive model name that only this brand's recalls use: the label has to show the brand.
+  const distinctiveName = (modelNameMatch && !specConflict && distinctiveModel(item)) || (refMatch && item.references.some(distinctiveCode));
+  if (!identified && item.brandNorm === null && recall.brand !== null && candidate.onlyBrandNamingModel && distinctiveName && !otherType && photo.sameProduct !== "no") {
+    evidence.push({
+      fact: `No brand given, and only a ${recall.brand} recall names the ${item.model ?? item.references.find((ref) => codeIn(refs, [ref]))}. Check the brand on the label`,
+      matched: false,
+      source: "official_data",
+    });
+    return { verdict: "check_label", recall: { id: recall.id, relation: "match" }, evidence, notes };
+  }
   // The brand has a recalled product of exactly this type, but the listing names no model: only the seller can say which.
   const modelUnknown = !item.model && !item.modelVariant && item.references.length === 0 && item.gtin === null;
-  if (!identified && !unbranded && brandMatch && modelUnknown && itemType !== null && itemType === recallType && photo.sameProduct !== "no") {
+  if (!identified && !unbranded && brandMatch && modelUnknown && isSpecificType(itemType) && itemType === recallType && photo.sameProduct !== "no") {
     evidence.push({
       fact: `This brand has a recalled ${recallType}. Ask the seller for the exact model`,
       matched: false,
@@ -374,7 +515,18 @@ export function decideVerdict({
   }
 
   // A recall is only certain when nothing leaves the product in doubt; otherwise the label has to settle it.
-  const doubt = photo.sameProduct === "no" || variantInDoubt;
+  // Serial numbers are never in a listing, so a recall limited to some of them always needs the label.
+  const doubt = photo.sameProduct === "no" || variantInDoubt || specsUnknown || Boolean(recall.unitLimit);
+  if (specsUnknown) {
+    evidence.push({
+      fact: `The recall is for the ${specs.missing.join(" ")} version; the listing doesn't say which version this is`,
+      matched: false,
+      source: "official_data",
+    });
+  }
+  if (recall.unitLimit) {
+    evidence.push({ fact: `Only some units are recalled: “${recall.unitLimit}”`, matched: false, source: "official_data" });
+  }
   if (variantInDoubt) {
     evidence.push({
       fact: `The recall names the ${item.model}; it doesn't say whether the ${[item.model, item.modelVariant].join(" ")} is included`,
@@ -389,7 +541,7 @@ export function decideVerdict({
 
   // No date or batch limit: the model, reference or barcode match is enough.
   if (!hasRange && !hasBatches) {
-    evidence.push({ fact: "Every unit of this model is recalled", matched: true, source: "official_data" });
+    if (!recall.unitLimit) evidence.push({ fact: "Every unit of this model is recalled", matched: true, source: "official_data" });
     return { verdict: doubt ? "check_label" : "recalled", recall: { id: recall.id, relation: "match" }, evidence, notes };
   }
 
@@ -441,6 +593,23 @@ function rank(result: VerdictResult) {
   return result.recall ? RANK[result.recall.relation === "other_dates" ? "other_dates" : "not_a_match"] : RANK.none;
 }
 
+// A brandless listing whose model is, or starts with, the recall's brand: "Hoverboard Tilgreen" read with Tilgreen as the
+// model, or "Smyths Toys Giro Drive SDrive" read as one model name. The brand part is the brand.
+function asBrand(item: ItemFacts, recall: CandidateRecall): ItemFacts {
+  if (item.brandNorm !== null || !item.model) return item;
+  const name = normalizeText(item.model);
+  const brand = [recall.brandCleanNorm, recall.brandNorm].find((value) => value && (name === normalizeText(value) || name.startsWith(`${normalizeText(value)} `)));
+  if (!brand) return item;
+  const rest = item.model.trim().split(/\s+/).slice(normalizeText(brand).split(" ").length).join(" ");
+  return { ...item, brand: item.model.slice(0, item.model.length - rest.length).trim(), brandNorm: brand, model: rest || null };
+}
+
+// Two notices about one product share a barcode or a reference.
+function sameProduct(a: CandidateRecall, b: CandidateRecall) {
+  const gtins = new Set(a.gtins.map(normalizeGtin));
+  return b.gtins.some((gtin) => gtins.has(normalizeGtin(gtin))) || codeIn(recallRefs(a).filter(isCode), recallRefs(b));
+}
+
 // Decides every candidate and keeps the most serious outcome. On a tie the French notice comes first,
 // then similarity order. A matching recall from the other source is kept as a second notice.
 export function decideBest({
@@ -455,10 +624,21 @@ export function decideBest({
   if (candidates.length === 0) {
     return { ...decideVerdict({ item, candidate: null, photo: { sameProduct: null } }), alsoMatched: [] };
   }
+  // Which brands have a recall naming the listing's model, so an unbranded listing can be tied to one of them.
+  const naming = candidates.filter((candidate) => {
+    const recall = comparable(candidate.recall);
+    return recall.models.some((model) => namesModel(model, recall, item)) || codeIn(recallRefs(recall), item.references);
+  });
+  const brands = new Set(naming.map((candidate) => comparable(candidate.recall).brandNorm ?? candidate.recall.id));
   const results = candidates.map((candidate) => ({
+    recall: candidate.recall,
     source: candidate.recall.source,
     photoSaysNo: photos.get(candidate.recall.id)?.sameProduct === "no",
-    result: decideVerdict({ item, candidate, photo: photos.get(candidate.recall.id) ?? { sameProduct: null } }),
+    result: decideVerdict({
+      item: asBrand(item, candidate.recall),
+      candidate: { ...candidate, onlyBrandNamingModel: brands.size === 1 && naming.includes(candidate) },
+      photo: photos.get(candidate.recall.id) ?? { sameProduct: null },
+    }),
   }));
   // On equal verdicts, a recall the photos agree with comes before one they don't. Among near misses the closest
   // is the one that matched most (brand and model named beats brand alone), so every clear names the same one.
@@ -474,11 +654,19 @@ export function decideBest({
     const i = a.findIndex((value, j) => value !== b[j]);
     return i !== -1 && a[i] < b[i];
   };
-  const best = results.reduce((top, entry) => (before(order(entry), order(top)) ? entry : top));
+  const top = results.reduce((first, entry) => (before(order(entry), order(first)) ? entry : first));
+  // An EU alert for "all batches" and a French notice for the same product with a batch or date limit: the French one is
+  // more precise, so its "check the label" stands and the alert is shown alongside.
+  const precise = top.source === "safetygate" && top.result.verdict === "recalled"
+    ? results.find((entry) => entry.source === "rappelconso" && entry.result.verdict === "check_label" && sameProduct(entry.recall, top.recall))
+    : undefined;
+  const best = precise ?? top;
   if (best.result.verdict === "clear") return { ...best.result, alsoMatched: [] };
-  const also = results.find(
-    (entry) =>
-      entry.source !== best.source && entry.result.verdict === best.result.verdict && entry.result.recall?.relation === "match",
-  );
+  const also = precise
+    ? top
+    : results.find(
+        (entry) =>
+          entry.source !== best.source && entry.result.verdict === best.result.verdict && entry.result.recall?.relation === "match",
+      );
   return { ...best.result, alsoMatched: also?.result.recall ? [also.result.recall.id] : [] };
 }

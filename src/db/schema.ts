@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, date, index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, date, index, jsonb, pgTable, real, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // One entry per model when a recall gives each model its own limits. Dates are YYYY-MM-DD; either end may be open.
 export type ModelRange = {
@@ -49,6 +49,11 @@ export const recalls = pgTable(
     codes: text().array().notNull().default(sql`'{}'`),
     specs: text().array().notNull().default(sql`'{}'`),
     cleanHash: text("clean_hash"), // input hash of the clean fields, so unchanged recalls aren't read again
+    embedding: real().array(), // unit vector of the clean fields, for the semantic candidate route
+    embeddingHash: text("embedding_hash"),
+    // The passage limiting the recall to some serial numbers or to an attached list, read by the model.
+    unitLimit: text("unit_limit"),
+    unitLimitHash: text("unit_limit_hash"),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

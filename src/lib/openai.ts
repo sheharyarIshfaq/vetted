@@ -11,3 +11,7 @@ export function openai() {
 export function openaiModel() {
   return openaiEnv().OPENAI_MODEL;
 }
+
+export function embeddingModel() {
+  return openaiEnv().OPENAI_EMBEDDING_MODEL;
+}

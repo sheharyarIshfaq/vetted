@@ -5,7 +5,7 @@ import { insertCheck } from "../db/checks";
 import { uploadObject } from "../storage";
 import { normalizeBrand } from "../text";
 import { decideBest, type Evidence, type ItemFacts, type Verdict } from "../verdict";
-import { findCandidates } from "./candidates";
+import { findCandidates, type Route } from "./candidates";
 import { comparePhotos, type PhotoResult } from "./compare";
 import { extractListing, type ExtractedItem } from "./extract";
 import { downloadImage, prepareImage } from "./images";
@@ -59,6 +59,7 @@ export type StoredCandidate = {
   titleSimilarity: number;
   brandSimilarity: number;
   photo: PhotoResult | null;
+  routes?: Route[]; // absent on checks stored before candidate routes
 };
 export type StoredEvidence = {
   items: Evidence[];
@@ -123,6 +124,17 @@ export async function readInput(input: CheckInput, log: Log = () => {}) {
   return { text, page, uploads, photos, photosUnread };
 }
 
+// What the listing is, in the same shape as a recall's embedding text.
+export function listingEmbeddingText(
+  extracted: Pick<ExtractedItem, "brand" | "productType" | "category" | "model" | "modelVariant">,
+  title: string | null,
+) {
+  const text = [extracted.brand, extracted.productType ?? extracted.category, [extracted.model, extracted.modelVariant].filter(Boolean).join(" "), title]
+    .filter(Boolean)
+    .join(" | ");
+  return text || null;
+}
+
 // The listing's own title: the page's, else the first line of the pasted text.
 export function titleOf(page: ListingPage | null, text: string | null) {
   return page?.title ?? text?.split("\n")[0] ?? null;
@@ -140,8 +152,42 @@ export function toItemFacts(extracted: ExtractedItem, brandNorm: string | null, 
     productionDate: extracted.productionDate,
     sources: extracted.sources,
     category: extracted.category,
+    productType: extracted.productType ?? null,
     title,
   };
+}
+
+// Finds the candidate recalls for what was read from a listing, compares photos and lets the rules decide.
+export async function matchListing({
+  extracted,
+  title,
+  photos,
+  aliases,
+  lap = () => {},
+}: {
+  extracted: ExtractedItem;
+  title: string | null;
+  photos: Buffer[];
+  aliases: ReadonlyMap<string, string>;
+  lap?: (step: string) => void;
+}) {
+  const brandNorm = extracted.brand ? normalizeBrand(extracted.brand, aliases) : null;
+  const ranked = await findCandidates({
+    brandNorm,
+    model: [extracted.model, extracted.modelVariant].filter(Boolean).join(" ") || null,
+    gtin: extracted.gtin,
+    codes: extracted.references,
+    productType: extracted.productType ?? null,
+    searchText: [extracted.brand, extracted.model, extracted.modelVariant, title].filter(Boolean).join(" "),
+    embeddingText: listingEmbeddingText(extracted, title),
+  });
+  lap(`candidates (${ranked.length})`);
+
+  const photoResults = await comparePhotos(photos, ranked.map((candidate) => candidate.recall));
+  lap(`compare photos (${photoResults.size})`);
+
+  const item = toItemFacts(extracted, brandNorm, title);
+  return { brandNorm, ranked, photoResults, result: decideBest({ item, candidates: ranked, photos: photoResults }) };
 }
 
 export async function runCheck(input: CheckInput, log: Log = () => {}): Promise<CheckResult> {
@@ -157,22 +203,13 @@ export async function runCheck(input: CheckInput, log: Log = () => {}): Promise<
   ]);
   lap("extract");
 
-  const brandNorm = extracted.brand ? normalizeBrand(extracted.brand, aliases) : null;
-  const ranked = await findCandidates({
-    brandNorm,
-    model: [extracted.model, extracted.modelVariant].filter(Boolean).join(" ") || null,
-    gtin: extracted.gtin,
-    searchText: [extracted.brand, extracted.model, extracted.modelVariant, titleOf(page, text)]
-      .filter(Boolean)
-      .join(" "),
+  const { brandNorm, ranked, photoResults, result } = await matchListing({
+    extracted,
+    title: titleOf(page, text),
+    photos,
+    aliases,
+    lap,
   });
-  lap(`candidates (${ranked.length})`);
-
-  const photoResults = await comparePhotos(photos, ranked.map((candidate) => candidate.recall));
-  lap(`compare photos (${photoResults.size})`);
-
-  const item = toItemFacts(extracted, brandNorm, titleOf(page, text));
-  const result = decideBest({ item, candidates: ranked, photos: photoResults });
   const evidence = photosUnread ? [...result.evidence, PHOTOS_UNREAD] : result.evidence;
   const matched: Recall | undefined = ranked.find((candidate) => candidate.recall.id === result.recall?.id)?.recall;
 
@@ -188,11 +225,12 @@ export async function runCheck(input: CheckInput, log: Log = () => {}): Promise<
   };
   const id = await insertCheck({
     ...stored,
-    candidates: ranked.map(({ recall, titleSimilarity, brandSimilarity }): StoredCandidate => ({
+    candidates: ranked.map(({ recall, titleSimilarity, brandSimilarity, routes }): StoredCandidate => ({
       recallId: recall.id,
       titleSimilarity,
       brandSimilarity,
       photo: photoResults.get(recall.id) ?? null,
+      routes,
     })),
     verdict: result.verdict,
     recallId: result.recall?.id ?? null,

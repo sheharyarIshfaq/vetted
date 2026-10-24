@@ -10,6 +10,7 @@ type ScalarField = "category" | "brand" | "model" | "modelVariant" | "gtin" | "b
 
 export type ExtractedItem = {
   category: string | null;
+  productType?: string | null; // from the fixed type list; absent on checks stored before it existed
   brand: string | null;
   model: string | null;
   modelVariant: string | null;
@@ -84,6 +85,7 @@ export function groundExtraction(text: string, raw: ListingExtraction): Extracte
 
   return {
     category: ground("category", raw.category).value,
+    productType: raw.productType,
     brand: brand.value,
     model: model.value,
     modelVariant: modelVariant.value,

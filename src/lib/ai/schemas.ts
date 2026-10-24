@@ -47,6 +47,7 @@ export const extractedFieldSchema = z.enum([
 
 export const listingExtractionSchema = z.object({
   category: z.string().nullable(),
+  productType: z.enum(PRODUCT_TYPES).nullable(),
   brand: z.string().nullable(),
   model: z.string().nullable(),
   modelVariant: z.string().nullable(),
@@ -84,3 +85,10 @@ export const labelReadingSchema = z.object({
 });
 
 export type LabelReading = z.infer<typeof labelReadingSchema>;
+
+export const unitLimitSchema = z.object({
+  limited: z.boolean(),
+  quote: z.string().nullable(),
+});
+
+export type UnitLimitOutput = z.infer<typeof unitLimitSchema>;

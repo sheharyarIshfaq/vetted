@@ -1,76 +1,127 @@
-import { desc, getTableColumns, gte, or, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, getTableColumns, gte, inArray, or, sql, type SQL } from "drizzle-orm";
 import { recalls, type Recall } from "../../db/schema";
+import { embed } from "../ai/embeddings";
 import { db } from "../db/client";
 import { normalizeModelText } from "../text";
+import { nearestRecalls } from "./semantic";
 
-export type RankedRecall = { recall: Recall; titleSimilarity: number; brandSimilarity: number };
+export type Route = "barcode" | "code" | "brand_model" | "brand_title" | "type_model" | "title" | "semantic";
 
-const MAX_CANDIDATES = 5;
+export type RankedRecall = {
+  recall: Recall;
+  titleSimilarity: number;
+  brandSimilarity: number;
+  routes: Route[]; // every route that found it, for the self-test's per-route report
+};
+
+const MAX_CANDIDATES = 20;
+const PER_ROUTE = 20;
 const MIN_TITLE_SIMILARITY = 0.25;
 const MIN_BRAND_SIMILARITY = 0.6;
-// Within the same brand, a recall also qualifies when the model name appears in it,
-// so extra listing words ("siège vélo enfant" vs "porte-bébé") don't hide it.
-const MIN_MODEL_SIMILARITY = 0.8;
 // The brand's own recalls only need a faint title overlap: "Hoverboard Blaupunkt 6.5 pouces" against
 // "Scooter auto-équilibrage (hoverboard)" scores 0.24, and the rules still decide whether it matches.
 const MIN_SAME_BRAND_SIMILARITY = 0.1;
+const MIN_MODEL_SIMILARITY = 0.6;
+// Set from the self-test (pnpm selftest): below this the nearest recalls are unrelated products.
+export const MIN_SEMANTIC_SIMILARITY = 0.3;
+// Reciprocal rank fusion: a recall ranked high by several routes beats one ranked first by a single route.
+const RRF_K = 60;
 
-function select(brandNorm: string | null, query: string, model: string) {
-  const titleSimilarity = sql<number>`similarity(${recalls.searchText}, ${query})`.mapWith(Number);
-  const modelSimilarity = sql<number>`word_similarity(${model}, ${recalls.searchText})`;
-  const brandSimilarity = (
-    brandNorm ? sql<number>`similarity(coalesce(${recalls.brandNorm}, ''), ${brandNorm})` : sql<number>`0`
-  ).mapWith(Number);
-  return { titleSimilarity, brandSimilarity, modelSimilarity, columns: { ...getTableColumns(recalls), titleSimilarity, brandSimilarity } };
-}
-
-function toRanked(rows: (Recall & { titleSimilarity: number; brandSimilarity: number })[]): RankedRecall[] {
-  return rows.map(({ titleSimilarity, brandSimilarity, ...recall }) => ({ recall, titleSimilarity, brandSimilarity }));
-}
-
-// A barcode match comes first; otherwise recalls of the same brand ranked by trigram similarity to the listing.
-export async function findCandidates({
-  brandNorm,
-  model,
-  gtin,
-  searchText,
-}: {
+export type CandidateQuery = {
   brandNorm: string | null;
-  model: string | null;
+  model: string | null; // model and variant
   gtin: string | null;
-  searchText: string;
-}): Promise<RankedRecall[]> {
-  const query = normalizeModelText(searchText);
-  const modelQuery = normalizeModelText(model ?? "");
-  const { titleSimilarity, brandSimilarity, modelSimilarity, columns } = select(brandNorm, query, modelQuery);
+  codes: string[]; // references and other code-like values from the listing
+  productType: string | null;
+  searchText: string; // brand, model and title
+  embeddingText: string | null; // null skips the semantic route
+};
 
-  if (gtin) {
-    const rows = await db()
-      .select(columns)
-      .from(recalls)
-      .where(sql`exists (select 1 from unnest(${recalls.gtins}) as code where ltrim(code, '0') = ltrim(${gtin}, '0'))`)
-      .orderBy(desc(recalls.publishedAt))
-      .limit(MAX_CANDIDATES);
-    if (rows.length) return toRanked(rows);
-  }
+// "BPB-002" and "bpb002" are one code.
+export const compactCode = (value: string) => normalizeModelText(value).replaceAll(" ", "");
 
-  if (!query) return [];
-  const titleOrModel = brandNorm
-    ? or(
-        gte(titleSimilarity, MIN_TITLE_SIMILARITY),
-        modelQuery ? gte(modelSimilarity, MIN_MODEL_SIMILARITY) : undefined,
-        sql`${recalls.brandNorm} = ${brandNorm} and ${titleSimilarity} >= ${MIN_SAME_BRAND_SIMILARITY}`,
-      )!
-    : gte(titleSimilarity, MIN_TITLE_SIMILARITY);
-  const filters: SQL[] = [titleOrModel];
-  if (brandNorm) {
-    filters.push(or(sql`${recalls.brandNorm} = ${brandNorm}`, gte(brandSimilarity, MIN_BRAND_SIMILARITY))!);
+const codeLike = (value: string) => {
+  const code = compactCode(value);
+  return code.length >= 3 && /\d/.test(code);
+};
+
+async function ids(where: SQL | undefined, order: SQL[]) {
+  const rows = await db().select({ id: recalls.id }).from(recalls).where(where).orderBy(...order).limit(PER_ROUTE);
+  return rows.map((row) => row.id);
+}
+
+const none = Promise.resolve<string[]>([]);
+
+// Each route returns recall ids best first; the rules see the fused top 20.
+export async function findCandidates(query: CandidateQuery): Promise<RankedRecall[]> {
+  const title = normalizeModelText(query.searchText);
+  const model = normalizeModelText(query.model ?? "");
+  const { brandNorm } = query;
+  const brandSimilarity = (
+    brandNorm
+      ? sql<number>`greatest(similarity(coalesce(${recalls.brandCleanNorm}, ''), ${brandNorm}), similarity(coalesce(${recalls.brandNorm}, ''), ${brandNorm}))`
+      : sql<number>`0`
+  ).mapWith(Number);
+  const sameBrand = brandNorm ? or(eq(recalls.brandCleanNorm, brandNorm), eq(recalls.brandNorm, brandNorm))! : undefined;
+  const brandMatches = brandNorm ? or(sameBrand, gte(brandSimilarity, MIN_BRAND_SIMILARITY))! : undefined;
+  const titleSimilarity = sql<number>`similarity(${recalls.searchText}, ${title})`.mapWith(Number);
+  const modelSimilarity = sql<number>`word_similarity(${model}, array_to_string(${recalls.modelNames}, ' ') || ' ' || ${recalls.searchText})`;
+  const codes = [...new Set([...query.codes, query.model ?? "", query.gtin ?? ""].filter(codeLike).map(compactCode))];
+
+  const routes: Record<Route, Promise<string[]>> = {
+    barcode: query.gtin
+      ? ids(sql`exists (select 1 from unnest(${recalls.gtins}) as code where ltrim(code, '0') = ltrim(${query.gtin}, '0'))`, [desc(recalls.publishedAt)])
+      : none,
+    code: codes.length
+      ? ids(
+          sql`exists (select 1 from unnest(${recalls.refs} || ${recalls.codes} || ${recalls.models}) as code
+            where regexp_replace(lower(unaccent(code)), '[^a-z0-9]', '', 'g') in (${sql.join(codes.map((code) => sql`${code}`), sql`, `)}))`,
+          [desc(recalls.publishedAt)],
+        )
+      : none,
+    brand_model: brandMatches && model ? ids(and(brandMatches, gte(modelSimilarity, MIN_MODEL_SIMILARITY)), [desc(modelSimilarity), desc(titleSimilarity)]) : none,
+    brand_title:
+      brandMatches && title
+        ? ids(
+            and(brandMatches, or(gte(titleSimilarity, MIN_TITLE_SIMILARITY), and(sameBrand, gte(titleSimilarity, MIN_SAME_BRAND_SIMILARITY)))),
+            [desc(titleSimilarity), desc(recalls.publishedAt)],
+          )
+        : none,
+    // An unbranded listing can still name the model of a recall of its type.
+    type_model:
+      !brandNorm && query.productType && model
+        ? ids(and(eq(recalls.productType, query.productType), gte(modelSimilarity, MIN_MODEL_SIMILARITY)), [desc(modelSimilarity)])
+        : none,
+    title: !brandNorm && title ? ids(gte(titleSimilarity, MIN_TITLE_SIMILARITY), [desc(titleSimilarity), desc(recalls.publishedAt)]) : none,
+    semantic: query.embeddingText
+      ? embed([query.embeddingText]).then(async ({ vectors }) =>
+          (await nearestRecalls(vectors[0], PER_ROUTE, MIN_SEMANTIC_SIMILARITY)).map((item) => item.id),
+        )
+      : none,
+  };
+
+  const results = await Promise.all(Object.entries(routes).map(async ([route, found]) => ({ route: route as Route, ids: await found })));
+  const fused = new Map<string, { score: number; routes: Route[] }>();
+  for (const { route, ids: found } of results) {
+    found.forEach((id, rank) => {
+      const entry = fused.get(id) ?? { score: 0, routes: [] };
+      entry.score += 1 / (RRF_K + rank + 1);
+      entry.routes.push(route);
+      fused.set(id, entry);
+    });
   }
+  // A barcode match is exact, so it always goes first.
+  const barcode = (entry: { routes: Route[] }) => Number(entry.routes.includes("barcode"));
+  const top = [...fused].sort(([, a], [, b]) => barcode(b) - barcode(a) || b.score - a.score).slice(0, MAX_CANDIDATES);
+  if (top.length === 0) return [];
+
   const rows = await db()
-    .select(columns)
+    .select({ ...getTableColumns(recalls), titleSimilarity, brandSimilarity })
     .from(recalls)
-    .where(sql.join(filters, sql` and `))
-    .orderBy(desc(titleSimilarity), desc(recalls.publishedAt))
-    .limit(MAX_CANDIDATES);
-  return toRanked(rows);
+    .where(inArray(recalls.id, top.map(([id]) => id)));
+  const byId = new Map(rows.map(({ titleSimilarity, brandSimilarity, ...recall }) => [recall.id, { recall, titleSimilarity, brandSimilarity }]));
+  return top.flatMap(([id, entry]) => {
+    const row = byId.get(id);
+    return row ? [{ ...row, routes: entry.routes }] : [];
+  });
 }

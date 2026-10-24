@@ -17,6 +17,7 @@
     "ingest": "tsx --env-file-if-exists=.env.local scripts/ingest.ts",
     "eval": "tsx --env-file-if-exists=.env.local scripts/eval.ts",
     "recalls:clean": "tsx --env-file-if-exists=.env.local scripts/clean-recalls.ts",
+    "recalls:embed": "tsx --env-file-if-exists=.env.local scripts/embed-recalls.ts",
     "ext:build": "pnpm --dir extension build",
     "ext:dev": "pnpm --dir extension dev"
   },

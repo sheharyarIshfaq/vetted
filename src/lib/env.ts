@@ -19,6 +19,7 @@ export const storageEnvSchema = z.object({
 export const openaiEnvSchema = z.object({
   OPENAI_API_KEY: z.string().min(1),
   OPENAI_MODEL: z.string().min(1).default("gpt-6.1-sol"),
+  OPENAI_EMBEDDING_MODEL: z.string().min(1).default("text-embedding-3-small"),
 });
 
 export const ingestEnvSchema = z.object({

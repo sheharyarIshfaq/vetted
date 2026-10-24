@@ -55,8 +55,38 @@ export function productType(text: string | null): string | null {
   return found[0][0] === "car seat" && BASE.test(normalized) ? "car seat base" : found[0][0];
 }
 
-// Only clearly different products conflict; a type and its variants or group never do.
+// Families whose members are variants of one another, so they never rule each other out:
+// a "véhicule à moteur" recall can be a fatbike, a "toy" recall a soft toy, a "lamp" a lighting chain.
+const FAMILIES: Record<string, readonly string[]> = {
+  vehicle: ["vehicle", "e-bike", "e-scooter", "scooter", "hoverboard", "moped", "bicycle", "motor vehicle"],
+  toy: ["toy", "soft toy", "magnetic toy", "slime", "ride-on toy", "toy weapon", "doll", "balloon", "costume"],
+  lighting: ["lamp", "lighting chain"],
+  // "Porte-bébé" is both a baby carrier and a child bike seat.
+  carrier: ["baby carrier", "bike seat"],
+};
+const FAMILY = new Map(Object.entries(FAMILIES).flatMap(([family, types]) => types.map((type) => [type, family])));
+// Types that say only "something of this kind", so they never conflict with a type of that kind.
+const ELECTRICAL = new Set(["power bank", "charger", "cable", "phone", "headphones", "speaker", "lamp", "lighting chain", "heater",
+  "hair appliance", "kitchen appliance", "vacuum cleaner", "electric toothbrush", "extension lead", "battery", "smoke detector",
+  "television", "e-cigarette", "other electrical"]);
+
+// Types a brand makes many unrelated products of: "this brand has a recalled toy" says nothing about this toy.
+const BROAD = new Set([
+  ...FAMILIES.toy, "clothing", "footwear", "bag", "jewellery", "cosmetics", "decoration", "kitchenware", "stationery",
+  "sports equipment", "tool", "furniture", "lamp", "lighting chain", "cable", "battery", "extension lead", "other electrical", "other",
+]);
+
+// A type specific enough that a brand's recall of it is worth asking the seller about.
+export function isSpecificType(type: string | null): type is string {
+  return type !== null && !BROAD.has(type);
+}
+
+// Only clearly different products conflict (a stroller and a car seat, a power bank and a helmet);
+// a type and its variants, a family, or a vague "other" never do.
 export function typesConflict(a: string | null, b: string | null) {
-  if (a === null || b === null) return false;
-  return (GROUPS.get(a) ?? a) !== (GROUPS.get(b) ?? b);
+  if (a === null || b === null || a === b || a === "other" || b === "other") return false;
+  const family = FAMILY.get(a) ?? GROUPS.get(a);
+  if (family !== undefined && family === (FAMILY.get(b) ?? GROUPS.get(b))) return false;
+  if ((a === "other electrical" && ELECTRICAL.has(b)) || (b === "other electrical" && ELECTRICAL.has(a))) return false;
+  return true;
 }
