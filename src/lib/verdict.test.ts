@@ -3,6 +3,7 @@ import {
   decideBest,
   decideVerdict,
   isInRange,
+  namesRecallModel,
   normalizeModel,
   type Candidate,
   type CandidateRecall,
@@ -313,10 +314,10 @@ describe("decideVerdict · other rules", () => {
     });
   });
 
-  it("a high title similarity counts as a model match when the model name differs", () => {
+  it("a high title similarity counts as a model match when the recall names no model", () => {
     const result = decideVerdict({
-      item: { ...buddy, model: "Buddy siège enfant", productionDate: "2024-02" },
-      candidate: candidate(hamaxBuddy, 0.62),
+      item: { ...buddy, model: "Siège enfant", productionDate: "2024-02" },
+      candidate: candidate({ ...hamaxBuddy, models: [] }, 0.62),
       photo: noPhoto,
     });
     expect(result.verdict).toBe("recalled");
@@ -510,5 +511,144 @@ describe("decideBest · both sources", () => {
   it("has no second notice when only one source matches", () => {
     const result = decideBest({ item: { ...buddy, productionDate: "2023-05" }, candidates: [candidate(hamaxBuddy)], photos: new Map() });
     expect(result.alsoMatched).toEqual([]);
+  });
+});
+
+const bebeConfortBatch = ["inférieur ou égal à 1038653"];
+const bebeConfortSeat: CandidateRecall = {
+  id: "rc:22017",
+  source: "rappelconso",
+  brand: "bébé confort",
+  brandNorm: "bebe confort",
+  productName: "siège auto bébé des sunlite duo, breeze trio et brume trio",
+  models: ["sunlite duo tinted grey", "sunlite duo mineral graphite", "breeze trio mineral grey", "brumetrio mineral graphite"],
+  refs: ["1146077210", "1146153210", "1982085210", "1982153210"],
+  gtins: ["3220660344840", "3220660344833", "3220660011391", "3220660011384"],
+  batches: bebeConfortBatch,
+  sampleBatches: [],
+  productionFrom: null,
+  productionTo: null,
+  modelRanges: [
+    { model: "sunlite duo tinted grey", from: null, to: null, refs: ["1146077210"], batches: bebeConfortBatch },
+    { model: "breeze trio mineral grey", from: null, to: null, refs: ["1982085210"], batches: bebeConfortBatch },
+  ],
+};
+const bebeConfort = item({ brand: "Bébé Confort", brandNorm: "bebe confort", model: "Breeze" });
+
+describe("namesRecallModel", () => {
+  const listing = (model: string | null, title: string | null = null) => ({ model, modelVariant: null, title });
+
+  it("ignores pack and colour words in the recall's model", () => {
+    expect(namesRecallModel("breeze trio mineral grey", "bebe confort", listing("Breeze"))).toBe(true);
+    expect(namesRecallModel("sunlite duo tinted grey", "bebe confort", listing("Sunlite"))).toBe(true);
+  });
+
+  it("needs every distinctive word, so a bare or other model doesn't match", () => {
+    expect(namesRecallModel("smile iii", "britax romer", listing("Smile"))).toBe(false);
+    expect(namesRecallModel("smile iii", "britax romer", listing("Smile 2"))).toBe(false);
+    expect(namesRecallModel("smile iii", "britax romer", listing("Smile 3"))).toBe(true);
+    expect(namesRecallModel("familyfix slide pro base", "maxi cosi", listing("FamilyFix 360 Pro", "Base FamilyFix 360 Pro"))).toBe(false);
+  });
+
+  it("only goes from the recall to the listing", () => {
+    expect(namesRecallModel("breeze", "bebe confort", listing("Breeze Trio Mineral Grey"))).toBe(true);
+    expect(namesRecallModel("breeze trio duo", "bebe confort", listing("Trio"))).toBe(false);
+  });
+
+  it("finds words in the title, but numbers only in the model", () => {
+    expect(namesRecallModel("buddy", "hamax", listing(null, "Porte bébé vélo Hamax Buddy"))).toBe(true);
+    expect(namesRecallModel("smile iii", "britax romer", listing("Smile", "Poussette Britax Smile 3 roues"))).toBe(false);
+  });
+
+  it("leaves out the recall's brand and never matches on filler alone", () => {
+    expect(namesRecallModel("porte-bébé hamax buddy", "hamax", listing("Porte-bébé Buddy"))).toBe(true);
+    expect(namesRecallModel("trio mineral grey", "bebe confort", listing("Trio Mineral Grey"))).toBe(false);
+  });
+});
+
+describe("decideVerdict · Bébé Confort car seat in Breeze and Sunlite packs (product types)", () => {
+  it("the Breeze trio's car seat needs the label: the batch limit applies", () => {
+    const result = decideVerdict({
+      item: { ...bebeConfort, category: "car seat", title: "Cosy seul du trio Breeze Bébé Confort" },
+      candidate: candidate(bebeConfortSeat),
+      photo: { sameProduct: "yes" },
+    });
+    expect(result.verdict).toBe("check_label");
+    expect(result.recall).toEqual({ id: "rc:22017", relation: "match" });
+  });
+
+  it("a Breeze stroller sold without the car seat is clear", () => {
+    const result = decideVerdict({
+      item: { ...bebeConfort, category: "stroller", title: "Poussette Breeze" },
+      candidate: candidate(bebeConfortSeat, 0.7),
+      photo: noPhoto,
+    });
+    expect(result.verdict).toBe("clear");
+    expect(result.evidence).toContainEqual({ fact: "The recall is for a car seat, not a stroller", matched: false, source: "listing_text" });
+  });
+
+  it("a Sunlite stroller is clear too", () => {
+    const result = decideVerdict({
+      item: { ...bebeConfort, model: "Sunlite", category: "stroller" },
+      candidate: candidate(bebeConfortSeat),
+      photo: noPhoto,
+    });
+    expect(result.verdict).toBe("clear");
+  });
+
+  it("an unknown type on either side doesn't block the match", () => {
+    const result = decideVerdict({
+      item: { ...bebeConfort, category: "travel system" },
+      candidate: candidate(bebeConfortSeat),
+      photo: noPhoto,
+    });
+    expect(result.verdict).toBe("check_label");
+  });
+
+  it("a barcode still identifies the product whatever the listing's type", () => {
+    const result = decideVerdict({
+      item: { ...bebeConfort, category: "stroller", gtin: "3220660011391" },
+      candidate: candidate(bebeConfortSeat),
+      photo: noPhoto,
+    });
+    expect(result.verdict).toBe("check_label");
+  });
+});
+
+describe("decideVerdict · Britax Smile models that aren't the Smile III", () => {
+  it("a bare Smile is clear, even with a close title", () => {
+    const result = decideVerdict({
+      item: { ...smileIII, model: "Smile", category: "stroller" },
+      candidate: candidate(britax22625, 0.7),
+      photo: noPhoto,
+    });
+    expect(result.verdict).toBe("clear");
+  });
+
+  it("a Smile 2 is clear", () => {
+    const result = decideVerdict({
+      item: { ...smileIII, model: "Smile 2", category: "stroller" },
+      candidate: candidate(britax22625, 0.7),
+      photo: noPhoto,
+    });
+    expect(result.verdict).toBe("clear");
+  });
+
+  it("a Smile 3 stroller without a date needs the label", () => {
+    const result = decideVerdict({
+      item: { ...smileIII, model: "Smile 3", category: "stroller" },
+      candidate: candidate(britax22625),
+      photo: noPhoto,
+    });
+    expect(result.verdict).toBe("check_label");
+  });
+
+  it("a Smile III car seat and base is not the recalled stroller frame", () => {
+    const result = decideVerdict({
+      item: { ...smileIII, category: "car seat" },
+      candidate: candidate(britax22625),
+      photo: noPhoto,
+    });
+    expect(result.verdict).toBe("clear");
   });
 });

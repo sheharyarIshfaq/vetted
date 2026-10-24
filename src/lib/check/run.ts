@@ -93,7 +93,12 @@ async function readInput(input: CheckInput) {
   return { text, page, uploads, photos };
 }
 
-export function toItemFacts(extracted: ExtractedItem, brandNorm: string | null): ItemFacts {
+// The listing's own title: the page's, else the first line of the pasted text.
+export function titleOf(page: ListingPage | null, text: string | null) {
+  return page?.title ?? text?.split("\n")[0] ?? null;
+}
+
+export function toItemFacts(extracted: ExtractedItem, brandNorm: string | null, title: string | null): ItemFacts {
   return {
     brand: extracted.brand,
     brandNorm,
@@ -104,6 +109,8 @@ export function toItemFacts(extracted: ExtractedItem, brandNorm: string | null):
     batch: extracted.batch,
     productionDate: extracted.productionDate,
     sources: extracted.sources,
+    category: extracted.category,
+    title,
   };
 }
 
@@ -125,7 +132,7 @@ export async function runCheck(input: CheckInput, log: Log = () => {}): Promise<
     brandNorm,
     model: [extracted.model, extracted.modelVariant].filter(Boolean).join(" ") || null,
     gtin: extracted.gtin,
-    searchText: [extracted.brand, extracted.model, extracted.modelVariant, page?.title ?? text.split("\n")[0]]
+    searchText: [extracted.brand, extracted.model, extracted.modelVariant, titleOf(page, text)]
       .filter(Boolean)
       .join(" "),
   });
@@ -134,7 +141,7 @@ export async function runCheck(input: CheckInput, log: Log = () => {}): Promise<
   const photoResults = await comparePhotos(photos, ranked.map((candidate) => candidate.recall));
   lap(`compare photos (${photoResults.size})`);
 
-  const item = toItemFacts(extracted, brandNorm);
+  const item = toItemFacts(extracted, brandNorm, titleOf(page, text));
   const result = decideBest({ item, candidates: ranked, photos: photoResults });
   const matched: Recall | undefined = ranked.find((candidate) => candidate.recall.id === result.recall?.id)?.recall;
 

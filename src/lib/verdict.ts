@@ -1,4 +1,5 @@
 import type { ModelRange } from "../db/schema";
+import { productType } from "./product-type";
 import { normalizeModelText } from "./text";
 
 export type Verdict = "recalled" | "check_label" | "clear";
@@ -16,6 +17,8 @@ export type ItemFacts = {
   gtin: string | null;
   batch: string | null;
   productionDate: string | null; // YYYY-MM
+  category?: string | null; // the product type read from the listing
+  title?: string | null; // the listing's title
   // Where each fact was read; listing text unless the label or a photo said otherwise.
   sources?: Partial<Record<"references" | "gtin" | "batch" | "productionDate", EvidenceSource>>;
 };
@@ -68,6 +71,38 @@ export function normalizeModel(value: string) {
 
 export const normalizeCode = normalizeModel;
 
+// Pack, colour and filler words: "breeze trio mineral grey" is the Breeze.
+const FILLER = new Set([
+  "trio", "duo", "pack", "set", "kit", "edition", "travel", "system", "the", "and", "with", "de", "des", "du", "la", "le",
+  "les", "et", "avec", "mineral", "tinted", "grey", "gray", "gris", "noir", "black", "blanc", "white", "rouge", "red",
+  "bleu", "blue", "vert", "green", "rose", "pink", "beige", "graphite", "copper",
+]);
+
+function words(value: string | null | undefined) {
+  return new Set(normalizeModelText(value ?? "").split(" ").filter(Boolean));
+}
+
+// Every distinctive word of the recall's model must be in the listing, never the other way round:
+// "Breeze" names "breeze trio mineral grey", but "Smile" or "Smile 2" don't name "smile iii".
+// Words with a digit must be in the listing's model; a title can carry stray numbers ("0-4 ans").
+export function namesRecallModel(
+  recallModel: string,
+  recallBrand: string | null,
+  item: Pick<ItemFacts, "model" | "modelVariant" | "title">,
+) {
+  const brand = words(recallBrand);
+  const wanted = [...words(recallModel)].filter((word) => !FILLER.has(word) && !brand.has(word));
+  const model = words([item.model, item.modelVariant].filter(Boolean).join(" "));
+  const title = words(item.title);
+  return wanted.length > 0 && wanted.every((word) => model.has(word) || (!/\d/.test(word) && title.has(word)));
+}
+
+type ModelFacts = Pick<ItemFacts, "model" | "modelVariant" | "references" | "title">;
+
+function namesModel(recallModel: string, recall: CandidateRecall, item: ModelFacts) {
+  return itemModels(item).has(normalizeModel(recallModel)) || namesRecallModel(recallModel, recall.brandNorm, item);
+}
+
 function normalizeGtin(value: string) {
   return value.replace(/\D/g, "").replace(/^0+/, "");
 }
@@ -117,10 +152,9 @@ function sharedCode(item: ItemFacts, recall: CandidateRecall) {
 }
 
 // The per-model entry for this item, matched by model name or by one of its references.
-function matchingRange(item: Pick<ItemFacts, "model" | "modelVariant" | "references">, recall: CandidateRecall) {
-  const models = itemModels(item);
+function matchingRange(item: ModelFacts, recall: CandidateRecall) {
   return (
-    recall.modelRanges.find((range) => models.has(normalizeModel(range.model))) ??
+    recall.modelRanges.find((range) => namesModel(range.model, recall, item)) ??
     recall.modelRanges.find((range) => codeIn(range.refs, item.references))
   );
 }
@@ -129,7 +163,7 @@ export type RecallLimits = { from: string | null; to: string | null; batches: st
 
 // The date and batch limits that apply to this item: its model's entry if there is one, else the whole recall.
 export function recallLimits(
-  item: Pick<ItemFacts, "model" | "modelVariant" | "references">,
+  item: ModelFacts,
   recall: CandidateRecall,
 ): RecallLimits {
   const range = matchingRange(item, recall);
@@ -203,13 +237,20 @@ export function decideVerdict({
     item.brandNorm !== null &&
     (item.brandNorm === recall.brandNorm || candidate.brandSimilarity >= BRAND_MATCH_THRESHOLD);
   const range = matchingRange(item, recall);
-  const models = itemModels(item);
-  const modelNameMatch =
-    range !== undefined || recall.models.some((model) => models.has(normalizeModel(model)));
+  const modelNameMatch = range !== undefined || recall.models.some((model) => namesModel(model, recall, item));
   const refMatch = codeIn(recall.refs, item.references);
   const sampleBatchMatch = item.batch !== null && codeIn(recall.sampleBatches, [item.batch]);
+  // A close title stands in for the model only when the listing and the recall don't name different models.
+  const otherModel = itemModels(item).size > 0 && recall.models.length > 0 && !modelNameMatch;
   const modelMatch =
-    modelNameMatch || refMatch || sampleBatchMatch || candidate.titleSimilarity >= TITLE_MATCH_THRESHOLD;
+    modelNameMatch ||
+    refMatch ||
+    sampleBatchMatch ||
+    (!otherModel && candidate.titleSimilarity >= TITLE_MATCH_THRESHOLD);
+  // When both product types are known they must agree: the Breeze stroller is not the Breeze car seat.
+  const itemType = productType(item.category ?? null);
+  const recallType = productType(recall.productName);
+  const otherType = itemType !== null && recallType !== null && itemType !== recallType;
   // A barcode identifies the product like a model match does; date and batch limits still apply.
   const gtinMatch =
     item.gtin !== null && recall.gtins.some((gtin) => normalizeGtin(gtin) === normalizeGtin(item.gtin!));
@@ -218,6 +259,9 @@ export function decideVerdict({
     evidence.push({ fact: `Barcode ${item.gtin} is listed in the recall`, matched: true, source: source("gtin") });
   } else {
     evidence.push(...identityEvidence(item, recall, { brandMatch, modelNameMatch, refMatch, modelMatch }));
+    if (otherType) {
+      evidence.push({ fact: `The recall is for a ${recallType}, not a ${itemType}`, matched: false, source: "listing_text" });
+    }
   }
   if (sampleBatchMatch) {
     evidence.push({ fact: `Batch ${item.batch} is the batch named in the alert`, matched: true, source: source("batch") });
@@ -232,8 +276,8 @@ export function decideVerdict({
   // Without a brand, a similar title proves nothing ("peluche ours"): it takes a barcode, or a shared code and the photos.
   const unbranded = recall.brandNorm === null;
   const identified = unbranded
-    ? gtinMatch || (sharedCode(item, recall) && photo.sameProduct === "yes")
-    : gtinMatch || (brandMatch && modelMatch);
+    ? gtinMatch || (sharedCode(item, recall) && photo.sameProduct === "yes" && !otherType)
+    : gtinMatch || (brandMatch && modelMatch && !otherType);
   if (unbranded && !identified) {
     evidence.push({
       fact: "The recalled product has no brand, so only a barcode, or a matching code and photo, can identify it",

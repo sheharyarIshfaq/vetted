@@ -11,7 +11,15 @@ import { normalizeText } from "../text";
 import { decideBest, type Candidate, type PhotoComparison, type Verdict } from "../verdict";
 import { findCandidates } from "./candidates";
 import { prepareImage, toDataUrl } from "./images";
-import { CheckInputError, toItemFacts, type StoredCandidate, type StoredEvidence, type StoredExtracted } from "./run";
+import {
+  CheckInputError,
+  titleOf,
+  toItemFacts,
+  type StoredCandidate,
+  type StoredEvidence,
+  type StoredExtracted,
+  type StoredInput,
+} from "./run";
 
 // Labels have small print, so they keep more pixels than listing photos.
 const LABEL_SIDE = 2048;
@@ -125,7 +133,9 @@ export async function runLabelCheck(id: string, bytes: Uint8Array, log: Log = ()
   const photos = new Map<string, PhotoComparison>(
     stored.flatMap((candidate) => (candidate.photo ? [[candidate.recallId, candidate.photo] as const] : [])),
   );
-  const result = decideBest({ item: toItemFacts(extracted, extracted.brandNorm), candidates, photos });
+  const input = check.input as StoredInput;
+  const item = toItemFacts(extracted, extracted.brandNorm, titleOf(input.page, input.text));
+  const result = decideBest({ item, candidates, photos });
 
   const evidence: StoredEvidence = {
     items: result.evidence,

@@ -1,4 +1,4 @@
-import type { StoredEvidence, StoredExtracted, StoredInput } from "@/lib/check/run";
+import { titleOf, type StoredEvidence, type StoredExtracted, type StoredInput } from "@/lib/check/run";
 import { capitalize, titleCase } from "@/lib/check/copy";
 import type { StoredLabel } from "@/lib/check/label";
 import { getCheck } from "@/lib/db/checks";
@@ -65,7 +65,7 @@ export async function loadCheck(id: string) {
     labelPhoto,
     recall: recall ?? null,
     secondRecall: secondRecall ?? null,
-    limits: recall ? recallLimits(extracted, recall) : null,
+    limits: recall ? recallLimits({ ...extracted, title: titleOf(input.page, input.text) }, recall) : null,
     stats: { ...stats, updatedAt: stats.updatedAt ? UPDATED_AT.format(stats.updatedAt).replace(",", "") : null },
   };
 }
