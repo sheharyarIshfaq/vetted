@@ -132,31 +132,16 @@ export function checkLabelSummary({
 
 type Source = "rappelconso" | "safetygate";
 
-// " of France and the EU", or "" when no recalls are loaded yet.
 // "HAMAX BUDDY" or "hamax buddy" -> "Hamax Buddy": the brand and model as read, cased for display.
 export function itemName(item: { brand: string | null; model: string | null; modelVariant: string | null }) {
   const name = [item.brand, item.model, item.modelVariant].filter(Boolean).join(" ").trim();
   return name ? nameCase(name) : null;
 }
 
-export function regionsPhrase(sources: readonly Source[]) {
-  const regions = [sources.includes("rappelconso") && "France", sources.includes("safetygate") && "the EU"].filter(Boolean);
-  return regions.length ? ` of ${regions.join(" and ")}` : "";
-}
-
 // "RappelConso for France and EU Safety Gate", naming only the lists that are loaded.
 export function listsPhrase(sources: readonly Source[]) {
   const lists = [sources.includes("rappelconso") && "RappelConso for France", sources.includes("safetygate") && "EU Safety Gate"].filter(Boolean);
   return lists.length ? lists.join(" and ") : "Official recall lists";
-}
-
-// "2,935 from France and 11,498 from the EU", for the sources that are loaded.
-export function sourceSplitPhrase(bySource: Partial<Record<Source, number>>) {
-  const parts = [
-    bySource.rappelconso && `${bySource.rappelconso.toLocaleString("en-GB")} from France`,
-    bySource.safetygate && `${bySource.safetygate.toLocaleString("en-GB")} from the EU`,
-  ].filter(Boolean);
-  return parts.join(" and ");
 }
 
 export function sourcesLabel(sources: readonly string[]) {

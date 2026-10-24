@@ -12,13 +12,11 @@ import {
   numericDate,
   rangePhrase,
   recalledSummary,
-  regionsPhrase,
   riskLabel,
   riskWord,
   searchedSummary,
   sellerMessage,
   shortDay,
-  sourceSplitPhrase,
   nameCase,
   titleCase,
 } from "./copy";
@@ -59,9 +57,6 @@ describe("labels", () => {
 
 describe("source phrases", () => {
   it("names only the lists that are loaded", () => {
-    expect(regionsPhrase(["rappelconso"])).toBe(" of France");
-    expect(regionsPhrase(["rappelconso", "safetygate"])).toBe(" of France and the EU");
-    expect(regionsPhrase([])).toBe("");
     expect(listsPhrase(["rappelconso"])).toBe("RappelConso for France");
     expect(listsPhrase(["safetygate", "rappelconso"])).toBe("RappelConso for France and EU Safety Gate");
     expect(listsPhrase([])).toBe("Official recall lists");
@@ -128,14 +123,6 @@ describe("batch and date limits together", () => {
       "Only some batches are affected",
     );
     expect(sellerMessage("check_label", "Cathy", both, "https://x")).toContain("numéro de lot");
-  });
-});
-
-describe("sourceSplitPhrase", () => {
-  it("names only the loaded sources", () => {
-    expect(sourceSplitPhrase({ rappelconso: 2935, safetygate: 11498 })).toBe("2,935 from France and 11,498 from the EU");
-    expect(sourceSplitPhrase({ rappelconso: 2935 })).toBe("2,935 from France");
-    expect(sourceSplitPhrase({})).toBe("");
   });
 });
 

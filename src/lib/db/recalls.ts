@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, inArray, max, or, sql, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, inArray, max, or, sql, type SQL } from "drizzle-orm";
 import { recalls, type NewRecall, type Recall } from "../../db/schema";
 import type { CategoryGroup, RecallSource } from "../recalls";
 import { normalizeText } from "../text";
@@ -96,20 +96,6 @@ export async function listRecalls({ q, group, source, page = 1, pageSize = 24 }:
     db().select({ total: count() }).from(recalls).where(where),
   ]);
   return { items, total };
-}
-
-export function recallsPublishedSince(since: string, limit = 8, source?: RecallSource) {
-  return db()
-    .select()
-    .from(recalls)
-    .where(and(gte(recalls.publishedAt, since), source ? eq(recalls.source, source) : undefined))
-    .orderBy(desc(recalls.publishedAt), recalls.id)
-    .limit(limit);
-}
-
-export async function countRecallsSince(since: string) {
-  const [{ total }] = await db().select({ total: count() }).from(recalls).where(gte(recalls.publishedAt, since));
-  return total;
 }
 
 // What a check searches: how many recalls, from which sources, and when the data was last refreshed.
