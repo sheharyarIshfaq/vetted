@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { ThreeAnswers } from "@/components/home/HowItWorks";
 import { Lists } from "@/components/home/sources";
 import { recallStats } from "@/lib/db/recalls";
 
@@ -56,25 +57,26 @@ async function Sources() {
   const loaded = SOURCES.filter((entry) => stats.sources.includes(entry.source));
   return (
     <>
-      {loaded.map((entry) => (
-        <div key={entry.source} className="flex flex-col gap-1 border-t border-line pt-2.5">
-          <div className="font-bold">{entry.name}</div>
-          <div className="text-sm leading-normal text-ink-2">{entry.text}</div>
-          <div className="font-mono text-[13px] text-muted">
-            {(stats.bySource[entry.source] ?? 0).toLocaleString("en-GB")} recalls loaded
+        {loaded.map((entry) => (
+          <div key={entry.source} className="flex flex-col gap-1 border-t border-line pt-2.5">
+            <div className="font-semibold">{entry.name}</div>
+            <div className="text-sm leading-normal text-ink-2">{entry.text}</div>
+            <div className="font-mono text-[13px] text-muted">
+              {(stats.bySource[entry.source] ?? 0).toLocaleString("en-GB")} recalls loaded
+            </div>
           </div>
-        </div>
-      ))}
-      {stats.updatedAt && <div className="font-mono text-[13px] text-muted">Last updated {UPDATED_AT.format(stats.updatedAt)}</div>}
+        ))}
+        {stats.updatedAt && <div className="font-mono text-[13px] text-muted">Last updated {UPDATED_AT.format(stats.updatedAt)}</div>}
     </>
   );
 }
 
 export default function HowItWorksPage() {
   return (
+    <>
     <div className="mx-auto flex max-w-[1160px] flex-col gap-10 px-4 pt-12 pb-16 sm:px-6">
       <div className="flex max-w-[720px] flex-col gap-3">
-        <h1 className="m-0 text-[36px] leading-[1.08] font-extrabold tracking-[-0.03em] sm:text-[44px]">AI reads. Official data decides.</h1>
+        <h1 className="m-0 text-[36px] leading-[1.08] font-semibold tracking-[-0.045em] sm:text-[44px]">AI reads. Official data decides.</h1>
         <p className="m-0 text-lg leading-[1.55] text-ink-2">
           Vetted uses AI only for the messy parts: reading listings, photos and labels. Whether something is recalled comes from
           government data and fixed rules, and every verdict shows its source.
@@ -83,25 +85,25 @@ export default function HowItWorksPage() {
 
       <ol className="m-0 grid list-none grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4 p-0">
         {STEPS.map((step) => (
-          <li key={step.tag} className="flex flex-col gap-2.5 rounded-[18px] border border-line bg-surface p-[22px]">
+          <li key={step.tag} className="flex flex-col gap-2.5 rounded-[20px] border border-line bg-surface p-[22px]">
             <span className="font-mono text-[13px] text-brand">{step.tag}</span>
-            <h2 className="m-0 text-[19px] font-bold">{step.title}</h2>
+            <h2 className="m-0 text-[19px] font-semibold">{step.title}</h2>
             <p className="m-0 text-[15px] leading-normal text-ink-2">{step.text}</p>
           </li>
         ))}
       </ol>
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] gap-4">
-        <section aria-labelledby="sources" className="flex flex-col gap-3 rounded-[18px] border border-line bg-surface p-[22px]">
-          <h2 id="sources" className="m-0 text-[22px] font-bold">
+        <section aria-labelledby="sources" className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-[22px]">
+          <h2 id="sources" className="m-0 text-[22px] font-semibold">
             Where the data comes from
           </h2>
           <Suspense fallback={<p className="m-0 text-sm text-muted">Loading the sources…</p>}>
             <Sources />
           </Suspense>
         </section>
-        <section aria-labelledby="limits" className="flex flex-col gap-3 rounded-[18px] border border-line bg-surface p-[22px]">
-          <h2 id="limits" className="m-0 text-[22px] font-bold">
+        <section aria-labelledby="limits" className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-[22px]">
+          <h2 id="limits" className="m-0 text-[22px] font-semibold">
             What Vetted won&apos;t do
           </h2>
           <ul className="m-0 flex flex-col gap-2 pl-5 text-[15px] leading-normal text-ink-2">
@@ -116,9 +118,9 @@ export default function HowItWorksPage() {
       <section
         id="extension"
         aria-labelledby="extension-title"
-        className="flex scroll-mt-6 flex-col gap-2.5 rounded-[18px] border border-line bg-surface p-[22px]"
+        className="flex scroll-mt-6 flex-col gap-2.5 rounded-[20px] border border-line bg-surface p-[22px]"
       >
-        <h2 id="extension-title" className="m-0 text-[22px] font-bold">
+        <h2 id="extension-title" className="m-0 text-[22px] font-semibold">
           The Chrome extension
         </h2>
         <p className="m-0 max-w-[720px] text-[15px] leading-normal text-ink-2">
@@ -128,5 +130,7 @@ export default function HowItWorksPage() {
         <p className="m-0 text-sm text-muted">It isn&apos;t in the Chrome Web Store yet.</p>
       </section>
     </div>
+    <ThreeAnswers />
+    </>
   );
 }

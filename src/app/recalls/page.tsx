@@ -35,7 +35,7 @@ function Chip({ href, pressed, children }: { href: string; pressed: boolean; chi
       href={href}
       aria-current={pressed ? "true" : undefined}
       className={`inline-flex min-h-10 items-center rounded-full px-3.5 text-sm font-semibold no-underline ${
-        pressed ? "bg-ink text-white hover:text-white" : "border border-field bg-surface text-ink hover:text-ink"
+        pressed ? "bg-ink text-paper hover:text-paper" : "border border-field bg-surface text-ink hover:text-ink"
       }`}
     >
       {children}
@@ -58,9 +58,9 @@ function Filters({ filters }: { filters: RecallFilters }) {
           name="q"
           defaultValue={filters.q}
           placeholder="Search a brand or product"
-          className="min-h-11 min-w-0 flex-1 rounded-[10px] border border-field bg-surface px-3.5 text-[15px]"
+          className="min-h-11 min-w-0 flex-1 rounded-full border border-field bg-surface px-3.5 text-[15px]"
         />
-        <button type="submit" className="min-h-11 cursor-pointer rounded-[10px] bg-ink px-4 text-[15px] font-bold text-white">
+        <button type="submit" className="min-h-11 cursor-pointer rounded-full bg-ink px-4 text-[15px] font-semibold text-paper">
           Search
         </button>
       </form>
@@ -107,7 +107,7 @@ async function Results({ searchParams }: { searchParams: PageProps<"/recalls">["
     <>
       <Filters filters={filters} />
       {items.length === 0 ? (
-        <div className="flex flex-col gap-2 rounded-[18px] border border-line bg-surface p-6">
+        <div className="flex flex-col gap-2 rounded-[20px] border border-line bg-surface p-6">
           <p className="m-0 font-semibold">No recall matches these filters.</p>
           <p className="m-0 text-ink-2">
             That doesn&apos;t mean a product is safe. Try another spelling, or{" "}
@@ -118,7 +118,7 @@ async function Results({ searchParams }: { searchParams: PageProps<"/recalls">["
           </p>
         </div>
       ) : (
-        <ul className="m-0 list-none overflow-hidden rounded-[18px] border border-line bg-surface p-0">
+        <ul className="m-0 list-none overflow-hidden rounded-[20px] border border-line bg-surface p-0">
           {items.map((recall) => {
             const brand = recall.brand && !recall.productName.toLowerCase().includes(recall.brand.toLowerCase()) ? titleCase(recall.brand) : null;
             const risk = riskWord(recall.risk);
@@ -129,15 +129,15 @@ async function Results({ searchParams }: { searchParams: PageProps<"/recalls">["
                   className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3.5 text-ink no-underline hover:bg-paper hover:text-ink sm:px-[18px]"
                 >
                   {recall.images[0] ? (
-                    <RemoteImage src={recall.images[0]} alt="" className="size-16 shrink-0 rounded-[10px] bg-placeholder object-cover" />
+                    <RemoteImage src={recall.images[0]} alt="" className="size-16 shrink-0 rounded-xl bg-placeholder object-cover" />
                   ) : (
-                    <div aria-hidden="true" className="size-16 shrink-0 rounded-[10px] bg-placeholder" />
+                    <div aria-hidden="true" className="size-16 shrink-0 rounded-xl bg-placeholder" />
                   )}
                   <div className="flex min-w-0 flex-[999_1_220px] flex-col gap-[3px]">
-                    <div className="font-bold break-words">{capitalize(recall.productName)}</div>
+                    <div className="font-semibold break-words">{capitalize(recall.productName)}</div>
                     <div className="text-sm text-ink-2">{[brand, risk && capitalize(risk)].filter(Boolean).join(" · ")}</div>
                   </div>
-                  <span className="rounded-full bg-[#ECEFEC] px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-ink-2">
+                  <span className="rounded-full bg-paper px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-ink-2">
                     {SOURCE_BADGES[recall.source as RecallSource]}
                   </span>
                   <span className="w-[90px] text-right font-mono text-[13px] text-ink-2">{numericDate(recall.publishedAt)}</span>
@@ -181,7 +181,7 @@ export default function RecallsPage({ searchParams }: PageProps<"/recalls">) {
     <div className="mx-auto flex max-w-[1160px] flex-col gap-[22px] px-4 pt-9 pb-14 sm:px-6">
       <div className="flex flex-wrap items-end justify-between gap-5">
         <div className="flex flex-col gap-1.5">
-          <h1 className="m-0 text-[32px] leading-tight font-extrabold tracking-[-0.03em] sm:text-[38px]">Recent recalls</h1>
+          <h1 className="m-0 text-[32px] leading-tight font-semibold tracking-[-0.045em] sm:text-[38px]">Recent recalls</h1>
           <p className="m-0 text-ink-2">
             Products people resell second-hand, from{" "}
             <Suspense fallback="official recall lists">

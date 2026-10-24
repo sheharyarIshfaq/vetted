@@ -11,7 +11,7 @@ type Line = { type: "start"; total: number } | ({ type: "row" } & BatchResult) |
 const VERDICTS: Record<Verdict, { icon: string; label: string; counted: string; pill: string; action: string; done: string }> = {
   recalled: { icon: "✕", label: "Recalled", counted: "recalled", pill: "bg-recalled-soft text-recalled-text", action: "Take down", done: "Taken down" },
   check_label: { icon: "!", label: "Check label", counted: "check label", pill: "bg-check-soft text-check-text", action: "Ask seller", done: "Seller asked" },
-  clear: { icon: "✓", label: "Clear", counted: "clear", pill: "bg-brand-soft text-safe-text", action: "Approve", done: "Approved" },
+  clear: { icon: "✓", label: "Clear", counted: "clear", pill: "bg-safe-soft text-safe-text", action: "Approve", done: "Approved" },
 };
 
 const SOURCE_NAMES: Record<string, string> = { rc: "RappelConso", sg: "Safety Gate" };
@@ -77,10 +77,10 @@ export function BatchCheck() {
   for (const result of results) if (result.verdict) counts[result.verdict]++;
 
   return (
-    <section id="batch" aria-labelledby="queue-title" className="scroll-mt-6 overflow-hidden rounded-[18px] border border-line bg-surface">
+    <section id="batch" aria-labelledby="queue-title" className="scroll-mt-6 overflow-hidden rounded-[20px] border border-line bg-surface">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
         <div className="flex flex-col gap-0.5">
-          <h2 id="queue-title" className="m-0 text-lg font-bold">
+          <h2 id="queue-title" className="m-0 text-lg font-semibold">
             Review queue
           </h2>
           <div role="status" className="text-[13px] text-muted">
@@ -92,7 +92,7 @@ export function BatchCheck() {
         {results.length > 0 && (
           <div className="flex flex-wrap gap-2">
             {(Object.keys(VERDICTS) as Verdict[]).map((verdict) => (
-              <span key={verdict} className={`rounded-full px-2.5 py-1.5 text-[13px] font-bold ${VERDICTS[verdict].pill}`}>
+              <span key={verdict} className={`rounded-full px-2.5 py-1.5 text-[13px] font-semibold ${VERDICTS[verdict].pill}`}>
                 {VERDICTS[verdict].icon} {counts[verdict]} {VERDICTS[verdict].counted}
               </span>
             ))}
@@ -101,7 +101,7 @@ export function BatchCheck() {
       </div>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-4">
-        <label className="inline-flex min-h-11 cursor-pointer items-center rounded-[10px] bg-ink px-4 text-[15px] font-bold text-white has-disabled:cursor-not-allowed has-disabled:opacity-60">
+        <label className="inline-flex min-h-11 cursor-pointer items-center rounded-full bg-ink px-4 text-[15px] font-semibold text-paper has-disabled:cursor-not-allowed has-disabled:opacity-60">
           {file ? "Upload another CSV" : "Upload a CSV"}
           <input
             type="file"
@@ -165,7 +165,7 @@ export function BatchCheck() {
                     </td>
                     <td className="px-3 py-3">
                       {verdict && (
-                        <span className={`rounded-full px-2.5 py-[5px] text-[13px] font-bold whitespace-nowrap ${verdict.pill}`}>
+                        <span className={`rounded-full px-2.5 py-[5px] text-[13px] font-semibold whitespace-nowrap ${verdict.pill}`}>
                           {verdict.icon} {verdict.label}
                         </span>
                       )}

@@ -20,7 +20,7 @@ export default function PlatformsPage() {
       <div className="flex flex-wrap items-end gap-8">
         <div className="flex min-w-0 flex-[999_1_520px] flex-col gap-3">
           <div className="font-mono text-[13px] tracking-[0.06em] text-brand uppercase">For marketplaces and second-hand shops</div>
-          <h1 className="m-0 text-[36px] leading-[1.08] font-extrabold tracking-[-0.03em] sm:text-[44px]">
+          <h1 className="m-0 text-[36px] leading-[1.08] font-semibold tracking-[-0.045em] sm:text-[44px]">
             Catch recalled products before your buyers do.
           </h1>
           <p className="m-0 text-lg leading-[1.55] text-ink-2">
@@ -32,13 +32,13 @@ export default function PlatformsPage() {
         <div className="flex flex-[1_1_260px] flex-wrap gap-2.5">
           <a
             href="#batch"
-            className="inline-flex min-h-12 items-center rounded-xl bg-brand px-5 text-base font-bold text-white no-underline hover:text-white"
+            className="inline-flex min-h-12 items-center rounded-full bg-ink px-5 text-base font-semibold text-paper no-underline hover:text-paper"
           >
             Try the batch check
           </a>
           <a
             href="#api"
-            className="inline-flex min-h-12 items-center rounded-xl border border-field bg-surface px-5 text-base font-semibold text-ink no-underline hover:text-ink"
+            className="inline-flex min-h-12 items-center rounded-full border border-field bg-surface px-5 text-base font-semibold text-ink no-underline hover:text-ink"
           >
             See the API
           </a>
@@ -48,8 +48,8 @@ export default function PlatformsPage() {
       <BatchCheck />
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] gap-4">
-        <section id="api" aria-labelledby="api-title" className="flex scroll-mt-6 flex-col gap-3 rounded-[18px] bg-ink p-[22px] text-white">
-          <h2 id="api-title" className="m-0 text-xl font-bold">
+        <section id="api" aria-labelledby="api-title" className="flex scroll-mt-6 flex-col gap-3 rounded-[20px] bg-ink p-[22px] text-paper">
+          <h2 id="api-title" className="m-0 text-xl font-semibold">
             One call per listing
           </h2>
           <pre className="m-0 overflow-x-auto font-mono text-[13px] leading-[1.6] whitespace-pre-wrap text-[#D8E3DD]">{CHECK_EXAMPLE}</pre>
@@ -58,8 +58,8 @@ export default function PlatformsPage() {
             rows.
           </p>
         </section>
-        <section aria-labelledby="built-for" className="flex flex-col gap-2.5 rounded-[18px] border border-line bg-surface p-[22px]">
-          <h2 id="built-for" className="m-0 text-xl font-bold">
+        <section aria-labelledby="built-for" className="flex flex-col gap-2.5 rounded-[20px] border border-line bg-surface p-[22px]">
+          <h2 id="built-for" className="m-0 text-xl font-semibold">
             Built for
           </h2>
           <ul className="m-0 flex flex-col gap-2 pl-5 text-[15px] leading-normal text-ink-2">

@@ -30,7 +30,7 @@ function CheckLabelButton({ recall, model, label, variant }: { recall: Recall; m
         type="submit"
         className={
           variant === "button"
-            ? "min-h-11 cursor-pointer rounded-[10px] border border-field bg-surface px-[18px] text-[15px] font-semibold text-ink"
+            ? "min-h-11 cursor-pointer rounded-full border border-field bg-surface px-[18px] text-[15px] font-semibold text-ink"
             : "cursor-pointer border-0 bg-transparent p-0 text-[15px] font-semibold text-brand hover:text-brand-dark"
         }
       >
@@ -47,7 +47,7 @@ function Codes({ title, values, note }: { title: string; values: string[]; note?
       <h3 className="m-0 text-sm font-semibold text-muted">{title}</h3>
       <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0">
         {values.map((value) => (
-          <li key={value} className="rounded-md bg-[#F2F4F1] px-2 py-1 font-mono text-[13px] text-ink">
+          <li key={value} className="rounded-md bg-paper px-2 py-1 font-mono text-[13px] text-ink">
             {value}
           </li>
         ))}
@@ -66,8 +66,8 @@ function Affected({ recall, labelCheck }: { recall: Recall; labelCheck: boolean 
   if (!recall.modelRanges.length && !showModels && !hasCodes && !sold) return null;
 
   return (
-    <section aria-labelledby="affected" className="flex flex-col gap-4 rounded-[18px] border border-line bg-surface p-[22px]">
-      <h2 id="affected" className="m-0 text-[22px] font-bold">
+    <section aria-labelledby="affected" className="flex flex-col gap-4 rounded-[20px] border border-line bg-surface p-[22px]">
+      <h2 id="affected" className="m-0 text-[22px] font-semibold">
         Which ones are affected
       </h2>
       {recall.modelRanges.length > 0 && (
@@ -144,8 +144,8 @@ function EuAlert({ recall }: { recall: Recall }) {
   const measures = measuresTaken((recall.raw as { measures?: string }).measures);
   if (!recall.risk && measures.length === 0) return null;
   return (
-    <section aria-labelledby="eu-alert" className="flex flex-col gap-3 rounded-[18px] border border-line bg-surface p-[22px]">
-      <h2 id="eu-alert" className="m-0 text-xl font-bold">
+    <section aria-labelledby="eu-alert" className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-[22px]">
+      <h2 id="eu-alert" className="m-0 text-xl font-semibold">
         From the EU alert
       </h2>
       <dl lang="fr" className="m-0 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2 text-[15px]">
@@ -197,22 +197,22 @@ async function RecallView({ params }: { params: PageProps<"/recalls/[id]">["para
           <RemoteImage
             src={recall.images[0]}
             alt={`Photo from notice ${recall.sourceRef}`}
-            className="h-[300px] min-w-0 flex-[1_1_320px] rounded-[18px] bg-placeholder object-contain sm:h-[340px]"
+            className="h-[300px] min-w-0 flex-[1_1_320px] rounded-[20px] bg-placeholder object-contain sm:h-[340px]"
           />
         ) : (
-          <div className="flex h-[200px] min-w-0 flex-[1_1_320px] items-center justify-center rounded-[18px] bg-placeholder text-sm text-muted">
+          <div className="flex h-[200px] min-w-0 flex-[1_1_320px] items-center justify-center rounded-[20px] bg-placeholder text-sm text-muted">
             No photo in the official notice
           </div>
         )}
         <div className="flex min-w-0 flex-[999_1_480px] flex-col gap-3.5">
           <div className="flex flex-wrap gap-2">
-            {risk && <span className="rounded-full bg-recalled-soft px-2.5 py-1 text-[13px] font-bold text-recalled-text">{capitalize(risk)}</span>}
+            {risk && <span className="rounded-full bg-recalled-soft px-2.5 py-1 text-[13px] font-semibold text-recalled-text">{capitalize(risk)}</span>}
             {recall.category && (
-              <span className="rounded-full bg-[#ECEFEC] px-2.5 py-1 text-[13px] font-semibold text-ink-2">{capitalize(recall.category)}</span>
+              <span className="rounded-full bg-paper px-2.5 py-1 text-[13px] font-semibold text-ink-2">{capitalize(recall.category)}</span>
             )}
-            <span className="rounded-full bg-[#ECEFEC] px-2.5 py-1 text-[13px] font-semibold text-ink-2">{SOURCE_BADGES[source]}</span>
+            <span className="rounded-full bg-paper px-2.5 py-1 text-[13px] font-semibold text-ink-2">{SOURCE_BADGES[source]}</span>
           </div>
-          <h1 className="m-0 text-[30px] leading-[1.1] font-extrabold tracking-[-0.03em] break-words sm:text-[38px]">
+          <h1 className="m-0 text-[30px] leading-[1.1] font-semibold tracking-[-0.045em] break-words sm:text-[38px]">
             {brand ? `${name} · ${brand}` : name}
           </h1>
           {recall.reason && (
@@ -228,7 +228,7 @@ async function RecallView({ params }: { params: PageProps<"/recalls/[id]">["para
               href={recall.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-11 items-center rounded-[10px] bg-ink px-[18px] text-[15px] font-bold text-white no-underline hover:text-white"
+              className="inline-flex min-h-11 items-center rounded-full bg-ink px-[18px] text-[15px] font-semibold text-paper no-underline hover:text-paper"
             >
               Official notice
             </a>
@@ -242,8 +242,8 @@ async function RecallView({ params }: { params: PageProps<"/recalls/[id]">["para
       <Affected recall={recall} labelCheck={labelCheck} />
       {source === "safetygate" && <EuAlert recall={recall} />}
 
-      <section aria-labelledby="what-to-do" className="flex flex-col gap-2.5 rounded-[18px] border border-line bg-surface p-[22px]">
-        <h2 id="what-to-do" className="m-0 text-xl font-bold">
+      <section aria-labelledby="what-to-do" className="flex flex-col gap-2.5 rounded-[20px] border border-line bg-surface p-[22px]">
+        <h2 id="what-to-do" className="m-0 text-xl font-semibold">
           What to do
         </h2>
         {recall.whatToDo && (
