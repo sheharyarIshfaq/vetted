@@ -79,7 +79,7 @@ async function readInput(input: CheckInput) {
 
   let uploads: Buffer[];
   try {
-    uploads = await Promise.all(input.photos.slice(0, MAX_PHOTOS).map(prepareImage));
+    uploads = await Promise.all(input.photos.slice(0, MAX_PHOTOS).map((photo) => prepareImage(photo)));
   } catch {
     throw new CheckInputError("One of the photos could not be read. Try a JPEG or PNG.");
   }
