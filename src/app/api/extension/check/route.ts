@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { downloadImage } from "@/lib/check/images";
+import { panelSummary } from "@/lib/check/panel";
 import { CheckInputError, runCheck } from "@/lib/check/run";
+import { getRecall, recallStats } from "@/lib/db/recalls";
 
 const pinnedExtensionOrigin = "chrome-extension://blbmfaapgjjfdolfklhjgckmpcghggem";
 const extensionOrigin = process.env.EXTENSION_ORIGIN || pinnedExtensionOrigin;
@@ -60,8 +62,19 @@ export async function POST(request: Request) {
     const photos = downloadedPhotos.filter((photo) => photo !== null);
     const text = [parsed.data.title, parsed.data.description].filter(Boolean).join("\n").slice(0, 5000);
     const result = await runCheck({ text, photos, unreadPhotos: downloadedPhotos.length - photos.length }, log);
+    const [recall, stats] = await Promise.all([
+      result.recall?.relation === "match" ? getRecall(result.recall.id) : undefined,
+      recallStats(),
+    ]);
+    const panel = panelSummary({
+      verdict: result.verdict,
+      recall: recall ?? null,
+      extracted: result.extracted,
+      listingTitle: parsed.data.title,
+      searched: { total: stats.total, sources: stats.sources },
+    });
     return Response.json(
-      { id: result.id, verdict: result.verdict, evidence: result.evidence, recall: result.recall },
+      { id: result.id, verdict: result.verdict, evidence: result.evidence, recall: result.recall, panel },
       { headers },
     );
   } catch (error) {

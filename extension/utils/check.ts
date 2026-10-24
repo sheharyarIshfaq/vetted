@@ -1,10 +1,22 @@
 export type Verdict = "recalled" | "check_label" | "clear";
 
+// What the panel shows, written by the server from the recall's own data.
+export type PanelSummary = {
+  title: string;
+  line: string;
+  risk: string | null;
+  source: { label: string; url: string } | null;
+  lookFor: string[];
+  whatToDo: string[];
+  sellerMessage: string | null;
+};
+
 export type CheckResult = {
   id: string;
   verdict: Verdict;
   evidence: { fact: string; matched: boolean; source: string }[];
   recall: { productName: string; url: string; sourceRef: string } | null;
+  panel?: PanelSummary; // absent on results saved before the panel summary
 };
 
 export type ListingPayload = { pageUrl: string; title: string; description: string; imageUrls: string[] };

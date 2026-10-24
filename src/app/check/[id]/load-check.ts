@@ -1,5 +1,5 @@
 import { titleOf, type StoredEvidence, type StoredExtracted, type StoredInput } from "@/lib/check/run";
-import { capitalize, titleCase } from "@/lib/check/copy";
+import { capitalize, itemName, titleCase } from "@/lib/check/copy";
 import type { StoredLabel } from "@/lib/check/label";
 import { getCheck } from "@/lib/db/checks";
 import { getRecall, recallStats } from "@/lib/db/recalls";
@@ -60,7 +60,7 @@ export async function loadCheck(id: string) {
     searchedFor,
     // How the recalled product is named in prose: the model the listing gave, else the notice's product name.
     productLabel: model ? titleCase(model) : recall ? capitalize(recall.productName) : listingTitle,
-    sellerLabel: searchedFor ? titleCase(searchedFor) : listingTitle,
+    sellerLabel: itemName(extracted) ?? listingTitle,
     label,
     labelPhoto,
     recall: recall ?? null,

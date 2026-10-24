@@ -1,16 +1,11 @@
 import { browser } from "wxt/browser";
 import { defineContentScript } from "wxt/utils/define-content-script";
 import { isListingUrl, resultUrl, toCheckResponse, type CheckResponse, type CheckResult, type ListingPayload, type Verdict } from "../utils/check";
+import { PALETTE, sticker } from "../utils/sticker";
 
 export default defineContentScript({
   matches: ["https://www.leboncoin.fr/ad/*", "https://www.vinted.fr/items/*"],
   main() {
-const palette = {
-  recalled: { color: "#C2362B", soft: "#FBE9E7", text: "#8F2219", title: "Recalled" },
-  check_label: { color: "#B86A00", soft: "#FBF1E3", text: "#7A4700", title: "Check the label" },
-  clear: { color: "#1E7F55", soft: "#E7F1EC", text: "#145C3E", title: "No recall found" },
-};
-
 const meta = (name: string) =>
   document.querySelector<HTMLMetaElement>(`meta[property="${name}"],meta[name="${name}"]`)?.content?.trim() || "";
 
@@ -73,19 +68,24 @@ const style = document.createElement("style");
 style.textContent = `
   :host { all: initial; }
   * { box-sizing: border-box; }
-  .panel { position: fixed; right: 24px; bottom: 24px; width: min(420px, calc(100vw - 32px)); background: #fff; color: #16202B; border: 2px solid #CBD2CC; border-radius: 16px; box-shadow: 0 12px 40px #16202b2b; overflow: hidden; font: 14px/1.5 Onest, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; z-index: 2147483647; }
-  .head { display: flex; gap: 12px; align-items: flex-start; padding: 16px; }
-  .sticker { flex: 0 0 44px; width: 44px; height: 44px; }
-  .eyebrow { color: var(--text); font: 11px/1.4 "IBM Plex Mono", ui-monospace, monospace; letter-spacing: .06em; text-transform: uppercase; }
-  h2 { margin: 3px 0 0; font-size: 17px; line-height: 1.3; font-weight: 700; }
-  p { margin: 5px 0 0; color: #3A4552; }
-  .body { padding: 12px 16px 16px; border-top: 1px solid #E2E6E1; }
-  .fact { margin: 0 0 8px; padding-left: 18px; color: #3A4552; position: relative; }
-  .fact::before { content: ""; position: absolute; left: 0; top: .46em; width: 8px; height: 8px; border-radius: 50%; background: var(--color); }
-  .actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-  a, button { font: 600 13px Onest, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-decoration: none; border-radius: 10px; padding: 10px 13px; min-height: 40px; cursor: pointer; }
-  a { background: #16202B; color: #fff; }
-  button { background: #fff; color: #16202B; border: 1px solid #CBD2CC; }
+  .panel { position: fixed; left: 20px; bottom: 20px; width: min(360px, calc(100vw - 32px)); max-height: min(440px, calc(100vh - 40px)); display: flex; flex-direction: column; background: #fff; color: #16202B; border: 2px solid #CBD2CC; border-radius: 16px; box-shadow: 0 12px 40px #16202b2b; overflow: hidden; font: 13px/1.45 Onest, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; z-index: 2147483647; }
+  .head { position: relative; display: flex; gap: 12px; align-items: flex-start; padding: 14px 40px 14px 14px; }
+  .head svg { flex: 0 0 auto; }
+  .eyebrow { font: 11px/1.4 "IBM Plex Mono", ui-monospace, monospace; letter-spacing: .06em; text-transform: uppercase; }
+  h2 { margin: 2px 0 0; font-size: 16px; line-height: 1.3; font-weight: 700; }
+  p { margin: 4px 0 0; color: #3A4552; }
+  .body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+  .block { background: #F2F4F1; border-radius: 8px; padding: 8px 10px; }
+  .block-title { font-weight: 600; margin-bottom: 2px; }
+  ul { margin: 0; padding: 0 0 0 16px; color: #3A4552; font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 12px; }
+  li + li { margin-top: 2px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 4px 12px; color: #3A4552; font-size: 12px; }
+  .risk { font-weight: 600; }
+  a.source { padding: 0; min-height: 0; background: none; color: #0F6B4F; font: 500 12px "IBM Plex Mono", ui-monospace, monospace; text-decoration: underline; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  a, button { display: inline-flex; align-items: center; font: 600 13px Onest, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-decoration: none; border-radius: 10px; padding: 8px 12px; min-height: 38px; cursor: pointer; }
+  .primary { background: #16202B; color: #fff; border: 0; }
+  .secondary, button { background: #fff; color: #16202B; border: 1px solid #CBD2CC; }
   .message { padding: 16px 44px 16px 16px; }
   .message p { margin: 0 0 12px; }
   .close { position: absolute; right: 10px; top: 10px; width: 28px; height: 28px; min-height: auto; padding: 0; border: 0; background: transparent; color: #6B7684; font-size: 20px; }
@@ -94,36 +94,9 @@ style.textContent = `
   @keyframes spin { to { transform: rotate(360deg); } }
   @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
   .photo-sticker { position: fixed; width: 32px; height: 32px; pointer-events: none; z-index: 2147483647; filter: drop-shadow(0 2px 6px #16202b33); }
-  @media (max-width: 560px) { .panel { right: 12px; bottom: 12px; width: calc(100vw - 24px); } }
+  @media (max-width: 560px) { .panel { left: 12px; bottom: 12px; width: calc(100vw - 24px); } }
 `;
 shadow.append(style);
-
-function sticker(verdict: Verdict, size: number) {
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.setAttribute("viewBox", "0 0 104 104");
-  svg.setAttribute("width", String(size));
-  svg.setAttribute("height", String(size));
-  svg.setAttribute("aria-hidden", "true");
-  const group = document.createElementNS(svg.namespaceURI, "g");
-  group.setAttribute("transform", "rotate(-8 52 52)");
-  const circle = document.createElementNS(svg.namespaceURI, "circle");
-  circle.setAttribute("cx", "52"); circle.setAttribute("cy", "52"); circle.setAttribute("r", "46"); circle.setAttribute("fill", palette[verdict].color);
-  group.append(circle);
-  if (verdict === "clear") {
-    const mark = document.createElementNS(svg.namespaceURI, "path");
-    mark.setAttribute("d", "M31 53 L45 67 L73 37"); mark.setAttribute("fill", "none"); mark.setAttribute("stroke", "#fff"); mark.setAttribute("stroke-width", "11"); mark.setAttribute("stroke-linecap", "round"); mark.setAttribute("stroke-linejoin", "round"); group.append(mark);
-  } else if (verdict === "check_label") {
-    const line = document.createElementNS(svg.namespaceURI, "path");
-    line.setAttribute("d", "M52 28 L52 58"); line.setAttribute("stroke", "#fff"); line.setAttribute("stroke-width", "11"); line.setAttribute("stroke-linecap", "round"); group.append(line);
-    const dot = document.createElementNS(svg.namespaceURI, "circle");
-    dot.setAttribute("cx", "52"); dot.setAttribute("cy", "75"); dot.setAttribute("r", "7"); dot.setAttribute("fill", "#fff"); group.append(dot);
-  } else {
-    const cross = document.createElementNS(svg.namespaceURI, "path");
-    cross.setAttribute("d", "M35 35 L69 69 M69 35 L35 69"); cross.setAttribute("fill", "none"); cross.setAttribute("stroke", "#fff"); cross.setAttribute("stroke-width", "11"); cross.setAttribute("stroke-linecap", "round"); group.append(cross);
-  }
-  svg.append(group);
-  return svg;
-}
 
 let photoSticker: HTMLElement | null = null;
 let stickerListeners: AbortController | null = null;
@@ -144,36 +117,76 @@ function showLoading() {
   shadow.append(panel);
 }
 
+function element<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text?: string) {
+  const node = document.createElement(tag);
+  node.className = className;
+  if (text) node.textContent = text;
+  return node;
+}
+
+function list(heading: string, lines: string[]) {
+  const block = element("div", "block");
+  block.append(element("div", "block-title", heading));
+  const items = element("ul", "");
+  for (const line of lines) items.append(element("li", "", line));
+  block.append(items);
+  return block;
+}
+
+function copyButton(message: string) {
+  const button = element("button", "primary", "Copy a message for the seller");
+  button.type = "button";
+  button.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(message);
+      button.textContent = "Message copied";
+    } catch {
+      button.textContent = "Copy failed, open the full result";
+    }
+    setTimeout(() => { button.textContent = "Copy a message for the seller"; }, 2500);
+  });
+  return button;
+}
+
 function showResult(result: CheckResult) {
   removeChildren();
-  const colors = palette[result.verdict];
-  const panel = document.createElement("section");
-  panel.className = "panel";
+  const colors = PALETTE[result.verdict];
+  const summary = result.panel;
+  const panel = element("section", "panel");
   panel.setAttribute("aria-label", "Tiko recall check");
   panel.style.borderColor = colors.color;
-  const head = document.createElement("div");
-  head.className = "head";
+
+  const head = element("div", "head");
   head.style.background = colors.soft;
-  head.append(sticker(result.verdict, 44));
-  const summary = document.createElement("div");
-  summary.style.setProperty("--text", colors.text);
-  const eyebrow = document.createElement("div"); eyebrow.className = "eyebrow"; eyebrow.textContent = `tiko · ${colors.title}`;
-  const title = document.createElement("h2");
-  title.textContent = result.verdict === "recalled" ? "This listing matches a recalled product." : result.verdict === "check_label" ? "Check the label before you buy." : "No recall found for this listing.";
-  const description = document.createElement("p");
-  description.textContent = result.recall?.productName || "Tiko checked official recall lists from France and the EU.";
-  summary.append(eyebrow, title, description);
-  head.append(summary);
-  head.append(closeButton(panel));
-  const body = document.createElement("div"); body.className = "body"; body.style.setProperty("--color", colors.color);
-  for (const evidence of result.evidence.slice(0, 2)) {
-    const fact = document.createElement("div"); fact.className = "fact"; fact.textContent = evidence.fact; body.append(fact);
+  const text = element("div", "summary");
+  const eyebrow = element("div", "eyebrow", `tiko · ${colors.eyebrow}`);
+  eyebrow.style.color = colors.text;
+  text.append(eyebrow, element("h2", "", summary?.title ?? result.recall?.productName ?? "This listing"));
+  text.append(element("p", "", summary?.line ?? result.evidence[0]?.fact ?? ""));
+  head.append(sticker(result.verdict, 40), text, closeButton(panel));
+
+  const body = element("div", "body");
+  if (summary?.lookFor.length) body.append(list("What to look for", summary.lookFor));
+  if (summary?.whatToDo.length) body.append(list("What the notice says to do", summary.whatToDo));
+  if (summary?.risk || summary?.source) {
+    const meta = element("div", "meta");
+    if (summary.risk) meta.append(element("span", "risk", summary.risk));
+    if (summary.source) {
+      const source = element("a", "source", summary.source.label);
+      source.href = summary.source.url; source.target = "_blank"; source.rel = "noopener noreferrer";
+      source.title = "Open the official notice";
+      meta.append(source);
+    }
+    body.append(meta);
   }
-  const actions = document.createElement("div"); actions.className = "actions";
-  const link = document.createElement("a"); link.href = resultUrl(result); link.target = "_blank"; link.rel = "noopener noreferrer"; link.textContent = "Full result";
-  actions.append(link);
-  const retry = document.createElement("button"); retry.type = "button"; retry.textContent = "Check again"; retry.addEventListener("click", () => void runCheck()); actions.append(retry);
+
+  const actions = element("div", "actions");
+  if (summary?.sellerMessage) actions.append(copyButton(summary.sellerMessage));
+  const full = element("a", "secondary", "Full result");
+  full.href = resultUrl(result); full.target = "_blank"; full.rel = "noopener noreferrer";
+  actions.append(full);
   body.append(actions);
+
   panel.append(head, body);
   shadow.append(panel);
   placePhotoSticker(result.verdict);

@@ -125,6 +125,12 @@ export function checkLabelSummary({
 type Source = "rappelconso" | "safetygate";
 
 // " of France and the EU", or "" when no recalls are loaded yet.
+// "HAMAX BUDDY" or "hamax buddy" -> "Hamax Buddy": the brand and model as read, cased for display.
+export function itemName(item: { brand: string | null; model: string | null; modelVariant: string | null }) {
+  const name = [item.brand, item.model, item.modelVariant].filter(Boolean).join(" ").trim();
+  return name ? titleCase(name.toLowerCase()) : null;
+}
+
 export function regionsPhrase(sources: readonly Source[]) {
   const regions = [sources.includes("rappelconso") && "France", sources.includes("safetygate") && "the EU"].filter(Boolean);
   return regions.length ? ` of ${regions.join(" and ")}` : "";
