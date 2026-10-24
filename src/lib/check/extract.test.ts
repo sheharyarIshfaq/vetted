@@ -101,3 +101,18 @@ describe("groundExtraction", () => {
     expect(item.sources.references).toBe("listing_text");
   });
 });
+
+describe("groundExtraction barcodes", () => {
+  const withBarcode = (gtin: string) =>
+    groundExtraction("Siège vélo enfant", { ...empty, gtin, quotes: [{ field: "gtin", from: "photo", text: gtin }] });
+
+  it("keeps a barcode read in a photo when its check digit is right", () => {
+    expect(withBarcode("7029775520349")).toMatchObject({ gtin: "7029775520349", sources: { gtin: "barcode" } });
+    expect(withBarcode("036000291452").gtin).toBe("036000291452");
+  });
+
+  it("drops a barcode with a misread digit", () => {
+    expect(withBarcode("7029775520348").gtin).toBeNull();
+    expect(withBarcode("7029775520348").sources).toEqual({});
+  });
+});

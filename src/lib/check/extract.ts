@@ -3,6 +3,7 @@ import { LISTING_EXTRACTION_PROMPT } from "../ai/prompts";
 import { listingExtractionSchema, type ListingExtraction } from "../ai/schemas";
 import { recordSpend } from "../ai/spend";
 import { openai, openaiModel } from "../openai";
+import { isValidGtin } from "../gtin";
 import { normalizeText } from "../text";
 import type { EvidenceSource } from "../verdict";
 import { toDataUrl } from "./images";
@@ -69,7 +70,8 @@ export function groundExtraction(text: string, raw: ListingExtraction): Extracte
   const brand = ground("brand", raw.brand);
   const model = ground("model", raw.model);
   const modelVariant = ground("modelVariant", raw.modelVariant);
-  const gtin = ground("gtin", raw.gtin?.replace(/\s/g, "") ?? null, (value) => /^\d{8,14}$/.test(value));
+  // A misread digit breaks the check digit, so a wrong barcode never reaches the barcode search.
+  const gtin = ground("gtin", raw.gtin?.replace(/[\s-]/g, "") ?? null, isValidGtin);
   const batch = ground("batch", raw.batch);
   const productionDate = ground("productionDate", raw.productionDate, (value) => /^\d{4}-(0[1-9]|1[0-2])$/.test(value));
 

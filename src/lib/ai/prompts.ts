@@ -33,7 +33,8 @@ Rules:
 - productType: the same, chosen from the allowed list; the most specific fitting entry, "other" when none fits, null when the listing doesn't say what the product is.
 - brand: as written. model: the model name without the brand or product type ("smile iii", "buddy"). modelVariant: a version or edition if one is named.
 - A product named only by a proper name or code ("TilBoard", "LP-60L") goes in model when you can't tell whether it is the brand or the model.
-- references: product reference or article codes. gtin: an EAN/UPC barcode number, digits only. batch: a lot or batch number.
+- references: product reference or article codes. batch: a lot or batch number.
+- gtin: an EAN/UPC barcode number, digits only, from the text or from the digits printed under a barcode visible in a photo. Copy every digit; null if any digit is unreadable.
 - productionDate: the manufacturing month as YYYY-MM, only when a manufacturing date is written in the text or readable on a label in a photo. The year of purchase is not a manufacturing date.
 - labelTextSeen: text you can read on a product label in the photos, copied as is, or null.
 - confidence: 0 to 1, how sure you are that brand and model identify one specific product.
