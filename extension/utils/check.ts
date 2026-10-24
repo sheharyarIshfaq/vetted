@@ -27,36 +27,64 @@ export function defaultLang(hostname: string): Lang {
   return hostname.endsWith(".fr") ? "fr" : "en";
 }
 
-export const STRINGS: Record<Lang, Record<"checking" | "lookFor" | "whatToDo" | "copy" | "copied" | "copyFailed" | "full" | "notice" | "close" | "retry" | Verdict, string>> = {
+type Strings = {
+  checking: string;
+  steps: [string, string, string];
+  tag: Record<Verdict, string>;
+  headline: Record<Verdict, string>;
+  lookFor: string;
+  whatToDo: string;
+  officialNotice: string;
+  closestNotice: string;
+  readNotice: string;
+  copy: string;
+  copied: string;
+  copyFailed: string;
+  searched: string;
+  details: string;
+  minimise: string;
+  language: string;
+  retry: string;
+};
+
+export const STRINGS: Record<Lang, Strings> = {
   en: {
-    checking: "Vetted is checking this listing against official recalls…",
-    lookFor: "What to look for",
+    checking: "Checking this listing…",
+    steps: ["Reading the listing", "Searching the official recall lists", "Comparing photos"],
+    tag: { recalled: "RECALLED", check_label: "CHECK THE LABEL", clear: "NO RECALL FOUND" },
+    headline: { recalled: "Don't buy it as it is.", check_label: "Ask for the label first.", clear: "No recall found." },
+    lookFor: "On the label, look for",
     whatToDo: "What the notice says to do",
-    copy: "Copy a message for the seller",
+    officialNotice: "Official notice",
+    closestNotice: "Closest notice",
+    readNotice: "Read the notice",
+    copy: "Copy message for seller",
     copied: "Message copied",
-    copyFailed: "Copy failed, open the full result",
-    full: "Full result",
-    notice: "Open the official notice",
-    close: "Close panel",
+    copyFailed: "Copy failed, open Details",
+    searched: "See what we searched",
+    details: "Details",
+    minimise: "Minimise",
+    language: "Afficher en français",
     retry: "Try again",
-    recalled: "recalled",
-    check_label: "possibly recalled",
-    clear: "no recall found",
   },
   fr: {
-    checking: "Vetted compare cette annonce aux rappels officiels…",
-    lookFor: "À vérifier",
+    checking: "Vérification de l'annonce…",
+    steps: ["Lecture de l'annonce", "Recherche dans les listes officielles de rappels", "Comparaison des photos"],
+    tag: { recalled: "RAPPELÉ", check_label: "VÉRIFIEZ L'ÉTIQUETTE", clear: "AUCUN RAPPEL TROUVÉ" },
+    headline: { recalled: "Ne l'achetez pas en l'état.", check_label: "Demandez d'abord l'étiquette.", clear: "Aucun rappel trouvé." },
+    lookFor: "Sur l'étiquette, cherchez",
     whatToDo: "Ce que dit la fiche de rappel",
-    copy: "Copier un message pour le vendeur",
+    officialNotice: "Fiche officielle",
+    closestNotice: "Fiche la plus proche",
+    readNotice: "Lire la fiche",
+    copy: "Copier le message pour le vendeur",
     copied: "Message copié",
-    copyFailed: "Échec de la copie, ouvrez le résultat complet",
-    full: "Résultat complet",
-    notice: "Ouvrir la fiche officielle",
-    close: "Fermer",
+    copyFailed: "Échec de la copie, ouvrez Détails",
+    searched: "Voir ce qui a été cherché",
+    details: "Détails",
+    minimise: "Réduire",
+    language: "Show in English",
     retry: "Réessayer",
-    recalled: "rappelé",
-    check_label: "peut-être rappelé",
-    clear: "aucun rappel trouvé",
   },
 };
 
@@ -65,6 +93,41 @@ export function panelFor(result: CheckResult, lang: Lang) {
 }
 
 export type ListingPayload = { pageUrl: string; title: string; description: string; imageUrls: string[] };
+
+// One finished check as the popup lists it, kept in chrome.storage.local only.
+export type SavedCheck = {
+  id: string;
+  verdict: Verdict;
+  title: string;
+  headline: string;
+  image: string | null;
+  pageUrl: string;
+  host: string;
+};
+
+export const MAX_SAVED_CHECKS = 10;
+
+export function savedCheck(result: CheckResult, payload: ListingPayload): SavedCheck {
+  return {
+    id: result.id,
+    verdict: result.verdict,
+    title: result.panel?.title ?? payload.title,
+    headline: STRINGS.en.headline[result.verdict],
+    image: payload.imageUrls[0] ?? null,
+    pageUrl: payload.pageUrl,
+    host: new URL(payload.pageUrl).hostname.replace(/^www\./, ""),
+  };
+}
+
+// The newest check first, one entry per listing.
+export function addToHistory(history: SavedCheck[], check: SavedCheck) {
+  return [check, ...history.filter((entry) => entry.pageUrl !== check.pageUrl)].slice(0, MAX_SAVED_CHECKS);
+}
+
+export function isSavedCheck(value: unknown): value is SavedCheck {
+  const check = value as SavedCheck | null;
+  return typeof check?.id === "string" && typeof check.title === "string" && check.verdict in VERDICT_LABELS;
+}
 
 // Every message answer has this shape, so no caller ever reads a missing result.
 export type CheckResponse = { ok: true; result: CheckResult } | { ok: false; error: string };
@@ -105,6 +168,6 @@ export function toCheckResponse(value: unknown, fallback: string): CheckResponse
   return { ok: false, error: fallback };
 }
 
-export function resultUrl(result: CheckResult) {
+export function resultUrl(result: { id: string }) {
   return `${__TIKO_API_BASE_URL__}/check/${encodeURIComponent(result.id)}`;
 }

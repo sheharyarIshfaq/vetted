@@ -1,52 +1,34 @@
 import { browser } from "wxt/browser";
 import { defineBackground } from "wxt/utils/define-background";
-import { isCheckResult, type CheckResponse, type ListingPayload, type Verdict } from "../utils/check";
+import { addToHistory, isCheckResult, isSavedCheck, savedCheck, type CheckResponse, type ListingPayload, type Verdict } from "../utils/check";
+import { INK, MARKS, PALETTE, TAG_HOLE, TAG_OUTLINE } from "../utils/tag";
 
-const colors: Record<Verdict, string> = {
-  recalled: "#C2362B",
-  check_label: "#B86A00",
-  clear: "#1E7F55",
-};
-
-function icon(verdict: Verdict): ImageData {
-  const canvas = new OffscreenCanvas(32, 32);
+// The toolbar icon becomes the verdict's tag.
+function icon(verdict: Verdict, size: number): ImageData {
+  const canvas = new OffscreenCanvas(size, size);
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Could not draw the toolbar icon");
-  context.save();
-  context.translate(16, 16);
-  context.rotate(-0.14);
-  context.beginPath();
-  context.arc(0, 0, 14, 0, Math.PI * 2);
-  context.fillStyle = colors[verdict];
-  context.fill();
-  context.strokeStyle = "#fff";
-  context.lineWidth = 3.5;
+  const scale = size / 120;
+  context.translate(0, (size - 80 * scale) / 2);
+  context.scale(scale, scale);
+  context.translate(60, 40);
+  context.rotate((-10 * Math.PI) / 180);
+  context.translate(-60, -40);
+  context.fillStyle = PALETTE[verdict].color;
+  context.fill(new Path2D(`${TAG_OUTLINE} ${TAG_HOLE}`), "evenodd");
+  const mark = MARKS[verdict];
+  context.strokeStyle = INK;
+  context.lineWidth = mark.width + 2;
   context.lineCap = "round";
-  if (verdict === "clear") {
+  context.lineJoin = "round";
+  context.stroke(new Path2D(mark.d));
+  if (mark.dot) {
+    context.fillStyle = INK;
     context.beginPath();
-    context.moveTo(-6, 0);
-    context.lineTo(-1, 5);
-    context.lineTo(7, -5);
-    context.stroke();
-  } else if (verdict === "check_label") {
-    context.beginPath();
-    context.moveTo(0, -6);
-    context.lineTo(0, 2);
-    context.stroke();
-    context.beginPath();
-    context.arc(0, 8, 1.3, 0, Math.PI * 2);
-    context.fillStyle = "#fff";
+    context.arc(73, 60, 6.5, 0, Math.PI * 2);
     context.fill();
-  } else {
-    context.beginPath();
-    context.moveTo(-5, -5);
-    context.lineTo(5, 5);
-    context.moveTo(5, -5);
-    context.lineTo(-5, 5);
-    context.stroke();
   }
-  context.restore();
-  return context.getImageData(0, 0, 32, 32);
+  return context.getImageData(0, 0, size, size);
 }
 
 async function check(payload: ListingPayload): Promise<CheckResponse> {
@@ -69,11 +51,17 @@ async function check(payload: ListingPayload): Promise<CheckResponse> {
 export default defineBackground(() => {
   browser.runtime.onMessage.addListener(async (message, sender) => {
     if (message?.type === "TIKO_RUN_CHECK") {
-      const outcome = await check(message.payload as ListingPayload);
+      const payload = message.payload as ListingPayload;
+      const outcome = await check(payload);
       const tabId = sender.tab?.id;
       if (outcome.ok && tabId !== undefined) {
-        await browser.action.setIcon({ tabId, imageData: { 16: icon(outcome.result.verdict), 32: icon(outcome.result.verdict) } });
-        await browser.storage.local.set({ [`result:${tabId}`]: outcome.result });
+        const saved = savedCheck(outcome.result, payload);
+        const { history } = await browser.storage.local.get("history");
+        await browser.action.setIcon({ tabId, imageData: { 16: icon(outcome.result.verdict, 16), 32: icon(outcome.result.verdict, 32) } });
+        await browser.storage.local.set({
+          [`result:${tabId}`]: saved,
+          history: addToHistory(Array.isArray(history) ? history.filter(isSavedCheck) : [], saved),
+        });
       }
       return outcome;
     }
