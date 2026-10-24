@@ -21,6 +21,13 @@ export const openaiEnvSchema = z.object({
   OPENAI_MODEL: z.string().min(1).default("gpt-6.1-sol"),
 });
 
+export const ingestEnvSchema = z.object({
+  INGEST_CONTACT: z
+    .union([z.email(), z.literal("")])
+    .optional()
+    .transform((value) => value || undefined),
+});
+
 // Each area is parsed on first use, so a script only needs the variables it touches.
 function lazyEnv<T extends z.ZodType>(schema: T) {
   let cached: z.infer<T> | undefined;
@@ -40,3 +47,4 @@ function lazyEnv<T extends z.ZodType>(schema: T) {
 export const databaseEnv = lazyEnv(databaseEnvSchema);
 export const storageEnv = lazyEnv(storageEnvSchema);
 export const openaiEnv = lazyEnv(openaiEnvSchema);
+export const ingestEnv = lazyEnv(ingestEnvSchema);
