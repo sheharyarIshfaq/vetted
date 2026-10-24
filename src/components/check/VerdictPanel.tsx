@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { VerdictSticker } from "@/components/VerdictSticker";
+import { VERDICT_TAGS, VettedTag } from "@/components/VettedTag";
 import type { Verdict } from "@/lib/verdict";
 
 const STYLES: Record<Verdict, { border: string; band: string; eyebrow: string }> = {
@@ -19,10 +19,10 @@ export function VerdictPanel({ verdict, eyebrow, title, children, body }: Props)
     >
       <div className={`flex items-start gap-4 p-5 sm:gap-[18px] sm:p-6 ${style.band}`}>
         <span className="hidden sm:block">
-          <VerdictSticker verdict={verdict} size={72} decorative />
+          <VettedTag variant={VERDICT_TAGS[verdict]} width={96} decorative />
         </span>
         <span className="sm:hidden">
-          <VerdictSticker verdict={verdict} size={52} decorative />
+          <VettedTag variant={VERDICT_TAGS[verdict]} width={66} decorative />
         </span>
         <div className="flex min-w-0 flex-col gap-1.5">
           <div className={`font-mono text-xs tracking-[0.06em] uppercase ${style.eyebrow}`}>{eyebrow}</div>

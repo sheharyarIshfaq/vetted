@@ -1,26 +1,34 @@
 import Link from "next/link";
-import { Suspense } from "react";
-import { NavLinkList, NavLinks } from "./NavLinks";
-import { VerdictSticker } from "./VerdictSticker";
+import { VettedTag } from "./VettedTag";
 
+const LINKS = [
+  { href: "/#recall", label: "What's a recall?" },
+  { href: "/#how", label: "How it works" },
+  { href: "/#faq", label: "Questions" },
+  { href: "/platforms", label: "For marketplaces" },
+];
+
+// Transparent, so the home hero shows through it; the hero pulls itself up by the header's height.
 export function SiteHeader() {
   return (
-    <header className="border-b border-line bg-surface">
-      <div className="mx-auto flex max-w-[1160px] flex-wrap items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
-        <Link href="/" className="flex items-center gap-2.5 text-ink no-underline hover:text-ink">
-          <VerdictSticker verdict="brand" size={34} decorative />
-          <span className="text-[26px] font-extrabold tracking-[-0.04em]">vetted</span>
+    <header className="relative z-10 h-[120px] md:h-[86px]">
+      <div className="mx-auto flex max-w-[1240px] flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-4 sm:px-7 md:py-[22px]">
+        <Link href="/" aria-label="Vetted home" className="flex min-h-11 items-center gap-2 text-xl font-bold tracking-[-0.05em] text-ink no-underline hover:text-ink">
+          <VettedTag variant="brand" width={30} decorative />
+          vetted
         </Link>
-        <nav aria-label="Main" className="flex flex-wrap items-center gap-1">
-          <Suspense fallback={<NavLinkList pathname={null} />}>
-            <NavLinks />
-          </Suspense>
-          <Link
-            href="/how-it-works#extension"
-            className="ml-2 rounded-[10px] bg-ink px-4 py-[9px] text-[15px] font-bold text-white no-underline hover:text-white"
-          >
-            Add to Chrome
-          </Link>
+        <Link
+          href="/#extension"
+          className="inline-flex min-h-11 items-center rounded-full border border-ink px-[18px] text-sm font-medium text-ink no-underline hover:bg-ink hover:text-paper md:order-last"
+        >
+          Add to Chrome
+        </Link>
+        <nav aria-label="Main" className="-mx-2 flex w-full gap-x-1 overflow-x-auto text-[15px] md:mx-0 md:w-auto md:gap-x-[18px]">
+          {LINKS.map((link) => (
+            <Link key={link.href} href={link.href} className="flex min-h-11 shrink-0 items-center px-2 text-ink no-underline hover:text-brand">
+              {link.label}
+            </Link>
+          ))}
         </nav>
       </div>
     </header>

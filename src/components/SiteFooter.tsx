@@ -1,9 +1,19 @@
+import Link from "next/link";
+
 export function SiteFooter() {
   return (
     <footer className="border-t border-line bg-surface">
-      <div className="mx-auto flex max-w-[1160px] flex-wrap justify-between gap-4 px-4 py-6 text-sm text-muted sm:px-6">
-        <span>Data: RappelConso (Ministère de l&apos;Économie) and EU Safety Gate. Always check the official notice.</span>
-        <span>Built for #parisdevdayhack</span>
+      <div className="mx-auto flex max-w-[1200px] flex-wrap justify-between gap-3.5 px-4 py-7 text-[13px] text-muted sm:px-7">
+        <span>
+          Recall data and product photos: RappelConso (Ministère de l&apos;Économie, Licence Ouverte 2.0) and EU Safety Gate. Always
+          read the official notice.
+        </span>
+        <span className="flex flex-wrap gap-x-4">
+          <Link href="/recalls" className="text-muted hover:text-ink">
+            Recent recalls
+          </Link>
+          <span>Built in Paris · #parisdevdayhack</span>
+        </span>
       </div>
     </footer>
   );

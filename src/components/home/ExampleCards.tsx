@@ -1,10 +1,11 @@
 import { RemoteImage } from "@/components/check/RemoteImage";
-import { VerdictSticker, type StickerKind } from "@/components/VerdictSticker";
+import { VERDICT_TAGS, VettedTag } from "@/components/VettedTag";
+import type { Verdict } from "@/lib/verdict";
 import { monthNumber } from "@/lib/check/copy";
 import { getRecalls } from "@/lib/db/recalls";
 import { recallLimits } from "@/lib/verdict";
 
-type Card = { title: string; meta: string; verdict: StickerKind; image: string | null; tilt: string };
+type Card = { title: string; meta: string; verdict: Verdict; image: string | null; tilt: string };
 
 function period(from: string | null, to: string | null) {
   if (from && to) return `made ${monthNumber(from)} to ${monthNumber(to)}`;
@@ -66,7 +67,7 @@ export async function ExampleCards() {
             <div className="font-bold">{card.title}</div>
             <div className="text-[13px] text-muted">{card.meta}</div>
           </div>
-          <VerdictSticker verdict={card.verdict} size={44} decorative />
+          <VettedTag variant={VERDICT_TAGS[card.verdict]} width={60} decorative />
         </div>
       ))}
     </div>
