@@ -175,7 +175,7 @@ export function recallLimits(
 function identityEvidence(
   item: ItemFacts,
   recall: CandidateRecall,
-  match: { brandMatch: boolean; modelNameMatch: boolean; refMatch: boolean; modelMatch: boolean },
+  match: { brandMatch: boolean; modelNameMatch: boolean; refMatch: boolean; modelMatch: boolean; variantInDoubt: boolean },
 ): Evidence[] {
   const evidence: Evidence[] = [];
   if (item.brand) {
@@ -189,7 +189,8 @@ function identityEvidence(
   }
   const modelName = [item.model, item.modelVariant].filter(Boolean).join(" ");
   if (match.modelNameMatch) {
-    evidence.push({ fact: `Model ${modelName} is named in the recall`, matched: true, source: "listing_text" });
+    // Only the part the recall names: "Model V8", not "Model V8 Ultra Max".
+    evidence.push({ fact: `Model ${match.variantInDoubt ? item.model : modelName} is named in the recall`, matched: true, source: "listing_text" });
   } else if (match.refMatch) {
     evidence.push({
       fact: "Reference code is listed in the recall",
@@ -284,11 +285,12 @@ export function decideVerdict({
   // A barcode identifies the product like a model match does; date and batch limits still apply.
   const gtinMatch =
     item.gtin !== null && recall.gtins.some((gtin) => normalizeGtin(gtin) === normalizeGtin(item.gtin!));
+  const variantInDoubt = unnamedVariant(item, recall, gtinMatch || refMatch);
 
   if (gtinMatch) {
     evidence.push({ fact: `Barcode ${item.gtin} is listed in the recall`, matched: true, source: source("gtin") });
   } else {
-    evidence.push(...identityEvidence(item, recall, { brandMatch, modelNameMatch, refMatch, modelMatch }));
+    evidence.push(...identityEvidence(item, recall, { brandMatch, modelNameMatch, refMatch, modelMatch, variantInDoubt }));
     if (otherType) {
       evidence.push({ fact: `The recall is for a ${recallType}, this is a ${itemType}`, matched: false, source: "listing_text" });
     }
@@ -328,7 +330,6 @@ export function decideVerdict({
   }
 
   // A recall is only certain when nothing leaves the product in doubt; otherwise the label has to settle it.
-  const variantInDoubt = unnamedVariant(item, recall, gtinMatch || refMatch);
   const doubt = photo.sameProduct === "no" || variantInDoubt;
   if (variantInDoubt) {
     evidence.push({

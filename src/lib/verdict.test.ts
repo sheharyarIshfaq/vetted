@@ -714,6 +714,7 @@ describe("decideVerdict · Ouxi V8 fatbike (Safety Gate, vehicle types)", () => 
         matched: false,
         source: "official_data",
       });
+      expect(result.evidence).toContainEqual({ fact: "Model V8 is named in the recall", matched: true, source: "listing_text" });
     }
   });
 
