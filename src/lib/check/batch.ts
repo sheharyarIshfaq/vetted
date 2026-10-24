@@ -88,7 +88,7 @@ export async function runBatch(rows: BatchRow[], onResult: (result: BatchResult)
     try {
       const photo = row.imageUrl ? await downloadImage(row.imageUrl, { log }) : null;
       const text = [row.title, row.description].filter(Boolean).join("\n").slice(0, MAX_TEXT);
-      const check = await runCheck({ text, photos: photo ? [photo] : [] }, log);
+      const check = await runCheck({ text, photos: photo ? [photo] : [], unreadPhotos: row.imageUrl && !photo ? 1 : 0 }, log);
       onResult({
         ...base,
         checkId: check.id,

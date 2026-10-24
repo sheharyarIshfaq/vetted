@@ -57,9 +57,9 @@ export async function POST(request: Request) {
 
   try {
     const downloadedPhotos = await Promise.all(parsed.data.imageUrls.slice(0, 3).map((url) => downloadImage(url, { referer: parsed.data.pageUrl, log })));
-    const photos: Uint8Array[] = downloadedPhotos.flatMap((photo) => (photo ? [photo] : []));
+    const photos = downloadedPhotos.filter((photo) => photo !== null);
     const text = [parsed.data.title, parsed.data.description].filter(Boolean).join("\n").slice(0, 5000);
-    const result = await runCheck({ text, photos }, log);
+    const result = await runCheck({ text, photos, unreadPhotos: downloadedPhotos.length - photos.length }, log);
     return Response.json(
       { id: result.id, verdict: result.verdict, evidence: result.evidence, recall: result.recall },
       { headers },

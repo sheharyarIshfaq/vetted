@@ -17,7 +17,14 @@ const MAX_TEXT_LENGTH = 5000;
 // A problem with what the user sent; the message is shown to them as is.
 export class CheckInputError extends Error {}
 
-export type CheckInput = { text?: string; url?: string; photos: Uint8Array[] };
+// unreadPhotos: photos the caller could not download, so the check can say they weren't seen.
+export type CheckInput = { text?: string; url?: string; photos: Uint8Array[]; unreadPhotos?: number };
+
+const PHOTOS_UNREAD: Evidence = {
+  fact: "The photos could not be read, so only the text was checked",
+  matched: false,
+  source: "listing_photo",
+};
 
 export type CheckResult = {
   id: string;
@@ -62,7 +69,8 @@ function timer(log: Log) {
   };
 }
 
-async function readInput(input: CheckInput, log: Log) {
+// A photo that can't be read is skipped; only a listing with nothing readable at all is refused.
+export async function readInput(input: CheckInput, log: Log = () => {}) {
   let page: ListingPage | null = null;
   if (input.url) {
     try {
@@ -78,19 +86,29 @@ async function readInput(input: CheckInput, log: Log) {
     .join("\n")
     .slice(0, MAX_TEXT_LENGTH);
 
-  let uploads: Buffer[];
-  try {
-    uploads = await Promise.all(input.photos.slice(0, MAX_PHOTOS).map((photo) => prepareImage(photo)));
-  } catch {
-    throw new CheckInputError("One of the photos could not be read. Try a JPEG or PNG.");
-  }
+  const prepared = await Promise.all(
+    input.photos.slice(0, MAX_PHOTOS).map(async (photo, i) => {
+      try {
+        return await prepareImage(photo);
+      } catch (error) {
+        log(`[check] photo ${i + 1} skipped: ${error instanceof Error ? error.message : String(error)}`);
+        return null;
+      }
+    }),
+  );
+  const uploads = prepared.filter((photo) => photo !== null);
   const pagePhoto = page?.image && uploads.length < MAX_PHOTOS ? await downloadImage(page.image, { referer: input.url, log }) : null;
   const photos = pagePhoto ? [...uploads, pagePhoto] : uploads;
 
+  const photosUnread = photos.length === 0 && (input.photos.length > 0 || (input.unreadPhotos ?? 0) > 0 || Boolean(page?.image));
   if (!text && photos.length === 0) {
-    throw new CheckInputError("Paste a listing link or its text, or add a photo.");
+    throw new CheckInputError(
+      photosUnread
+        ? "The photos could not be read and there is no text to check. Paste the listing text or try other photos."
+        : "Paste a listing link or its text, or add a photo.",
+    );
   }
-  return { text, page, uploads, photos };
+  return { text, page, uploads, photos, photosUnread };
 }
 
 // The listing's own title: the page's, else the first line of the pasted text.
@@ -116,7 +134,7 @@ export function toItemFacts(extracted: ExtractedItem, brandNorm: string | null, 
 
 export async function runCheck(input: CheckInput, log: Log = () => {}): Promise<CheckResult> {
   const lap = timer(log);
-  const { text, page, uploads, photos } = await readInput(input, log);
+  const { text, page, uploads, photos, photosUnread } = await readInput(input, log);
   lap("read input");
 
   const photoKeys = uploads.map(() => `checks/${randomUUID()}.jpg`);
@@ -143,13 +161,14 @@ export async function runCheck(input: CheckInput, log: Log = () => {}): Promise<
 
   const item = toItemFacts(extracted, brandNorm, titleOf(page, text));
   const result = decideBest({ item, candidates: ranked, photos: photoResults });
+  const evidence = photosUnread ? [...result.evidence, PHOTOS_UNREAD] : result.evidence;
   const matched: Recall | undefined = ranked.find((candidate) => candidate.recall.id === result.recall?.id)?.recall;
 
   const stored: { input: StoredInput; extracted: StoredExtracted; evidence: StoredEvidence } = {
     input: { text: input.text ?? null, url: input.url ?? null, page, photoKeys },
     extracted: { ...extracted, brandNorm },
     evidence: {
-      items: result.evidence,
+      items: evidence,
       notes: result.notes,
       relation: result.recall?.relation ?? null,
       alsoMatched: result.alsoMatched,
@@ -171,7 +190,7 @@ export async function runCheck(input: CheckInput, log: Log = () => {}): Promise<
   return {
     id,
     verdict: result.verdict,
-    evidence: result.evidence,
+    evidence,
     notes: result.notes,
     alsoMatched: result.alsoMatched,
     recall:
