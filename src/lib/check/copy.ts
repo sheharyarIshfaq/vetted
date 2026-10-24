@@ -67,10 +67,18 @@ export function capitalize(value: string) {
 }
 
 // "smile iii" -> "Smile III": first letters upper case, Roman numerals in full.
+// Codes mixing letters and digits ("aes015", "xt800") are written in capitals.
 export function titleCase(value: string) {
   return value
     .replace(/(^|[\s-])(\p{L})/gu, (_, separator: string, letter: string) => separator + letter.toUpperCase())
-    .replace(/\b(?:Ii|Iii|Iv|Vi|Vii|Viii|Ix)\b/g, (numeral) => numeral.toUpperCase());
+    .replace(/\b(?:Ii|Iii|Iv|Vi|Vii|Viii|Ix)\b/g, (numeral) => numeral.toUpperCase())
+    .replace(/\b(?=[a-z]*\d)(?=\d*[a-z])[a-z\d]+\b/gi, (code) => code.toUpperCase());
+}
+
+// A name as the seller cased it, unless it is all lower or all upper case: "acer ES Series 5" -> "Acer ES Series 5".
+export function nameCase(value: string) {
+  if (value === value.toLowerCase() || value === value.toUpperCase()) return titleCase(value.toLowerCase());
+  return value.replace(/(^|\s)(\p{Ll})/gu, (_, separator: string, letter: string) => separator + letter.toUpperCase());
 }
 
 export function eyebrow(verdict: Verdict, risk: string | null) {
@@ -128,7 +136,7 @@ type Source = "rappelconso" | "safetygate";
 // "HAMAX BUDDY" or "hamax buddy" -> "Hamax Buddy": the brand and model as read, cased for display.
 export function itemName(item: { brand: string | null; model: string | null; modelVariant: string | null }) {
   const name = [item.brand, item.model, item.modelVariant].filter(Boolean).join(" ").trim();
-  return name ? titleCase(name.toLowerCase()) : null;
+  return name ? nameCase(name) : null;
 }
 
 export function regionsPhrase(sources: readonly Source[]) {

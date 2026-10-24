@@ -7,6 +7,7 @@ import type { Recall } from "@/db/schema";
 import { capitalize, monthNumber, numericDate, riskLabel, titleCase } from "@/lib/check/copy";
 import { canCheckLabel, recallModels } from "@/lib/check/start-label";
 import { getRecall } from "@/lib/db/recalls";
+import { batchInEnglish, remedyInEnglish } from "@/lib/official-text";
 import { SOURCE_BADGES, measuresTaken, type RecallSource } from "@/lib/recalls";
 import { checkLabelForRecall } from "./actions";
 
@@ -126,7 +127,7 @@ function Affected({ recall, labelCheck }: { recall: Recall; labelCheck: boolean 
       )}
       <Codes title="Reference codes" values={recall.refs.filter((ref) => !recall.gtins.includes(ref))} />
       <Codes title="Barcodes" values={recall.gtins} />
-      <Codes title="Recalled batches" values={recall.batches} />
+      <Codes title="Recalled batches" values={recall.batches.map(batchInEnglish)} />
       <Codes
         title="Batch of the tested sample"
         values={recall.sampleBatches}
@@ -248,9 +249,9 @@ async function RecallView({ params }: { params: PageProps<"/recalls/[id]">["para
         {recall.whatToDo && (
           <div className="flex flex-col gap-1">
             <div className="text-[13px] text-muted">From the official notice</div>
-            <ul lang="fr" className="m-0 flex flex-col gap-1 pl-5 text-[15px] leading-normal">
+            <ul className="m-0 flex flex-col gap-1 pl-5 text-[15px] leading-normal">
               {recall.whatToDo.split("\n").filter(Boolean).map((line) => (
-                <li key={line}>{capitalize(line.trim())}</li>
+                <li key={line}>{capitalize(remedyInEnglish(line.trim()))}</li>
               ))}
             </ul>
           </div>

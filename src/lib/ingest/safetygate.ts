@@ -6,7 +6,7 @@ import type { NewRecall } from "../../db/schema";
 import { loadBrandAliases } from "../db/brands";
 import { sourceRefs, upsertRecalls } from "../db/recalls";
 import { isValidGtin } from "../gtin";
-import { normalizeBrand, normalizeModelText } from "../text";
+import { decodeEntities, normalizeBrand, normalizeModelText } from "../text";
 import {
   cacheKey,
   estimateCost,
@@ -162,8 +162,9 @@ export function toRecall(alert: SafetyGateAlert, details: RecallDetails | null, 
   const models = types.filter((type) => !/\d/.test(type));
   const barcodes = barcodesIn([...splitValues(alert.barcode), ...types.filter((type) => /\d/.test(type))]);
   const refs = [...new Set([...types.filter((type) => /\d/.test(type)), ...barcodes.codes])];
-  const brand = alert.brand && !UNKNOWN_VALUE.test(alert.brand) ? alert.brand : null;
-  const productName = alert.product || alert.name || alert.caseNumber;
+  // Names are decoded here only: the raw alert stays as sent, so cached readings of it still apply.
+  const brand = alert.brand && !UNKNOWN_VALUE.test(alert.brand) ? decodeEntities(alert.brand) : null;
+  const productName = decodeEntities(alert.product || alert.name || alert.caseNumber);
   return {
     id: `sg:${alert.caseNumber}`,
     source: "safetygate",
@@ -187,7 +188,7 @@ export function toRecall(alert: SafetyGateAlert, details: RecallDetails | null, 
     soldFrom: null,
     soldTo: null,
     risk: alert.riskType || null,
-    reason: alert.danger || null,
+    reason: alert.danger ? decodeEntities(alert.danger) : null,
     whatToDo: null,
     images: alert.pictures.filter((url) => url.startsWith("https://")),
     datesQuote: details?.quote ?? null,
@@ -253,7 +254,7 @@ export async function ingestSafetyGate({
     const output = key ? cached.get(key) : undefined;
     const details = output ? validateDetails(texts[i]!, output) : null;
     if (output && !details) dropped++;
-    const brandNorm = alert.brand ? normalizeBrand(alert.brand, aliases) : null;
+    const brandNorm = alert.brand ? normalizeBrand(decodeEntities(alert.brand), aliases) : null;
     return toRecall(alert, details, brandNorm);
   });
   await upsertRecalls(recalls);

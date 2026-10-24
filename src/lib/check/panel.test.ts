@@ -79,7 +79,7 @@ describe("panelSummary", () => {
   it("quotes where the notice says the number is, and shortens long code lists", () => {
     const panel = panelSummary({ verdict: "check_label", recall: bebeConfort, extracted: extracted({ brand: "Bébé Confort", model: "Breeze" }), listingTitle: "Cosy", searched });
     expect(panel.lookFor).toEqual([
-      "Batches: inférieur ou égal à 1038653",
+      "Batches: up to 1038653",
       "Codes 1146077210 / 1146153210 / 1982085210 and 1 more",
       'The notice says the number is "visible sur l’emballage et sur le produit"',
     ]);
@@ -87,7 +87,7 @@ describe("panelSummary", () => {
 
   it("recalled: what the notice tells owners to do, and no seller message", () => {
     const panel = panelSummary({ verdict: "recalled", recall: bebeConfort, extracted: extracted({ brand: "Bébé Confort", model: "Breeze" }), listingTitle: "Cosy", searched });
-    expect(panel.whatToDo).toEqual(["Ne plus utiliser le produit", "Contacter le service consommateur"]);
+    expect(panel.whatToDo).toEqual(["Stop using the product", "Contact customer service"]);
     expect(panel.risk).toBe("Risk: injury");
     expect(panel.sellerMessage).toBeNull();
   });

@@ -1141,8 +1141,43 @@ describe("decideBest · a model given as part of the recall's brand", () => {
     expect(result.recall?.id).toBe("sg:SR/03043/26");
   });
 
+  it("names only the part of a longer model the recall names", () => {
+    const listing = item({ brand: "HJC", brandNorm: "hjc", model: "Furion 3", title: "Casque vélo HJC Furion 3" });
+    const result = decideBest({ item: listing, candidates: [candidate(furion, 0.3)], photos: new Map() });
+    expect(result.verdict).toBe("check_label");
+    const facts = result.evidence.map((fact) => fact.fact);
+    expect(facts).toContain("Model Furion is named in the recall");
+    expect(facts).toContain("The recall names the Furion; it doesn't say whether the Furion 3 is included");
+    expect(facts).toContain("If it is the recalled model, every unit is recalled");
+  });
+
   it("does not flag another model of the brand", () => {
     const listing = item({ brand: "HJC", brandNorm: "hjc", model: "Ibex 2.0", title: "Casque vélo HJC Ibex 2.0" });
     expect(decideBest({ item: listing, candidates: [candidate(furion, 0.3)], photos: new Map() }).verdict).toBe("clear");
+  });
+});
+
+describe("decideBest · product type wording", () => {
+  it("uses the right article", async () => {
+    const { decideBest: decide } = await import("./verdict");
+    const scooter: CandidateRecall = {
+      id: "rc:21110",
+      source: "rappelconso",
+      brand: "acer",
+      brandNorm: "acer",
+      productName: "trottinette électrique es series 5",
+      models: ["es series 5"],
+      productType: "e-scooter",
+      refs: [],
+      gtins: [],
+      batches: [],
+      sampleBatches: [],
+      productionFrom: null,
+      productionTo: null,
+      modelRanges: [],
+    };
+    const listing = item({ brand: "Acer", brandNorm: "acer", model: "ES Series 5", productType: "laptop", title: "Acer ES Series 5 ordinateur portable" });
+    const fact = decide({ item: listing, candidates: [candidate(scooter, 0.5)], photos: new Map() }).evidence[0].fact;
+    expect(fact).toMatch(/^Not this recall: the recall is for an e-scooter, this is (a laptop|another electrical product)$/);
   });
 });

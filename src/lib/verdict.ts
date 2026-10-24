@@ -321,7 +321,7 @@ function identityEvidence(
   const modelName = [item.model, item.modelVariant].filter(Boolean).join(" ");
   if (match.modelNameMatch) {
     // Only the part the recall names: "Model V8", not "Model V8 Ultra Max".
-    evidence.push({ fact: `Model ${match.variantInDoubt ? item.model : modelName} is named in the recall`, matched: true, source: "listing_text" });
+    evidence.push({ fact: `Model ${match.variantInDoubt ? namedPart(item, recall) : modelName} is named in the recall`, matched: true, source: "listing_text" });
   } else if (match.refMatch) {
     evidence.push({
       fact: "Reference code is listed in the recall",
@@ -338,6 +338,23 @@ function identityEvidence(
 
 // A variant the recall never mentions ("V8 Ultra Max" against a recall for the "V8"): the recall may or may not cover it.
 // A barcode or reference match identifies the exact product, so it leaves no doubt.
+// The words of the listing's model that the recall names, as the seller wrote them: "Furion" of "Furion 3".
+function namedPart(item: ItemFacts, recall: CandidateRecall) {
+  const named = recall.models.find((model) => namesModel(model, recall, item));
+  if (!named || !item.model) return item.model;
+  const wanted = words(modelName(named));
+  const kept = item.model.split(/\s+/).filter((word) => [...words(word)].some((part) => wanted.has(part)));
+  return kept.length ? kept.join(" ") : item.model;
+}
+
+// "a car seat", "an e-scooter", "another electrical product".
+function typeWithArticle(type: string | null) {
+  if (!type) return "another kind of product";
+  if (type.startsWith("other ")) return `another ${type.slice(6)} product`;
+  if (type === "other") return "another kind of product";
+  return `${/^[aeiou]/i.test(type) ? "an" : "a"} ${type}`;
+}
+
 function unnamedVariant(item: ItemFacts, recall: CandidateRecall, exactCode: boolean) {
   if (exactCode || !item.model) return false;
   if (!item.modelVariant) return extraModelWords(item, recall);
@@ -448,7 +465,7 @@ export function decideVerdict({
     }
     evidence.push(...identityEvidence(item, recall, { brandMatch, modelNameMatch, refMatch, modelMatch, variantInDoubt }));
     if (otherType) {
-      evidence.push({ fact: `The recall is for a ${recallType}, this is a ${itemType}`, matched: false, source: "listing_text" });
+      evidence.push({ fact: `The recall is for ${typeWithArticle(recallType)}, this is ${typeWithArticle(itemType)}`, matched: false, source: "listing_text" });
     }
   }
   if (sampleBatchMatch) {
@@ -536,7 +553,7 @@ export function decideVerdict({
   }
   if (variantInDoubt) {
     evidence.push({
-      fact: `The recall names the ${item.model}; it doesn't say whether the ${[item.model, item.modelVariant].join(" ")} is included`,
+      fact: `The recall names the ${namedPart(item, recall)}; it doesn't say whether the ${[item.model, item.modelVariant].filter(Boolean).join(" ")} is included`,
       matched: false,
       source: "official_data",
     });
@@ -548,7 +565,13 @@ export function decideVerdict({
 
   // No date or batch limit: the model, reference or barcode match is enough.
   if (!hasRange && !hasBatches) {
-    if (!recall.unitLimit) evidence.push({ fact: "Every unit of this model is recalled", matched: true, source: "official_data" });
+    if (!recall.unitLimit) {
+      evidence.push({
+        fact: doubt ? "If it is the recalled model, every unit is recalled" : "Every unit of this model is recalled",
+        matched: true,
+        source: "official_data",
+      });
+    }
     return { verdict: doubt ? "check_label" : "recalled", recall: { id: recall.id, relation: "match" }, evidence, notes };
   }
 

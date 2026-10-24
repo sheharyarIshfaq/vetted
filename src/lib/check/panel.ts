@@ -1,6 +1,7 @@
 import type { Recall } from "../../db/schema";
 import { recallLimits, type Evidence, type Verdict } from "../verdict";
 import { capitalize, dayName, itemName, monthNumber, riskWord, sellerMessage, sourcesLabel } from "./copy";
+import { batchInEnglish, remedyInEnglish } from "../official-text";
 import type { ExtractedItem } from "./extract";
 
 const SOURCE_NAMES: Record<string, string> = { rappelconso: "RappelConso", safetygate: "EU Safety Gate" };
@@ -59,7 +60,7 @@ function lookFor(input: PanelInput, recall: Recall) {
   const refs = limits.refs.filter((ref) => !recall.gtins.includes(ref));
   return [
     madePhrase(limits.from, limits.to),
-    codesPhrase("Batches:", limits.batches),
+    codesPhrase("Batches:", limits.batches.map(batchInEnglish)),
     codesPhrase("Codes", refs),
     refs.length === 0 ? codesPhrase("Barcodes", recall.gtins) : null,
     labelPlace(recall),
@@ -100,7 +101,7 @@ export function panelSummary(input: PanelInput): PanelSummary {
     risk: risk ? `Risk: ${risk}` : null,
     source: sourceOf(recall),
     lookFor: lookFor(input, recall),
-    whatToDo: verdict === "recalled" ? (recall.whatToDo ?? "").split("\n").map((line) => line.trim()).filter(Boolean).map(capitalize) : [],
+    whatToDo: verdict === "recalled" ? (recall.whatToDo ?? "").split("\n").map((line) => line.trim()).filter(Boolean).map(remedyInEnglish).map(capitalize) : [],
     sellerMessage:
       verdict === "check_label"
         ? sellerMessage("check_label", itemName(extracted) ?? listingTitle, recallLimits({ ...extracted, title: listingTitle }, recall), recall.url)

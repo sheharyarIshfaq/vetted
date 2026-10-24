@@ -19,6 +19,7 @@ import {
   sellerMessage,
   shortDay,
   sourceSplitPhrase,
+  nameCase,
   titleCase,
 } from "./copy";
 
@@ -144,11 +145,21 @@ describe("numericDate", () => {
   });
 });
 
+describe("nameCase", () => {
+  it("keeps the seller's capitals and fixes all-lower or all-upper names", () => {
+    expect(nameCase("acer ES Series 5")).toBe("Acer ES Series 5");
+    expect(nameCase("HAMAX BUDDY")).toBe("Hamax Buddy");
+    expect(nameCase("britax römer smile iii")).toBe("Britax Römer Smile III");
+  });
+});
+
 describe("titleCase", () => {
   it("writes Roman numerals in capitals", () => {
     expect(titleCase("smile iii")).toBe("Smile III");
     expect(titleCase("britax römer")).toBe("Britax Römer");
     expect(titleCase("vivid ivory")).toBe("Vivid Ivory");
+    expect(titleCase("es series 5 (aes015)")).toBe("Es Series 5 (AES015)");
+    expect(titleCase("speedtrott xt800")).toBe("Speedtrott XT800");
   });
 });
 
