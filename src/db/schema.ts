@@ -27,6 +27,8 @@ export const recalls = pgTable(
     refs: text().array().notNull().default(sql`'{}'`),
     gtins: text().array().notNull().default(sql`'{}'`),
     batches: text().array().notNull().default(sql`'{}'`),
+    // Safety Gate names the batch of the sample it tested: it identifies the product, it doesn't limit the recall.
+    sampleBatches: text("sample_batches").array().notNull().default(sql`'{}'`),
     productionFrom: date("production_from", { mode: "string" }),
     productionTo: date("production_to", { mode: "string" }),
     modelRanges: jsonb("model_ranges").$type<ModelRange[]>().notNull().default([]),

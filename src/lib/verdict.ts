@@ -22,6 +22,7 @@ export type ItemFacts = {
 
 export type CandidateRecall = {
   id: string;
+  source: string;
   brand: string | null;
   brandNorm: string | null;
   productName: string;
@@ -29,6 +30,7 @@ export type CandidateRecall = {
   refs: string[];
   gtins: string[];
   batches: string[];
+  sampleBatches: string[]; // batch of the tested sample: identifies the product, never limits the recall
   productionFrom: string | null;
   productionTo: string | null;
   modelRanges: ModelRange[];
@@ -52,6 +54,9 @@ export type VerdictResult = {
   evidence: Evidence[];
   notes: string[];
 };
+
+// The same product recalled in the other official source, shown as a second notice.
+export type BestResult = VerdictResult & { alsoMatched: string[] };
 
 const TITLE_MATCH_THRESHOLD = 0.55;
 const BRAND_MATCH_THRESHOLD = 0.6;
@@ -101,6 +106,21 @@ function itemModels(item: Pick<ItemFacts, "model" | "modelVariant">) {
 function codeIn(codes: readonly string[], values: readonly string[]) {
   const wanted = new Set(values.map(normalizeCode).filter(Boolean));
   return codes.some((code) => wanted.has(normalizeCode(code)));
+}
+
+// A model or type number: has a digit and is long enough not to collide by chance ("ours" or "a1" are not).
+function isCode(value: string) {
+  const code = normalizeCode(value);
+  return code.length >= 3 && /\d/.test(code);
+}
+
+// For an unbranded recall: a code from the listing (reference, model or batch) that the recall lists too.
+function sharedCode(item: ItemFacts, recall: CandidateRecall) {
+  const itemCodes = [...item.references, item.model, item.modelVariant, item.batch].filter(
+    (value): value is string => value !== null && isCode(value),
+  );
+  const recallCodes = [...recall.refs, ...recall.models, ...recall.sampleBatches].filter(isCode);
+  return codeIn(recallCodes, itemCodes);
 }
 
 // The per-model entry for this item, matched by model name or by one of its references.
@@ -194,7 +214,9 @@ export function decideVerdict({
   const modelNameMatch =
     range !== undefined || recall.models.some((model) => models.has(normalizeModel(model)));
   const refMatch = codeIn(recall.refs, item.references);
-  const modelMatch = modelNameMatch || refMatch || candidate.titleSimilarity >= TITLE_MATCH_THRESHOLD;
+  const sampleBatchMatch = item.batch !== null && codeIn(recall.sampleBatches, [item.batch]);
+  const modelMatch =
+    modelNameMatch || refMatch || sampleBatchMatch || candidate.titleSimilarity >= TITLE_MATCH_THRESHOLD;
   // A barcode identifies the product like a model match does; date and batch limits still apply.
   const gtinMatch =
     item.gtin !== null && recall.gtins.some((gtin) => normalizeGtin(gtin) === normalizeGtin(item.gtin!));
@@ -204,6 +226,9 @@ export function decideVerdict({
   } else {
     evidence.push(...identityEvidence(item, recall, { brandMatch, modelNameMatch, refMatch, modelMatch }));
   }
+  if (sampleBatchMatch) {
+    evidence.push({ fact: `Batch ${item.batch} is the batch named in the alert`, matched: true, source: source("batch") });
+  }
 
   if (photo.sameProduct === "yes") {
     evidence.push({ fact: "Photos show the same product as the official photo", matched: true, source: "listing_photo" });
@@ -211,7 +236,18 @@ export function decideVerdict({
     evidence.push({ fact: "Photos show a different product from the official photo", matched: false, source: "listing_photo" });
   }
 
-  const identified = gtinMatch || (brandMatch && modelMatch);
+  // Without a brand, a similar title proves nothing ("peluche ours"): it takes a barcode, or a shared code and the photos.
+  const unbranded = recall.brandNorm === null;
+  const identified = unbranded
+    ? gtinMatch || (sharedCode(item, recall) && photo.sameProduct === "yes")
+    : gtinMatch || (brandMatch && modelMatch);
+  if (unbranded && !identified) {
+    evidence.push({
+      fact: "The recalled product has no brand, so only a barcode, or a matching code and photo, can identify it",
+      matched: false,
+      source: "official_data",
+    });
+  }
   if (!identified || photo.sameProduct === "no") {
     return { verdict: "clear", recall: { id: recall.id, relation: "not_a_match" }, evidence, notes };
   }
@@ -274,7 +310,8 @@ function rank(result: VerdictResult) {
   return result.recall ? RANK[result.recall.relation === "other_dates" ? "other_dates" : "not_a_match"] : RANK.none;
 }
 
-// Decides every candidate and keeps the most serious outcome; candidates come in similarity order, which breaks ties.
+// Decides every candidate and keeps the most serious outcome. On a tie the French notice comes first,
+// then similarity order. A matching recall from the other source is kept as a second notice.
 export function decideBest({
   item,
   candidates,
@@ -283,11 +320,20 @@ export function decideBest({
   item: ItemFacts;
   candidates: Candidate[];
   photos: ReadonlyMap<string, PhotoComparison>;
-}): VerdictResult {
-  if (candidates.length === 0) return decideVerdict({ item, candidate: null, photo: { sameProduct: null } });
-  return candidates
-    .map((candidate) =>
-      decideVerdict({ item, candidate, photo: photos.get(candidate.recall.id) ?? { sameProduct: null } }),
-    )
-    .reduce((best, result) => (rank(result) < rank(best) ? result : best));
+}): BestResult {
+  if (candidates.length === 0) {
+    return { ...decideVerdict({ item, candidate: null, photo: { sameProduct: null } }), alsoMatched: [] };
+  }
+  const results = candidates.map((candidate) => ({
+    source: candidate.recall.source,
+    result: decideVerdict({ item, candidate, photo: photos.get(candidate.recall.id) ?? { sameProduct: null } }),
+  }));
+  const order = (entry: (typeof results)[number]) => rank(entry.result) * 2 + (entry.source === "rappelconso" ? 0 : 1);
+  const best = results.reduce((top, entry) => (order(entry) < order(top) ? entry : top));
+  if (best.result.verdict === "clear") return { ...best.result, alsoMatched: [] };
+  const also = results.find(
+    (entry) =>
+      entry.source !== best.source && entry.result.verdict === best.result.verdict && entry.result.recall?.relation === "match",
+  );
+  return { ...best.result, alsoMatched: also?.result.recall ? [also.result.recall.id] : [] };
 }

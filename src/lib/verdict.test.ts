@@ -12,6 +12,7 @@ import {
 
 const britax22625: CandidateRecall = {
   id: "rc:22625",
+  source: "rappelconso",
   brand: "britax römer",
   brandNorm: "britax romer",
   productName: "châssis de poussette smile iii, smile 4 et smile 5z",
@@ -19,6 +20,7 @@ const britax22625: CandidateRecall = {
   refs: ["4000984-204346"],
   gtins: [],
   batches: [],
+  sampleBatches: [],
   productionFrom: "2019-09-01",
   productionTo: "2024-03-31",
   modelRanges: [
@@ -30,6 +32,7 @@ const britax22625: CandidateRecall = {
 
 const hamaxBuddy: CandidateRecall = {
   id: "rc:23843",
+  source: "rappelconso",
   brand: "hamax",
   brandNorm: "hamax",
   productName: "porte-bébé hamax buddy",
@@ -37,6 +40,7 @@ const hamaxBuddy: CandidateRecall = {
   refs: ["4091054", "8591602"],
   gtins: ["70297755203498"],
   batches: [],
+  sampleBatches: [],
   productionFrom: "2022-01-01",
   productionTo: null,
   modelRanges: [],
@@ -44,6 +48,7 @@ const hamaxBuddy: CandidateRecall = {
 
 const boonPivot: CandidateRecall = {
   id: "rc:boon",
+  source: "rappelconso",
   brand: "boon",
   brandNorm: "boon",
   productName: "pivot",
@@ -51,6 +56,7 @@ const boonPivot: CandidateRecall = {
   refs: ["b11437", "b11578"],
   gtins: [],
   batches: [],
+  sampleBatches: [],
   productionFrom: null,
   productionTo: null,
   modelRanges: [],
@@ -398,5 +404,102 @@ describe("decideBest", () => {
 
   it("is clear with no recall when there are no candidates", () => {
     expect(decideBest({ item: buddy, candidates: [], photos: new Map() })).toMatchObject({ verdict: "clear", recall: null });
+  });
+});
+
+describe("decideVerdict · unbranded recalls", () => {
+  const teddy: CandidateRecall = {
+    ...boonPivot,
+    id: "sg:SR/01234/25",
+    source: "safetygate",
+    brand: null,
+    brandNorm: null,
+    productName: "peluche ours",
+    models: [],
+    refs: ["HX810"],
+    gtins: ["5055944706841"],
+    sampleBatches: ["C2024322"],
+  };
+  const plush = item({ model: "ours" });
+  const yes: PhotoComparison = { sameProduct: "yes" };
+
+  it("never matches on a similar title alone, even a very close one", () => {
+    const result = decideVerdict({ item: plush, candidate: candidate(teddy, 0.9), photo: noPhoto });
+    expect(result.verdict).toBe("clear");
+    expect(result.recall?.relation).toBe("not_a_match");
+  });
+
+  it("doesn't match on a photo 'yes' without a shared code", () => {
+    expect(decideVerdict({ item: plush, candidate: candidate(teddy, 0.9), photo: yes }).verdict).toBe("clear");
+  });
+
+  it("doesn't match on a shared code without a photo 'yes'", () => {
+    const coded = item({ references: ["HX-810"] });
+    expect(decideVerdict({ item: coded, candidate: candidate(teddy), photo: noPhoto }).verdict).toBe("clear");
+    expect(decideVerdict({ item: coded, candidate: candidate(teddy), photo: { sameProduct: "unsure" } }).verdict).toBe("clear");
+  });
+
+  it("matches on a shared code and a photo 'yes'", () => {
+    const coded = item({ model: "HX810" });
+    expect(decideVerdict({ item: coded, candidate: candidate(teddy), photo: yes }).verdict).toBe("recalled");
+  });
+
+  it("matches on the barcode alone", () => {
+    const scanned = item({ gtin: "5055944706841" });
+    expect(decideVerdict({ item: scanned, candidate: candidate(teddy, 0.1), photo: noPhoto }).verdict).toBe("recalled");
+  });
+
+  it("doesn't let a placeholder brand on both sides count as a brand match", () => {
+    const sansMarque = item({ brand: "Sans marque", brandNorm: null, model: "ours" });
+    expect(decideVerdict({ item: sansMarque, candidate: candidate(teddy, 0.9), photo: noPhoto }).verdict).toBe("clear");
+  });
+});
+
+describe("decideVerdict · Safety Gate sample batches", () => {
+  const charger: CandidateRecall = {
+    ...boonPivot,
+    id: "sg:SR/00042/26",
+    source: "safetygate",
+    brand: "x-start",
+    brandNorm: "x start",
+    productName: "chargeur usb",
+    models: [],
+    refs: ["XS-20W"],
+    sampleBatches: ["0371-27939196"],
+  };
+  const xstart = item({ brand: "X-Start", brandNorm: "x start", references: ["XS-20W"] });
+
+  it("never limits the recall: another batch of the same model is still recalled", () => {
+    const result = decideVerdict({ item: { ...xstart, batch: "9999" }, candidate: candidate(charger), photo: noPhoto });
+    expect(result.verdict).toBe("recalled");
+  });
+
+  it("counts the sample batch as a match", () => {
+    const result = decideVerdict({
+      item: item({ brand: "X-Start", brandNorm: "x start", batch: "0371-27939196" }),
+      candidate: candidate(charger, 0.1),
+      photo: noPhoto,
+    });
+    expect(result.verdict).toBe("recalled");
+    expect(result.evidence).toContainEqual(expect.objectContaining({ fact: "Batch 0371-27939196 is the batch named in the alert" }));
+  });
+});
+
+describe("decideBest · both sources", () => {
+  const euBuddy: CandidateRecall = { ...hamaxBuddy, id: "sg:SR/00777/25", source: "safetygate", productionFrom: null };
+
+  it("shows the RappelConso notice first and the EU alert as a second notice", () => {
+    const result = decideBest({
+      item: { ...buddy, productionDate: "2023-05" },
+      candidates: [candidate(euBuddy, 0.6), candidate(hamaxBuddy, 0.4)],
+      photos: new Map(),
+    });
+    expect(result.recall?.id).toBe("rc:23843");
+    expect(result.alsoMatched).toEqual(["sg:SR/00777/25"]);
+  });
+
+  it("has no second notice when only one source matches", () => {
+    const result = decideBest({ item: { ...buddy, productionDate: "2023-05" }, candidates: [candidate(hamaxBuddy)], photos: new Map() });
+    expect(result.alsoMatched).toEqual([]);
   });
 });

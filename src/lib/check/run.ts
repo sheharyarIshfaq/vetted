@@ -41,6 +41,7 @@ export type StoredEvidence = {
   items: Evidence[];
   notes: string[];
   relation: "match" | "other_dates" | "not_a_match" | null;
+  alsoMatched?: string[]; // absent on checks stored before the second source
 };
 
 type Log = (message: string) => void;
@@ -133,7 +134,12 @@ export async function runCheck(input: CheckInput, log: Log = () => {}): Promise<
   const stored: { input: StoredInput; extracted: StoredExtracted; evidence: StoredEvidence } = {
     input: { text: input.text ?? null, url: input.url ?? null, page, photoKeys },
     extracted: { ...extracted, brandNorm },
-    evidence: { items: result.evidence, notes: result.notes, relation: result.recall?.relation ?? null },
+    evidence: {
+      items: result.evidence,
+      notes: result.notes,
+      relation: result.recall?.relation ?? null,
+      alsoMatched: result.alsoMatched,
+    },
   };
   const id = await insertCheck({
     ...stored,

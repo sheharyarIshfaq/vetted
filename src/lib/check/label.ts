@@ -127,7 +127,12 @@ export async function runLabelCheck(id: string, bytes: Uint8Array, log: Log = ()
   );
   const result = decideBest({ item: toItemFacts(extracted, extracted.brandNorm), candidates, photos });
 
-  const evidence: StoredEvidence = { items: result.evidence, notes: result.notes, relation: result.recall?.relation ?? null };
+  const evidence: StoredEvidence = {
+    items: result.evidence,
+    notes: result.notes,
+    relation: result.recall?.relation ?? null,
+    alsoMatched: result.alsoMatched,
+  };
   const label: StoredLabel = { photoKey, read, text: raw.labelText?.trim() || null };
   await updateCheck(id, {
     extracted,

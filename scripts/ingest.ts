@@ -4,10 +4,12 @@ import { db } from "../src/lib/db/client";
 import { ingestEnv } from "../src/lib/env";
 import { sinceDate } from "../src/lib/ingest/dates";
 import { ingestRappelConso, type IngestPlan } from "../src/lib/ingest/rappelconso";
+import { ingestSafetyGate } from "../src/lib/ingest/safetygate";
 
 const { values } = parseArgs({
   options: {
     since: { type: "string" },
+    source: { type: "string", default: "all" },
     yes: { type: "boolean", default: false },
   },
 });
@@ -37,16 +39,31 @@ async function confirm(plan: IngestPlan) {
   return answer.trim().toLowerCase() === "y";
 }
 
+function report(name: string, result: { stored: number; failed: number; dropped: number; perCategory: Map<string, number> } | null) {
+  if (!result) {
+    log(`${name}: stopped before calling the model. Nothing was stored.`);
+    return;
+  }
+  log(`${name}: stored ${result.stored} recalls (${result.failed} parse failures, ${result.dropped} parses dropped by validation)`);
+  for (const [category, total] of [...result.perCategory].sort((a, b) => b[1] - a[1])) {
+    log(`  ${total}\t${category}`);
+  }
+}
+
+const sources = values.source === "all" ? ["rappelconso", "safetygate"] : [values.source];
+if (!sources.every((source) => source === "rappelconso" || source === "safetygate")) {
+  throw new Error("--source must be rappelconso, safetygate or all");
+}
+
 try {
   const since = values.since ? sinceDate(values.since) : undefined;
-  const result = await ingestRappelConso({ since, userAgent, confirm, log });
-  if (result) {
-    log(`Stored ${result.stored} recalls (${result.failed} parse failures, ${result.dropped} parses dropped by validation)`);
-    for (const [category, total] of [...result.perCategory].sort((a, b) => b[1] - a[1])) {
-      log(`  ${total}\t${category}`);
-    }
-  } else {
-    log("Stopped before calling the model. Nothing was stored.");
+  if (sources.includes("rappelconso")) {
+    report("RappelConso", await ingestRappelConso({ since, userAgent, confirm, log }));
+  }
+  if (sources.includes("safetygate")) {
+    const result = await ingestSafetyGate({ since, userAgent, confirm, log });
+    report("Safety Gate", result);
+    for (const [year, total] of [...(result?.perYear ?? [])].sort()) log(`  ${year}: ${total}`);
   }
 } finally {
   await db().$client.end();

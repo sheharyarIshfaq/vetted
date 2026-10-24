@@ -32,4 +32,12 @@ describe("normalizeBrand", () => {
   it("keeps unknown brands in normalised form", () => {
     expect(normalizeBrand("Petit Béguin", aliases)).toBe("petit beguin");
   });
+
+  it("turns placeholder brands into no brand", () => {
+    for (const raw of ["Inconnu", "SANS MARQUE", "Unknown", "no brand", "N/A", "Generic", "Générique", "pas de marque", "Not specified", "aucune", ""]) {
+      expect(normalizeBrand(raw, aliases), raw).toBeNull();
+    }
+    expect(normalizeBrand("Brandt", aliases)).toBe("brandt");
+    expect(normalizeBrand("Sansonite", aliases)).toBe("sansonite");
+  });
 });

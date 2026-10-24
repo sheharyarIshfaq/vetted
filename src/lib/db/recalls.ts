@@ -26,6 +26,7 @@ export async function upsertRecalls(rows: NewRecall[]) {
           refs: sql`excluded.refs`,
           gtins: sql`excluded.gtins`,
           batches: sql`excluded.batches`,
+          sampleBatches: sql`excluded.sample_batches`,
           productionFrom: sql`excluded.production_from`,
           productionTo: sql`excluded.production_to`,
           modelRanges: sql`excluded.model_ranges`,

@@ -4,6 +4,7 @@ import { LabelRead } from "@/components/check/LabelRead";
 import { ListingSummary } from "@/components/check/ListingSummary";
 import { PhotoPair } from "@/components/check/PhotoPair";
 import { ReportWrongMatch } from "@/components/check/ReportWrongMatch";
+import { SecondNotice } from "@/components/check/SecondNotice";
 import { VerdictPanel } from "@/components/check/VerdictPanel";
 import { capitalize, eyebrow, headline, recalledSummary, sellerMessage, sourcesLabel } from "@/lib/check/copy";
 import type { Recall } from "@/db/schema";
@@ -49,6 +50,11 @@ export function RecalledLayout({ check }: Props) {
                   />
                   <ReportWrongMatch checkId={check.id} alreadyFlagged={check.flagged} />
                 </div>
+                {check.secondRecall && (
+                  <div className="px-5 pb-5 sm:px-6">
+                    <SecondNotice recall={check.secondRecall} />
+                  </div>
+                )}
               </>
             }
           >

@@ -1,0 +1,1 @@
+ALTER TABLE "recalls" ADD COLUMN "sample_batches" text[] DEFAULT '{}' NOT NULL;

@@ -19,3 +19,4 @@ CLAUDE.local.md
 .mcp.json
 next-env.d.ts
 coverage/
+.cache/

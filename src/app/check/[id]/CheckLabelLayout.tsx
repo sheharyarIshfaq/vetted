@@ -4,6 +4,7 @@ import { LabelRead } from "@/components/check/LabelRead";
 import { LabelUpload } from "@/components/check/LabelUpload";
 import { RemoteImage } from "@/components/check/RemoteImage";
 import { ReportWrongMatch } from "@/components/check/ReportWrongMatch";
+import { SecondNotice } from "@/components/check/SecondNotice";
 import { VerdictPanel } from "@/components/check/VerdictPanel";
 import { checkLabelSummary, eyebrow, headline, labelTargets, sellerMessage } from "@/lib/check/copy";
 import type { Recall } from "@/db/schema";
@@ -75,6 +76,7 @@ export function CheckLabelLayout({ check }: Props) {
           <a href={recall.url} target="_blank" rel="noopener noreferrer" className="text-[15px] font-semibold">
             Read the official notice
           </a>
+          <SecondNotice recall={check.secondRecall} />
         </section>
       </div>
 

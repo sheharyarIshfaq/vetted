@@ -32,8 +32,9 @@ export async function loadCheck(id: string) {
   const extracted = check.extracted as StoredExtracted;
   const evidence = check.evidence as StoredEvidence;
   const label = check.label as StoredLabel | null;
-  const [recall, stats, listingPhoto, labelPhoto] = await Promise.all([
+  const [recall, secondRecall, stats, listingPhoto, labelPhoto] = await Promise.all([
     check.recallId ? getRecall(check.recallId) : undefined,
+    evidence.alsoMatched?.[0] ? getRecall(evidence.alsoMatched[0]) : undefined,
     recallStats(),
     input.photoKeys[0] ? presignedGetUrl(input.photoKeys[0]) : (input.page?.image ?? null),
     label ? presignedGetUrl(label.photoKey) : null,
@@ -59,6 +60,7 @@ export async function loadCheck(id: string) {
     label,
     labelPhoto,
     recall: recall ?? null,
+    secondRecall: secondRecall ?? null,
     limits: recall ? recallLimits(extracted, recall) : null,
     stats: { ...stats, updatedAt: stats.updatedAt ? UPDATED_AT.format(stats.updatedAt).replace(",", "") : null },
   };

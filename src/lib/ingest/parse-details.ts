@@ -7,6 +7,7 @@ import { recallDetailsSchema, type RecallDetailsOutput } from "../ai/schemas";
 import { db } from "../db/client";
 import { openai, openaiModel } from "../openai";
 import { normalizeText } from "../text";
+import { mapWithConcurrency } from "./concurrency";
 import { isIsoDate } from "./dates";
 
 export type RecallDetails = {
@@ -142,4 +143,48 @@ export async function parseDetailsWithModel(text: string, key: string) {
     .values({ inputHash: key, result: output })
     .onConflictDoUpdate({ target: parseCache.inputHash, set: { result: output } });
   return { output, usage: response.usage };
+}
+
+const MODEL_CONCURRENCY = 5;
+
+// Rough figures for the confirmation prompt: $2 / $10 per million input / output tokens.
+const INPUT_PRICE_PER_TOKEN = 2 / 1_000_000;
+const OUTPUT_PRICE_PER_TOKEN = 10 / 1_000_000;
+const ESTIMATED_OUTPUT_TOKENS = 300;
+const PROMPT_OVERHEAD_TOKENS = 500;
+
+export function estimateCost(texts: string[]) {
+  const inputTokens = texts.reduce((sum, text) => sum + PROMPT_OVERHEAD_TOKENS + Math.ceil(text.length / 4), 0);
+  return inputTokens * INPUT_PRICE_PER_TOKEN + texts.length * ESTIMATED_OUTPUT_TOKENS * OUTPUT_PRICE_PER_TOKEN;
+}
+
+// Texts that need the model and aren't cached yet, by cache key.
+export function pendingTexts(keys: (string | null)[], texts: string[], cached: ReadonlyMap<string, RecallDetailsOutput>) {
+  const pending = new Map<string, string>();
+  keys.forEach((key, i) => {
+    if (key && !cached.has(key)) pending.set(key, texts[i]);
+  });
+  return pending;
+}
+
+// Parses the pending texts into the cache map; returns the number of failures.
+export async function parsePending(
+  pending: ReadonlyMap<string, string>,
+  cached: Map<string, RecallDetailsOutput>,
+  log: (message: string) => void,
+) {
+  let done = 0;
+  let failed = 0;
+  await mapWithConcurrency([...pending], MODEL_CONCURRENCY, async ([key, text]) => {
+    try {
+      const { output } = await parseDetailsWithModel(text, key);
+      cached.set(key, output);
+    } catch (error) {
+      failed++;
+      log(`Parse failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    done++;
+    if (done % 25 === 0 || done === pending.size) log(`Parsed ${done}/${pending.size}`);
+  });
+  return failed;
 }

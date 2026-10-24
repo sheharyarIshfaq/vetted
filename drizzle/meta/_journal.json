@@ -22,6 +22,13 @@
       "when": 1792839184489,
       "tag": "0002_brand_aliases",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792844543991,
+      "tag": "0003_sample_batches",
+      "breakpoints": true
     }
   ]
 }

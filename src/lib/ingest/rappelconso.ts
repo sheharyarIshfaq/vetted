@@ -4,12 +4,13 @@ import { loadBrandAliases } from "../db/brands";
 import { upsertRecalls } from "../db/recalls";
 import { isValidGtin } from "../gtin";
 import { normalizeBrand, normalizeText } from "../text";
-import { mapWithConcurrency } from "./concurrency";
 import { toIsoDate } from "./dates";
 import {
   cacheKey,
+  estimateCost,
   needsModel,
-  parseDetailsWithModel,
+  parsePending,
+  pendingTexts,
   readCachedDetails,
   validateDetails,
   type RecallDetails,
@@ -39,13 +40,6 @@ const SOURCES: { category: string; subcategory?: string }[] = [
 // The accessories subcategory mixes car products with helmets and child seats.
 const ACCESSORY_KEYWORDS = /v[ée]lo|casque|si[èe]ge|trottinette|enfant|b[ée]b[ée]|cycl/i;
 
-const MODEL_CONCURRENCY = 5;
-
-// Rough figures for the confirmation prompt: $2 / $10 per million input / output tokens.
-const INPUT_PRICE_PER_TOKEN = 2 / 1_000_000;
-const OUTPUT_PRICE_PER_TOKEN = 10 / 1_000_000;
-const ESTIMATED_OUTPUT_TOKENS = 300;
-const PROMPT_OVERHEAD_TOKENS = 500;
 
 const nullableText = z.string().nullish().transform((value) => value ?? null);
 
@@ -242,37 +236,17 @@ export async function ingestRappelConso({
   const keys = texts.map((text) => (needsModel(text) ? cacheKey(text) : null));
   const cached = await readCachedDetails(keys.filter((key): key is string => key !== null));
 
-  const pending = new Map<string, string>();
-  keys.forEach((key, i) => {
-    if (key && !cached.has(key)) pending.set(key, texts[i]);
-  });
-  const inputTokens = [...pending.values()].reduce(
-    (sum, text) => sum + PROMPT_OVERHEAD_TOKENS + Math.ceil(text.length / 4),
-    0,
-  );
+  const pending = pendingTexts(keys, texts, cached);
   const plan: IngestPlan = {
     fetched: rows.length,
     recalls: groups.length,
     needModel: keys.filter(Boolean).length,
     cached: cached.size,
     calls: pending.size,
-    estimatedCost: inputTokens * INPUT_PRICE_PER_TOKEN + pending.size * ESTIMATED_OUTPUT_TOKENS * OUTPUT_PRICE_PER_TOKEN,
+    estimatedCost: estimateCost([...pending.values()]),
   };
   if (!(await confirm(plan))) return null;
-
-  let done = 0;
-  let failed = 0;
-  await mapWithConcurrency([...pending], MODEL_CONCURRENCY, async ([key, text]) => {
-    try {
-      const { output } = await parseDetailsWithModel(text, key);
-      cached.set(key, output);
-    } catch (error) {
-      failed++;
-      log(`Parse failed: ${error instanceof Error ? error.message : String(error)}`);
-    }
-    done++;
-    if (done % 25 === 0 || done === pending.size) log(`Parsed ${done}/${pending.size}`);
-  });
+  const failed = await parsePending(pending, cached, log);
 
   const aliases = await loadBrandAliases();
   let dropped = 0;
