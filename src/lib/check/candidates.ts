@@ -11,6 +11,9 @@ const MIN_BRAND_SIMILARITY = 0.6;
 // Within the same brand, a recall also qualifies when the model name appears in it,
 // so extra listing words ("siège vélo enfant" vs "porte-bébé") don't hide it.
 const MIN_MODEL_SIMILARITY = 0.8;
+// The brand's own recalls only need a faint title overlap: "Hoverboard Blaupunkt 6.5 pouces" against
+// "Scooter auto-équilibrage (hoverboard)" scores 0.24, and the rules still decide whether it matches.
+const MIN_SAME_BRAND_SIMILARITY = 0.1;
 
 function select(brandNorm: string | null, query: string, model: string) {
   const titleSimilarity = sql<number>`similarity(${recalls.searchText}, ${query})`.mapWith(Number);
@@ -52,10 +55,13 @@ export async function findCandidates({
   }
 
   if (!query) return [];
-  const titleOrModel =
-    brandNorm && modelQuery
-      ? or(gte(titleSimilarity, MIN_TITLE_SIMILARITY), gte(modelSimilarity, MIN_MODEL_SIMILARITY))!
-      : gte(titleSimilarity, MIN_TITLE_SIMILARITY);
+  const titleOrModel = brandNorm
+    ? or(
+        gte(titleSimilarity, MIN_TITLE_SIMILARITY),
+        modelQuery ? gte(modelSimilarity, MIN_MODEL_SIMILARITY) : undefined,
+        sql`${recalls.brandNorm} = ${brandNorm} and ${titleSimilarity} >= ${MIN_SAME_BRAND_SIMILARITY}`,
+      )!
+    : gte(titleSimilarity, MIN_TITLE_SIMILARITY);
   const filters: SQL[] = [titleOrModel];
   if (brandNorm) {
     filters.push(or(sql`${recalls.brandNorm} = ${brandNorm}`, gte(brandSimilarity, MIN_BRAND_SIMILARITY))!);

@@ -30,6 +30,8 @@ describe("productType", () => {
     expect(productType("Véhicules à moteur")).toBe("motor vehicle");
     expect(productType("Trottinette électrique")).toBe("e-scooter");
     expect(productType("Trottinette enfant")).toBe("scooter");
+    expect(productType("Scooter auto-équilibrage (hoverboard)")).toBe("hoverboard");
+    expect(productType("Hoverboard Blaupunkt 6.5 pouces")).toBe("hoverboard");
     expect(productType("Fatbike, cyclomoteur")).toBe("vehicle");
     expect(productType("cyclomoteur")).toBe("moped");
   });

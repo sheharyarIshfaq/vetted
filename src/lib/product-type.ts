@@ -14,6 +14,7 @@ const TYPES: [type: string, group: string, pattern: RegExp][] = [
     "vehicle",
     /\b(velos? (a assistance )?electriques?|vae|epac|e ?bikes?|electric (bike|bicycle)s?|fat ?bikes?|speed ?bikes?|s ?pedelecs?|pedelecs?|elektrofahrrad)\b/,
   ],
+  ["hoverboard", "vehicle", /\b(hoverboards?|overboards?|gyropodes?|scooters? auto equilibrage|self balancing scooters?)\b/],
   ["e-scooter", "vehicle", /\b(trottinettes? electriques?|e ?scooters?|electric scooters?|e ?roller)\b/],
   ["scooter", "vehicle", /\b(trottinettes?|scooters?)\b/],
   ["moped", "vehicle", /\b(cyclomoteurs?|mobylettes?|mopeds?|motos?|motocyclettes?|motorcycles?|quads?)\b/],
@@ -22,7 +23,7 @@ const TYPES: [type: string, group: string, pattern: RegExp][] = [
 
 const GROUPS = new Map(TYPES.map(([type, group]) => [type, group]));
 // A broader word that a narrower one contains: "trottinette électrique" is an e-scooter, not also a scooter.
-const NARROWER: Record<string, string> = { scooter: "e-scooter" };
+const NARROWER: Record<string, string[]> = { scooter: ["e-scooter", "hoverboard"] };
 const BASE = /\bbase\b/;
 
 // "car seat", "stroller", "e-bike", …; null when the text names no known type, or types from several groups
@@ -31,7 +32,7 @@ export function productType(text: string | null): string | null {
   if (!text) return null;
   const normalized = normalizeText(text);
   const matched = TYPES.filter(([, , pattern]) => pattern.test(normalized));
-  const found = matched.filter(([type]) => !matched.some(([other]) => NARROWER[type] === other));
+  const found = matched.filter(([type]) => !matched.some(([other]) => NARROWER[type]?.includes(other)));
   const groups = new Set(found.map(([, group]) => group));
   if (groups.size !== 1) return null;
   if (found.length > 1) return found[0][1];
