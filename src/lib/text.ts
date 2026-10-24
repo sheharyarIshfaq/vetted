@@ -25,5 +25,8 @@ const NO_BRAND = /^(?:inconnue?s?|unknown|not specified|non (?:specifiee?|defini
 export function normalizeBrand(raw: string, aliases: ReadonlyMap<string, string>) {
   const normalized = normalizeText(raw);
   if (!normalized || NO_BRAND.test(normalized)) return null;
-  return aliases.get(normalized) ?? normalized;
+  // "Btwin / Decathlon": a listing naming a sub-brand and its maker counts as the known one.
+  const parts = raw.split(/\s*[/,&+]\s*/).map(normalizeText).filter(Boolean);
+  const known = parts.length > 1 ? parts.find((part) => aliases.has(part)) : undefined;
+  return aliases.get(normalized) ?? (known ? aliases.get(known)! : normalized);
 }

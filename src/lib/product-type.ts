@@ -21,6 +21,8 @@ const TYPES: [type: string, group: string, pattern: RegExp][] = [
 ];
 
 const GROUPS = new Map(TYPES.map(([type, group]) => [type, group]));
+// A broader word that a narrower one contains: "trottinette électrique" is an e-scooter, not also a scooter.
+const NARROWER: Record<string, string> = { scooter: "e-scooter" };
 const BASE = /\bbase\b/;
 
 // "car seat", "stroller", "e-bike", …; null when the text names no known type, or types from several groups
@@ -28,7 +30,8 @@ const BASE = /\bbase\b/;
 export function productType(text: string | null): string | null {
   if (!text) return null;
   const normalized = normalizeText(text);
-  const found = TYPES.filter(([, , pattern]) => pattern.test(normalized));
+  const matched = TYPES.filter(([, , pattern]) => pattern.test(normalized));
+  const found = matched.filter(([type]) => !matched.some(([other]) => NARROWER[type] === other));
   const groups = new Set(found.map(([, group]) => group));
   if (groups.size !== 1) return null;
   if (found.length > 1) return found[0][1];

@@ -42,6 +42,11 @@ describe("normalizeBrand", () => {
     expect(normalizeBrand("B'Twin", aliases)).toBe("decathlon");
   });
 
+  it("reads a sub-brand named with its maker as the known one", () => {
+    expect(normalizeBrand("B Twin / Decathlon", aliases)).toBe("decathlon");
+    expect(normalizeBrand("Inglesina / Petit Béguin", aliases)).toBe("inglesina petit beguin");
+  });
+
   it("keeps unknown brands in normalised form", () => {
     expect(normalizeBrand("Petit Béguin", aliases)).toBe("petit beguin");
   });

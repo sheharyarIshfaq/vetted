@@ -78,8 +78,38 @@ const FILLER = new Set([
   "bleu", "blue", "vert", "green", "rose", "pink", "beige", "graphite", "copper",
 ]);
 
+// Product and spec words name what something is, not which model: "trottinette électrique", "power bank", "20000 mAh".
+const GENERIC = new Set([
+  "batterie", "batteries", "externe", "power", "bank", "powerbank", "chargeur", "charger", "cable", "adaptateur", "adapter",
+  "usb", "c", "pd", "type", "mah", "w", "v", "ah", "wh", "pouces", "pouce", "inch", "inches", "trottinette", "trottinettes",
+  "electrique", "electriques", "electric", "scooter", "scooters", "hoverboard", "velo", "bike", "e", "portable", "sans", "fil",
+  "wireless", "rapide", "fast", "charge", "pour", "for",
+]);
+
+// "20k" and "20000" are the same capacity; "65w" or "20000mah" keep only the number.
+function specWord(word: string) {
+  const thousands = /^(\d+)k$/.exec(word);
+  if (thousands) return String(Number(thousands[1]) * 1000);
+  return /^\d+(?:mah|wh|w|v|ah)$/.test(word) ? word.replace(/[a-z]+$/, "") : word;
+}
+
 function words(value: string | null | undefined) {
-  return new Set(normalizeModelText(value ?? "").split(" ").filter(Boolean));
+  return new Set(normalizeModelText(value ?? "").split(" ").filter(Boolean).map(specWord));
+}
+
+// "es series 5 (aes015)": the name before the brackets, the codes inside them.
+const BRACKETS = /\(([^)]*)\)/g;
+
+function modelName(recallModel: string) {
+  return recallModel.replace(BRACKETS, " ");
+}
+
+// The recall's references, with the codes its product and model names give in brackets.
+function recallRefs(recall: CandidateRecall) {
+  const bracketed = [recall.productName, ...recall.models]
+    .flatMap((name) => [...name.matchAll(BRACKETS)].map((match) => match[1].trim()))
+    .filter(isCode);
+  return [...recall.refs, ...bracketed];
 }
 
 // Every distinctive word of the recall's model must be in the listing, never the other way round:
@@ -91,16 +121,18 @@ export function namesRecallModel(
   item: Pick<ItemFacts, "model" | "modelVariant" | "title">,
 ) {
   const brand = words(recallBrand);
-  const wanted = [...words(recallModel)].filter((word) => !FILLER.has(word) && !brand.has(word));
+  const wanted = [...words(modelName(recallModel))].filter((word) => !FILLER.has(word) && !GENERIC.has(word) && !brand.has(word));
   const model = words([item.model, item.modelVariant].filter(Boolean).join(" "));
   const title = words(item.title);
-  return wanted.length > 0 && wanted.every((word) => model.has(word) || (!/\d/.test(word) && title.has(word)));
+  // A short number in a title may be anything ("0-4 ans"); a long one is a spec ("20000").
+  const fromTitle = (word: string) => title.has(word) && (!/\d/.test(word) || /^\d{4,}$/.test(word));
+  return wanted.length > 0 && wanted.every((word) => model.has(word) || fromTitle(word));
 }
 
 type ModelFacts = Pick<ItemFacts, "model" | "modelVariant" | "references" | "title">;
 
 function namesModel(recallModel: string, recall: CandidateRecall, item: ModelFacts) {
-  return itemModels(item).has(normalizeModel(recallModel)) || namesRecallModel(recallModel, recall.brandNorm, item);
+  return itemModels(item).has(normalizeModel(modelName(recallModel))) || namesRecallModel(recallModel, recall.brandNorm, item);
 }
 
 function normalizeGtin(value: string) {
@@ -263,13 +295,14 @@ export function decideVerdict({
     item.brandNorm !== null &&
     (item.brandNorm === recall.brandNorm || candidate.brandSimilarity >= BRAND_MATCH_THRESHOLD);
   const range = matchingRange(item, recall);
+  const refs = recallRefs(recall);
   // Safety Gate often gives the model only as the type reference ("V8"), so a listing's model can name it there too.
   const models = itemModels(item);
   const modelNameMatch =
     range !== undefined ||
     recall.models.some((model) => namesModel(model, recall, item)) ||
-    recall.refs.some((ref) => models.has(normalizeModel(ref)));
-  const refMatch = codeIn(recall.refs, item.references);
+    refs.some((ref) => models.has(normalizeModel(ref)));
+  const refMatch = codeIn(refs, item.references);
   const sampleBatchMatch = item.batch !== null && codeIn(recall.sampleBatches, [item.batch]);
   // A close title stands in for the model only when the listing and the recall don't name different models.
   const otherModel = models.size > 0 && recall.models.length > 0 && !modelNameMatch;
@@ -325,6 +358,17 @@ export function decideVerdict({
       source: "official_data",
     });
   }
+  // The brand has a recalled product of exactly this type, but the listing names no model: only the seller can say which.
+  const modelUnknown = !item.model && !item.modelVariant && item.references.length === 0 && item.gtin === null;
+  if (!identified && !unbranded && brandMatch && modelUnknown && itemType !== null && itemType === recallType && photo.sameProduct !== "no") {
+    evidence.push({
+      fact: `This brand has a recalled ${recallType}. Ask the seller for the exact model`,
+      matched: false,
+      source: "official_data",
+    });
+    return { verdict: "check_label", recall: { id: recall.id, relation: "match" }, evidence, notes };
+  }
+
   if (!identified || (photo.sameProduct === "no" && !namedInRecall)) {
     return { verdict: "clear", recall: { id: recall.id, relation: "not_a_match" }, evidence: explained(evidence, recall), notes };
   }

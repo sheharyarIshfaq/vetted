@@ -729,3 +729,81 @@ describe("decideVerdict · Ouxi V8 fatbike (Safety Gate, vehicle types)", () => 
     expect(result.evidence[0].fact).toMatch(/^Not this recall: /);
   });
 });
+
+describe("decideVerdict · electronics and mobility (long product names)", () => {
+  const recallBase = { gtins: [], batches: [], sampleBatches: [], productionFrom: null, productionTo: null, modelRanges: [], refs: [] };
+  const belkin: CandidateRecall = {
+    ...recallBase,
+    id: "rc:20518",
+    source: "rappelconso",
+    brand: "belkin",
+    brandNorm: "belkin",
+    productName: "batterie externe boostcharge usb-c pd power bank 20k (bpb002)",
+    models: ["batterie externe boostcharge usb-c pd power bank 20k (bpb002)"],
+    gtins: ["745883797622"],
+  };
+  const acer: CandidateRecall = {
+    ...recallBase,
+    id: "rc:21110",
+    source: "rappelconso",
+    brand: "acer",
+    brandNorm: "acer",
+    productName: "trottinette électrique acer es series 5 (aes015)",
+    models: ["trottinette électrique es series 5 (aes015)"],
+  };
+  const decathlon: CandidateRecall = {
+    ...recallBase,
+    id: "rc:22670",
+    source: "rappelconso",
+    brand: "btwin",
+    brandNorm: "decathlon",
+    productName: "trottinette électrique",
+    models: ["sd500e", "md500e"],
+    refs: ["5177606", "5244742"],
+  };
+
+  it("ignores product and spec words, and reads 20k as 20000", () => {
+    const listing = item({
+      brand: "Belkin",
+      brandNorm: "belkin",
+      model: "BoostCharge",
+      category: "power bank",
+      title: "Batterie externe Belkin BoostCharge 20000 mAh USB-C PD",
+    });
+    const result = decideVerdict({ item: listing, candidate: candidate(belkin, 0.66), photo: noPhoto });
+    expect(result.verdict).toBe("recalled");
+    expect(result.evidence).toContainEqual({ fact: "Model BoostCharge is named in the recall", matched: true, source: "listing_text" });
+    const tenK = decideVerdict({ item: { ...listing, title: "Batterie externe Belkin BoostCharge 10000 mAh" }, candidate: candidate(belkin, 0.6), photo: noPhoto });
+    expect(tenK.verdict).toBe("clear");
+  });
+
+  it("names the model before the brackets, and treats the bracketed code as a reference", () => {
+    const named = item({ brand: "Acer", brandNorm: "acer", model: "ES Series 5", category: "electric scooter", title: "Trottinette électrique Acer ES Series 5" });
+    expect(decideVerdict({ item: named, candidate: candidate(acer, 0.86), photo: noPhoto }).verdict).toBe("recalled");
+    const coded = item({ brand: "Acer", brandNorm: "acer", references: ["AES015"], category: "electric scooter" });
+    const result = decideVerdict({ item: coded, candidate: candidate(acer, 0.3), photo: noPhoto });
+    expect(result.verdict).toBe("recalled");
+    expect(result.evidence).toContainEqual({ fact: "Reference code is listed in the recall", matched: true, source: "listing_text" });
+  });
+
+  it("brand and product type with no model is check_label: ask the seller for the model", () => {
+    const listing = item({ brand: "Btwin / Decathlon", brandNorm: "decathlon", category: "electric scooter", title: "Trottinette électrique Btwin / Decathlon" });
+    const result = decideVerdict({ item: listing, candidate: candidate(decathlon, 0.38), photo: noPhoto });
+    expect(result.verdict).toBe("check_label");
+    expect(result.recall).toEqual({ id: "rc:22670", relation: "match" });
+    expect(result.evidence).toContainEqual({
+      fact: "This brand has a recalled e-scooter. Ask the seller for the exact model",
+      matched: false,
+      source: "official_data",
+    });
+  });
+
+  it("but not for another type of the same brand, or another model, or a photo 'no'", () => {
+    const bike = item({ brand: "Btwin", brandNorm: "decathlon", category: "electric bicycle", title: "Vélo électrique Btwin" });
+    expect(decideVerdict({ item: bike, candidate: candidate(decathlon, 0.3), photo: noPhoto }).verdict).toBe("clear");
+    const otherModel = item({ brand: "Decathlon", brandNorm: "decathlon", model: "R920E", category: "electric scooter" });
+    expect(decideVerdict({ item: otherModel, candidate: candidate(decathlon, 0.4), photo: noPhoto }).verdict).toBe("clear");
+    const scooter = item({ brand: "Decathlon", brandNorm: "decathlon", category: "electric scooter" });
+    expect(decideVerdict({ item: scooter, candidate: candidate(decathlon, 0.4), photo: { sameProduct: "no" } }).verdict).toBe("clear");
+  });
+});

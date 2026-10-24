@@ -28,7 +28,9 @@ describe("productType", () => {
     expect(productType("electric bicycle")).toBe("e-bike");
     expect(productType("Vélo électrique")).toBe("e-bike");
     expect(productType("Véhicules à moteur")).toBe("motor vehicle");
-    expect(productType("Trottinette électrique")).toBe("vehicle");
+    expect(productType("Trottinette électrique")).toBe("e-scooter");
+    expect(productType("Trottinette enfant")).toBe("scooter");
+    expect(productType("Fatbike, cyclomoteur")).toBe("vehicle");
     expect(productType("cyclomoteur")).toBe("moped");
   });
 });
