@@ -6,13 +6,22 @@ import { PhotoPair } from "@/components/check/PhotoPair";
 import { ReportWrongMatch } from "@/components/check/ReportWrongMatch";
 import { SecondNotice } from "@/components/check/SecondNotice";
 import { VerdictPanel } from "@/components/check/VerdictPanel";
+import { WhatToDo } from "@/components/check/WhatToDo";
+import { buttonStyles } from "@/components/ui";
 import { capitalize, eyebrow, headline, recalledSummary, sellerMessage, sourcesLabel } from "@/lib/check/copy";
+import { remediesPhrase } from "@/lib/official-text";
 import type { Recall } from "@/db/schema";
 import type { RecallLimits } from "@/lib/verdict";
 import { Breadcrumb } from "./Breadcrumb";
 import type { LoadedCheck } from "./load-check";
 
 type Props = { check: LoadedCheck & { recall: Recall; limits: RecallLimits } };
+
+function nextStep(recall: Recall, fromRecall: boolean) {
+  const steps = remediesPhrase(recall.whatToDo);
+  if (fromRecall) return steps ? `The notice tells owners to ${steps}.` : "Follow the steps in the official notice.";
+  return steps ? `Skip this one. The notice tells owners to ${steps}.` : "Skip this one, and read the official notice.";
+}
 
 export function RecalledLayout({ check }: Props) {
   const { recall, limits, extracted } = check;
@@ -22,7 +31,7 @@ export function RecalledLayout({ check }: Props) {
         Checked {check.checkedAt} · against {check.stats.total.toLocaleString("en-GB")} {sourcesLabel(check.stats.sources)} recall
         entries
       </Breadcrumb>
-      <div className="flex flex-wrap items-start gap-6">
+      <div className="flex flex-wrap items-start gap-5">
         <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-4">
           <ListingSummary title={check.listingTitle} photo={check.listingPhoto} extracted={extracted} fromRecall={check.fromRecall} />
           {check.label && <LabelRead read={check.label.read} photo={check.labelPhoto} />}
@@ -35,13 +44,10 @@ export function RecalledLayout({ check }: Props) {
             body={
               <>
                 <PhotoPair listingPhoto={check.listingPhoto} officialPhoto={recall.images[0] ?? null} noticeRef={recall.sourceRef} />
-                <div className="flex flex-wrap gap-2.5 px-5 pt-5 pb-[22px] sm:px-6">
-                  <a
-                    href={recall.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex min-h-11 items-center rounded-[10px] bg-ink px-[18px] py-3 text-[15px] font-bold text-white no-underline hover:text-white"
-                  >
+                <EvidenceList items={check.evidence.items} verdict="recalled" fromRecall={check.fromRecall} />
+                <WhatToDo recall={recall}>{nextStep(recall, check.fromRecall)}</WhatToDo>
+                <div className="flex flex-wrap gap-2.5">
+                  <a href={recall.url} target="_blank" rel="noopener noreferrer" className={`${buttonStyles.primary} min-h-11 text-[15px]`}>
                     Read the official notice
                   </a>
                   {!check.fromRecall && (
@@ -52,11 +58,7 @@ export function RecalledLayout({ check }: Props) {
                   )}
                   <ReportWrongMatch checkId={check.id} alreadyFlagged={check.flagged} />
                 </div>
-                {check.secondRecall && (
-                  <div className="px-5 pb-5 sm:px-6">
-                    <SecondNotice recall={check.secondRecall} />
-                  </div>
-                )}
+                <SecondNotice recall={check.secondRecall} />
               </>
             }
           >
@@ -70,13 +72,12 @@ export function RecalledLayout({ check }: Props) {
               })}
             </p>
             {recall.reason && (
-              <p lang="fr" className="mt-2 mb-0 text-[15px] text-ink-2">
-                <span className="text-muted">Official reason: </span>
+              <p lang="fr" className="mt-2 mb-0 text-[15px]">
+                <span lang="en" className="text-muted">Official reason: </span>
                 {capitalize(recall.reason)}
               </p>
             )}
           </VerdictPanel>
-          <EvidenceList items={check.evidence.items} fromRecall={check.fromRecall} />
         </div>
       </div>
     </>

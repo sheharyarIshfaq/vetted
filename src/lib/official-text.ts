@@ -25,3 +25,15 @@ export function batchInEnglish(value: string) {
   if (range) return `${range[1]} to ${range[2]}`;
   return text;
 }
+
+// All the steps as one phrase, "stop using the product and contact the shop", or null when one isn't on the list.
+export function remediesPhrase(whatToDo: string | null) {
+  const steps = (whatToDo ?? "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => REMEDIES[normalizeText(line)]);
+  if (steps.length === 0 || steps.some((step) => !step)) return null;
+  const lower = steps.map((step) => step[0].toLowerCase() + step.slice(1));
+  return lower.length === 1 ? lower[0] : `${lower.slice(0, -1).join(", ")} and ${lower.at(-1)}`;
+}

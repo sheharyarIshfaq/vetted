@@ -18,14 +18,14 @@ export function CopyMessageButton({ message, label, variant = "secondary" }: Pro
 
   const style =
     variant === "primary"
-      ? "border-0 bg-ink text-white font-bold"
-      : "border border-field bg-surface text-ink font-semibold";
+      ? "border-0 bg-ink text-paper font-semibold hover:bg-brand"
+      : "border border-field bg-surface text-ink font-medium hover:border-ink";
   return (
     <span className="flex flex-col gap-1">
       <button
         type="button"
         onClick={copy}
-        className={`min-h-11 cursor-pointer rounded-[10px] px-[18px] py-[11px] text-[15px] ${style}`}
+        className={`min-h-11 cursor-pointer rounded-full px-5 py-2.5 text-[15px] ${style}`}
       >
         {state === "copied" ? "Copied" : label}
       </button>

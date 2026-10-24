@@ -3,6 +3,7 @@ import { LabelRead } from "@/components/check/LabelRead";
 import { ReportWrongMatch } from "@/components/check/ReportWrongMatch";
 import { VerdictPanel } from "@/components/check/VerdictPanel";
 import { WatchForm } from "@/components/check/WatchForm";
+import { WhatToDo } from "@/components/check/WhatToDo";
 import { capitalize, eyebrow, headline, searchedSummary } from "@/lib/check/copy";
 import { Breadcrumb } from "./Breadcrumb";
 import type { LoadedCheck } from "./load-check";
@@ -11,9 +12,9 @@ const SOURCE_NAMES = { rappelconso: "RappelConso", safetygate: "EU Safety Gate" 
 
 function Tile({ label, children, mono = false }: { label: string; children: React.ReactNode; mono?: boolean }) {
   return (
-    <div className="rounded-xl bg-paper p-3.5">
-      <div className="text-[13px] text-muted">{label}</div>
-      <div className={`mt-1 font-bold break-words ${mono ? "font-mono" : ""}`}>{children}</div>
+    <div className="rounded-2xl border border-divider p-3.5">
+      <div className="font-mono text-xs tracking-[0.1em] text-muted uppercase">{label}</div>
+      <div className={`mt-1 font-semibold break-words ${mono ? "font-mono" : ""}`}>{children}</div>
     </div>
   );
 }
@@ -46,17 +47,25 @@ export function ClearLayout({ check }: { check: LoadedCheck }) {
             : headline("clear", extracted.category)
         }
         body={
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3.5 px-5 py-5 sm:px-6">
-            <Tile label="Searched">{stats.sources.map((source) => SOURCE_NAMES[source]).join(" + ") || "Official recall lists"}</Tile>
-            <Tile label="Closest recall">
-              <ClosestRecall check={check} />
-            </Tile>
-            {stats.updatedAt && (
-              <Tile label="Data updated" mono>
-                {stats.updatedAt}
+          <>
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
+              <Tile label="Searched">{stats.sources.map((source) => SOURCE_NAMES[source]).join(" + ") || "Official recall lists"}</Tile>
+              <Tile label="Closest recall">
+                <ClosestRecall check={check} />
               </Tile>
+              {stats.updatedAt && (
+                <Tile label="Data updated" mono>
+                  {stats.updatedAt}
+                </Tile>
+              )}
+            </div>
+            {evidence.items.length > 0 && <EvidenceList items={evidence.items} verdict="clear" fromRecall={check.fromRecall} />}
+            {!check.fromRecall && (
+              <WhatToDo recall={check.recall} closest>
+                Check its condition as you normally would.
+              </WhatToDo>
             )}
-          </div>
+          </>
         }
       >
         {evidence.notes.map((note) => (
@@ -70,14 +79,13 @@ export function ClearLayout({ check }: { check: LoadedCheck }) {
       </VerdictPanel>
 
       {check.label && <LabelRead read={check.label.read} photo={check.labelPhoto} />}
-      {evidence.items.length > 0 && <EvidenceList items={evidence.items} fromRecall={check.fromRecall} clear />}
 
       <section
         aria-label="Watch this item"
-        className="flex flex-wrap items-center gap-5 rounded-[18px] border border-line bg-surface p-[22px]"
+        className="flex flex-wrap items-center gap-5 rounded-[22px] border border-line bg-surface p-[22px] sm:p-[26px]"
       >
         <div className="flex min-w-0 flex-[999_1_420px] flex-col gap-1.5">
-          <h2 className="m-0 text-xl font-bold">Bought it? Vetted can keep watching.</h2>
+          <h2 className="m-0 text-xl font-semibold tracking-[-0.02em]">Bought it? Vetted can keep watching.</h2>
           <p className="m-0 text-[15px] leading-normal text-ink-2">
             Leave your email and we&apos;ll tell you if this model is recalled later.
           </p>

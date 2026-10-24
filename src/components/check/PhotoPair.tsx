@@ -9,10 +9,10 @@ export function PhotoPair({ listingPhoto, officialPhoto, noticeRef }: Props) {
   ].filter((photo) => photo !== null && photo !== "");
   if (photos.length === 0) return null;
   return (
-    <div className="grid grid-cols-2 gap-3 px-5 pt-5 sm:gap-4 sm:px-6">
+    <div className="grid grid-cols-2 gap-3 sm:gap-4">
       {photos.map((photo) => (
         <figure key={photo.caption} className="m-0 flex flex-col gap-2">
-          <RemoteImage src={photo.src} alt={photo.alt} className="h-[140px] w-full rounded-xl bg-placeholder object-cover sm:h-[180px]" />
+          <RemoteImage src={photo.src} alt={photo.alt} className="h-[140px] w-full rounded-[14px] border border-divider bg-surface object-contain sm:h-[200px]" />
           <figcaption className="text-[13px] text-muted">{photo.caption}</figcaption>
         </figure>
       ))}

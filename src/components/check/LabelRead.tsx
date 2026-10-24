@@ -13,10 +13,10 @@ function Row({ label, value }: { label: string; value: string }) {
 
 export function LabelRead({ read, photo }: { read: LabelFacts; photo: string | null }) {
   return (
-    <section aria-label="Vetted read on the label" className="flex flex-col gap-3 rounded-[14px] border border-line bg-surface p-4">
+    <section aria-label="Vetted read on the label" className="flex flex-col gap-3 rounded-[20px] border border-line bg-surface p-4">
       {photo && <RemoteImage src={photo} alt="Your label photo" className="h-[230px] w-full rounded-[10px] bg-placeholder object-contain" />}
       <div className="flex flex-col gap-2">
-        <div className="text-[13px] font-semibold text-muted">Vetted read on the label</div>
+        <div className="font-mono text-xs tracking-[0.1em] text-muted uppercase">Vetted read on the label</div>
         {read.references.length > 0 && <Row label="Code" value={read.references.join(", ")} />}
         {read.gtin && <Row label="Barcode" value={read.gtin} />}
         {read.batch && <Row label="Batch" value={read.batch} />}

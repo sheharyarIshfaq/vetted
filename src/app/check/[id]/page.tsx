@@ -24,7 +24,7 @@ async function CheckView({ params }: { params: PageProps<"/check/[id]">["params"
 
 function Loading() {
   return (
-    <div role="status" className="rounded-[18px] border border-line bg-surface p-6 text-ink-2">
+    <div role="status" className="rounded-[22px] border border-line bg-surface p-6 text-ink-2">
       Loading the check…
     </div>
   );

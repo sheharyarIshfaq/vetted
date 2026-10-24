@@ -25,7 +25,7 @@ export function ReportWrongMatch({ checkId, alreadyFlagged }: { checkId: string;
       <button
         type="button"
         onClick={() => setState("open")}
-        className="min-h-11 cursor-pointer rounded-[10px] border border-field bg-surface px-[18px] py-[11px] text-[15px] font-semibold text-ink"
+        className="min-h-11 cursor-pointer rounded-full border border-field bg-surface px-5 py-2.5 text-[15px] font-medium text-ink hover:border-ink"
       >
         Report a wrong match
       </button>
@@ -42,17 +42,17 @@ export function ReportWrongMatch({ checkId, alreadyFlagged }: { checkId: string;
         onChange={(event) => setNote(event.target.value)}
         maxLength={1000}
         rows={3}
-        className="rounded-[10px] border border-field bg-surface p-3 text-[15px]"
+        className="rounded-2xl border border-field bg-surface p-3 text-[15px]"
       />
       <div className="flex flex-wrap items-center gap-2.5">
         <button
           type="submit"
           disabled={state === "sending"}
-          className="min-h-11 cursor-pointer rounded-[10px] bg-ink px-[18px] py-[11px] text-[15px] font-bold text-white disabled:opacity-60"
+          className="min-h-11 cursor-pointer rounded-full bg-ink px-5 py-2.5 text-[15px] font-semibold text-paper hover:bg-brand disabled:opacity-60"
         >
           {state === "sending" ? "Sending…" : "Send report"}
         </button>
-        <button type="button" onClick={() => setState("closed")} className="cursor-pointer text-[15px] font-semibold text-brand">
+        <button type="button" onClick={() => setState("closed")} className="min-h-11 cursor-pointer px-2 text-[15px] font-medium text-brand">
           Cancel
         </button>
         {state === "failed" && <span role="alert" className="text-[15px] text-recalled-text">That didn&apos;t go through. Try again.</span>}

@@ -46,11 +46,11 @@ export function LabelUpload({ checkId }: { checkId: string }) {
         }}
         onDragLeave={() => setDragging(false)}
         onDrop={drop}
-        className={`flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-[14px] border-2 border-dashed px-4 py-5 text-center ${
+        className={`flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed px-4 py-5 text-center ${
           dragging ? "border-brand bg-brand-soft" : "border-field bg-paper"
         } ${state === "reading" ? "pointer-events-none opacity-70" : ""}`}
       >
-        <span className="text-[15px] font-bold">{state === "reading" ? "Reading the label…" : "Add a photo of the label"}</span>
+        <span className="text-[15px] font-semibold">{state === "reading" ? "Reading the label…" : "Add a photo of the label"}</span>
         <span className="text-sm text-muted">
           {state === "reading" ? "This takes a few seconds." : "Drop it here or choose a file. Get close so the small print is sharp."}
         </span>

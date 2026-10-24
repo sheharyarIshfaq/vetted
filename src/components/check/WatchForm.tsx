@@ -45,12 +45,12 @@ export function WatchForm({ brandNorm, model }: { brandNorm: string | null; mode
         onChange={(event) => setEmail(event.target.value)}
         placeholder="you@example.com"
         autoComplete="email"
-        className="min-h-11 min-w-0 flex-[999_1_200px] rounded-[10px] border border-field px-3.5 py-3 text-[15px]"
+        className="min-h-11 min-w-0 flex-[999_1_200px] rounded-full border border-field bg-surface px-5 py-2.5 text-[15px]"
       />
       <button
         type="submit"
         disabled={state === "sending"}
-        className="min-h-11 cursor-pointer rounded-[10px] bg-brand px-[18px] py-3 text-[15px] font-bold text-white disabled:opacity-60"
+        className="min-h-11 cursor-pointer rounded-full bg-ink px-5 py-2.5 text-[15px] font-semibold text-paper hover:bg-brand disabled:opacity-60"
       >
         Watch this item
       </button>
