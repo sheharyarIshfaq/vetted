@@ -328,6 +328,43 @@ describe("decideVerdict · other rules", () => {
   });
 });
 
+describe("decideVerdict · batch list with dates (the batch decides)", () => {
+  const cathy: CandidateRecall = {
+    ...boonPivot,
+    id: "rc:926",
+    brand: "oli&carol",
+    brandNorm: "oli carol",
+    productName: "jouet de dentition cathy la carotte",
+    models: ["cathy la carotte"],
+    refs: [],
+    batches: ["oc15"],
+    productionFrom: "2017-01-01",
+    productionTo: "2017-12-31",
+  };
+  const carrot = item({ brand: "Oli&Carol", brandNorm: "oli carol", model: "Cathy la carotte", productionDate: "2017-06" });
+
+  it("a listed batch is recalled", () => {
+    const result = decideVerdict({ item: { ...carrot, batch: "OC15" }, candidate: candidate(cathy), photo: noPhoto });
+    expect(result.verdict).toBe("recalled");
+  });
+
+  it("a known batch that is not listed is clear, even inside the dates", () => {
+    const result = decideVerdict({ item: { ...carrot, batch: "OC16" }, candidate: candidate(cathy), photo: noPhoto });
+    expect(result.verdict).toBe("clear");
+    expect(result.recall).toEqual({ id: "rc:926", relation: "other_dates" });
+  });
+
+  it("an unknown batch needs the label, even inside the dates", () => {
+    const result = decideVerdict({ item: carrot, candidate: candidate(cathy), photo: noPhoto });
+    expect(result.verdict).toBe("check_label");
+    expect(result.evidence).toContainEqual({
+      fact: "Batch number unknown; the recall covers some batches only",
+      matched: false,
+      source: "official_data",
+    });
+  });
+});
+
 describe("decideBest", () => {
   it("keeps the most serious outcome across candidates", () => {
     const result = decideBest({

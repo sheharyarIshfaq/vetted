@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { NewRecall } from "../../db/schema";
 import { loadBrandAliases } from "../db/brands";
 import { upsertRecalls } from "../db/recalls";
+import { isValidGtin } from "../gtin";
 import { normalizeBrand, normalizeText } from "../text";
 import { mapWithConcurrency } from "./concurrency";
 import { toIsoDate } from "./dates";
@@ -121,6 +122,7 @@ function rowText(row: RappelConsoRow) {
 
 // Entries look like ["4000984-204346, -204377", "non concerné", "|5027148039315", "batch n°10154", ...],
 // where "|" starts the next product. Barcodes go to gtins, the rest is kept as text for parsing.
+// A barcode inside other text ("r23189 mascot car 8904001231895") counts only with a valid check digit.
 export function splitIdentification(entries: readonly string[] | null | undefined) {
   const gtins: string[] = [];
   const identifiers: string[] = [];
@@ -128,8 +130,12 @@ export function splitIdentification(entries: readonly string[] | null | undefine
     const value = entry.replace(/^\|/, "").trim();
     if (!value || /^non concern[ée]$/i.test(value)) continue;
     const digits = value.replace(/\s/g, "");
-    if (/^\d{8,14}$/.test(digits)) gtins.push(digits);
-    else identifiers.push(value);
+    if (/^\d{8,14}$/.test(digits)) {
+      gtins.push(digits);
+      continue;
+    }
+    gtins.push(...(value.match(/(?<!\d)\d{8,14}(?!\d)/g) ?? []).filter(isValidGtin));
+    identifiers.push(value);
   }
   return { gtins, identifiers };
 }

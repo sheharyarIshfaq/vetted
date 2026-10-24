@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RecallDetailsOutput } from "../ai/schemas";
-import { needsModel, validateDetails } from "./parse-details";
+import { expandRefShorthand, needsModel, validateDetails } from "./parse-details";
 
 const hamaxText =
   "modele buddy code 4091054 / 8591602 avec les dates de fabrication entre le 01/01/2022 et le 06/08/2026.";
@@ -93,5 +93,49 @@ describe("validateDetails", () => {
 
   it("needs no quote when there are no dates", () => {
     expect(validateDetails("référence b11437", { ...empty, references: ["b11437"] })?.refs).toEqual(["b11437"]);
+  });
+});
+
+describe("expandRefShorthand", () => {
+  it("gives a shortened reference the prefix of the one before", () => {
+    expect(expandRefShorthand(["4000984-204346", "-204377", "-8148", "b11437"])).toEqual([
+      "4000984-204346",
+      "4000984-204377",
+      "4000984-8148",
+      "b11437",
+    ]);
+  });
+
+  it("leaves a shortened reference alone when there is no prefix to take", () => {
+    expect(expandRefShorthand(["-204377"])).toEqual(["-204377"]);
+  });
+});
+
+describe("validateDetails · some models recalled for all dates", () => {
+  const beertender =
+    "beertender vb31 vb21 vb215830, vb2158f2, vb215700 : toutes les dates de fabrication vb310e10, vb320e10, vb310310, vb310810 : fabrications jusqu'à juillet 2018.";
+
+  it("drops a flat date limit that would also cover the models recalled for all dates", () => {
+    const details = validateDetails(beertender, {
+      ...empty,
+      models: ["beertender vb31 vb21"],
+      references: ["vb215830", "vb310e10"],
+      productionTo: "2018-07-31",
+      quote: "vb310e10, vb320e10, vb310310, vb310810 : fabrications jusqu'à juillet 2018.",
+    });
+    expect(details).toMatchObject({ productionFrom: null, productionTo: null, quote: null, refs: ["vb215830", "vb310e10"] });
+  });
+
+  it("keeps per-model ranges, which say which models the date applies to", () => {
+    const details = validateDetails(beertender, {
+      ...empty,
+      modelRanges: [
+        { model: "vb21", from: null, to: null, refs: ["vb215830"], batches: [] },
+        { model: "vb31", from: null, to: "2018-07-31", refs: ["vb310e10"], batches: [] },
+      ],
+      quote: "vb310e10, vb320e10, vb310310, vb310810 : fabrications jusqu'à juillet 2018.",
+    });
+    expect(details?.modelRanges[1].to).toBe("2018-07-31");
+    expect(details?.quote).not.toBeNull();
   });
 });

@@ -54,6 +54,20 @@ function appearsIn(value: string, normalizedText: string, compactText: string) {
   return normalizedText.includes(normalized) || compactText.includes(normalized.replaceAll(" ", ""));
 }
 
+// "4000984-204346, -204377" gives the second reference as "-204377"; it takes the prefix of the one before.
+export function expandRefShorthand(refs: string[]) {
+  let prefix: string | null = null;
+  const expanded = refs.map((ref) => {
+    if (/^-[^-\s]+$/.test(ref)) return prefix ? prefix + ref.slice(1) : ref;
+    prefix = /^(.+-)[^-]+$/.exec(ref)?.[1] ?? null;
+    return ref;
+  });
+  return [...new Set(expanded)];
+}
+
+// "All production dates" for some models next to a date limit for others needs per-model ranges.
+const ALL_DATES = /\btoutes (?:les )?dates\b/i;
+
 function validRange(from: string | null, to: string | null) {
   if (from !== null && !isIsoDate(from)) return false;
   if (to !== null && !isIsoDate(to)) return false;
@@ -75,16 +89,28 @@ export function validateDetails(text: string, output: RecallDetailsOutput): Reca
   const quote = output.quote?.trim() || null;
   if (hasDates && (quote === null || !text.includes(quote))) return null;
 
+  // Without per-model ranges, one flat limit would wrongly cover the models recalled for all dates; drop it.
+  const flatDatesWrong = output.modelRanges.length === 0 && ALL_DATES.test(text);
+  const productionFrom = flatDatesWrong ? null : output.productionFrom;
+  const productionTo = flatDatesWrong ? null : output.productionTo;
+  const modelRanges = output.modelRanges
+    .filter((range) => appearsIn(range.model, normalizedText, compactText))
+    .map((range) => ({
+      ...range,
+      model: range.model.trim(),
+      refs: expandRefShorthand(keep(range.refs)),
+      batches: keep(range.batches),
+    }));
+  const keptDates = productionFrom !== null || productionTo !== null || modelRanges.some((range) => range.from || range.to);
+
   return {
     models: keep(output.models),
-    refs: keep(output.references),
+    refs: expandRefShorthand(keep(output.references)),
     batches: keep(output.batches),
-    productionFrom: output.productionFrom,
-    productionTo: output.productionTo,
-    modelRanges: output.modelRanges
-      .filter((range) => appearsIn(range.model, normalizedText, compactText))
-      .map((range) => ({ ...range, model: range.model.trim(), refs: keep(range.refs), batches: keep(range.batches) })),
-    quote: hasDates ? quote : null,
+    productionFrom,
+    productionTo,
+    modelRanges,
+    quote: keptDates ? quote : null,
   };
 }
 

@@ -82,7 +82,7 @@ export function recalledSummary({ brand, productLabel, publishedAt, limits, item
 
 export function checkLabelSummary({ brand, productLabel, publishedAt, limits }: Omit<Summary, "item">) {
   const recalled = `${brand ? `${titleCase(brand)} recalled` : "Recalled:"} the ${productLabel} on ${dayName(publishedAt)}.`;
-  const range = rangePhrase(limits.from, limits.to);
+  const range = limits.batches.length ? null : rangePhrase(limits.from, limits.to);
   if (range) return `${recalled} Only units made ${range} are affected, and the listing doesn't say when this one was made.`;
   return `${recalled} Only some batches are affected, and the listing doesn't give the batch number.`;
 }
@@ -101,8 +101,8 @@ export function searchedSummary({ total, sources, searchedFor }: { total: number
 export function labelTargets(limits: RecallLimits) {
   const targets: string[] = [];
   if (limits.refs.length) targets.push(`Code ${limits.refs.slice(0, 3).join(" or ")}`);
-  if (limits.from || limits.to) targets.push("production date");
   if (limits.batches.length) targets.push("batch number");
+  else if (limits.from || limits.to) targets.push("production date");
   return targets.join(" · ");
 }
 
@@ -111,7 +111,7 @@ export function sellerMessage(verdict: Verdict, productLabel: string, limits: Re
   if (verdict === "recalled") {
     return `Bonjour, votre ${productLabel} m'intéresse, mais ce modèle fait l'objet d'un rappel officiel : ${noticeUrl}. Pourriez-vous vérifier ce rappel avant la vente ? Merci !`;
   }
-  if (limits.from || limits.to) {
+  if (!limits.batches.length && (limits.from || limits.to)) {
     return `Bonjour, votre ${productLabel} m'intéresse. Ce modèle fait l'objet d'un rappel pour certaines dates de fabrication. Pourriez-vous m'envoyer une photo de l'étiquette avec la date de fabrication ? Merci !`;
   }
   return `Bonjour, votre ${productLabel} m'intéresse. Ce modèle fait l'objet d'un rappel pour certains numéros de lot. Pourriez-vous m'envoyer une photo de l'étiquette avec le numéro de lot ? Merci !`;

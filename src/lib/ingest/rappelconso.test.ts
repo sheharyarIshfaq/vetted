@@ -32,6 +32,19 @@ describe("splitIdentification", () => {
   });
 });
 
+describe("splitIdentification · barcodes inside text", () => {
+  it("keeps a barcode with a valid check digit and the text for parsing", () => {
+    expect(splitIdentification(["r23189 mascot car turquoise 8904001231895", "non concerné"])).toEqual({
+      gtins: ["8904001231895"],
+      identifiers: ["r23189 mascot car turquoise 8904001231895"],
+    });
+  });
+
+  it("ignores numbers that fail the check digit, such as phone numbers or references", () => {
+    expect(splitIdentification(["service client 0612345678, référence 8904001231896"]).gtins).toEqual([]);
+  });
+});
+
 describe("splitImages", () => {
   it("splits on pipes and spaces", () => {
     expect(splitImages("https://a.jpg|https://b.jpg https://c.jpg")).toEqual(["https://a.jpg", "https://b.jpg", "https://c.jpg"]);

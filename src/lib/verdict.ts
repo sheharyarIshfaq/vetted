@@ -226,42 +226,41 @@ export function decideVerdict({
     return { verdict: "recalled", recall: { id: recall.id, relation: "match" }, evidence, notes };
   }
 
-  const batchKnown = hasBatches && item.batch !== null;
-  const batchInside = batchKnown && codeIn(batches, [item.batch!]);
-  const dateKnown = hasRange && item.productionDate !== null;
-  const dateInside = dateKnown && isInRange(item.productionDate!, from, to);
-
-  if (batchKnown) {
+  // A batch list is the most precise limit, so it decides on its own; dates only decide when there is none.
+  if (hasBatches) {
+    if (item.batch !== null) {
+      const batchInside = codeIn(batches, [item.batch]);
+      evidence.push({
+        fact: batchInside ? `Batch ${item.batch} is in the recalled batches` : `Batch ${item.batch} is not in the recalled batches`,
+        matched: batchInside,
+        source: source("batch"),
+      });
+      if (batchInside) return { verdict: "recalled", recall: { id: recall.id, relation: "match" }, evidence, notes };
+      notes.push("This model has a recall for other batches.");
+      return { verdict: "clear", recall: { id: recall.id, relation: "other_dates" }, evidence, notes };
+    }
     evidence.push({
-      fact: batchInside ? `Batch ${item.batch} is in the recalled batches` : `Batch ${item.batch} is not in the recalled batches`,
-      matched: batchInside,
-      source: source("batch"),
+      fact: "Batch number unknown; the recall covers some batches only",
+      matched: false,
+      source: "official_data",
     });
+    return { verdict: "check_label", recall: { id: recall.id, relation: "match" }, evidence, notes };
   }
-  if (dateKnown) {
+
+  if (item.productionDate !== null) {
+    const dateInside = isInRange(item.productionDate, from, to);
     evidence.push({
-      fact: `Made ${monthLabel(item.productionDate!)}, ${dateInside ? "inside" : "outside"} the recalled period (${rangeLabel(from, to)})`,
+      fact: `Made ${monthLabel(item.productionDate)}, ${dateInside ? "inside" : "outside"} the recalled period (${rangeLabel(from, to)})`,
       matched: dateInside,
       source: source("productionDate"),
     });
-  }
-
-  if (batchInside || dateInside) {
-    return { verdict: "recalled", recall: { id: recall.id, relation: "match" }, evidence, notes };
-  }
-  if (batchKnown || dateKnown) {
-    notes.push(
-      hasRange
-        ? `This model has a recall for units made ${rangeLabel(from, to)}.`
-        : "This model has a recall for other batches.",
-    );
+    if (dateInside) return { verdict: "recalled", recall: { id: recall.id, relation: "match" }, evidence, notes };
+    notes.push(`This model has a recall for units made ${rangeLabel(from, to)}.`);
     return { verdict: "clear", recall: { id: recall.id, relation: "other_dates" }, evidence, notes };
   }
 
   evidence.push({
-    fact: hasRange
-      ? `Production date unknown; the recall covers units made ${rangeLabel(from, to)}`
-      : "Batch number unknown; the recall covers some batches only",
+    fact: `Production date unknown; the recall covers units made ${rangeLabel(from, to)}`,
     matched: false,
     source: "official_data",
   });

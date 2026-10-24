@@ -94,3 +94,15 @@ describe("label targets and seller messages", () => {
     );
   });
 });
+
+describe("batch and date limits together", () => {
+  const both: RecallLimits = { from: "2017-01-01", to: "2017-12-31", batches: ["oc15"], refs: [], model: null };
+
+  it("asks for the batch, since the batch decides", () => {
+    expect(labelTargets(both)).toBe("batch number");
+    expect(checkLabelSummary({ brand: "oli&carol", productLabel: "Cathy", publishedAt: "2017-10-19", limits: both })).toContain(
+      "Only some batches are affected",
+    );
+    expect(sellerMessage("check_label", "Cathy", both, "https://x")).toContain("numéro de lot");
+  });
+});

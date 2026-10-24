@@ -25,7 +25,7 @@ function matchedOn(items: Evidence[]) {
 
 export function CheckLabelLayout({ check }: Props) {
   const { recall, limits } = check;
-  const missing = limits.from || limits.to ? "The production date" : "The batch number";
+  const missing = limits.batches.length ? "The batch number" : "The production date";
   const matched = matchedOn(check.evidence.items);
   return (
     <>
