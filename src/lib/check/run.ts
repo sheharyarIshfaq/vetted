@@ -24,7 +24,7 @@ export type CheckResult = {
   verdict: Verdict;
   evidence: Evidence[];
   notes: string[];
-  recall: { id: string; relation: "match" | "other_dates" | "not_a_match"; productName: string; url: string } | null;
+  recall: { id: string; relation: "match" | "other_dates" | "not_a_match"; productName: string; sourceRef: string; url: string } | null;
   extracted: ExtractedItem;
 };
 
@@ -167,7 +167,7 @@ export async function runCheck(input: CheckInput, log: Log = () => {}): Promise<
     notes: result.notes,
     recall:
       result.recall && matched
-        ? { ...result.recall, productName: matched.productName, url: matched.url }
+        ? { ...result.recall, productName: matched.productName, sourceRef: matched.sourceRef, url: matched.url }
         : null,
     extracted,
   };
