@@ -60,6 +60,13 @@ function comparable(recall: CandidateRecall): CandidateRecall {
   };
 }
 
+// A recall naming no model whose brand starts with the listing's brand: Safety Gate gives "HJC FURION" as the
+// brand of a Furion helmet, so the rest is the model.
+function modelInBrand(recall: CandidateRecall, item: ItemFacts): CandidateRecall {
+  if (recall.models.length > 0 || !item.brandNorm || !recall.brandNorm?.startsWith(`${item.brandNorm} `)) return recall;
+  return { ...recall, brandNorm: item.brandNorm, models: [recall.brandNorm.slice(item.brandNorm.length + 1)] };
+}
+
 export type Candidate = {
   recall: CandidateRecall;
   titleSimilarity: number; // pg_trgm similarity between the listing and the recall's search text
@@ -388,7 +395,7 @@ export function decideVerdict({
     return { verdict: "clear", recall: null, evidence, notes };
   }
 
-  const recall = comparable(candidate.recall);
+  const recall = modelInBrand(comparable(candidate.recall), item);
   if (photo.officialPhotoUnavailable) {
     evidence.push({ fact: "Official photo unavailable", matched: false, source: "official_data" });
   }
@@ -626,10 +633,10 @@ export function decideBest({
   }
   // Which brands have a recall naming the listing's model, so an unbranded listing can be tied to one of them.
   const naming = candidates.filter((candidate) => {
-    const recall = comparable(candidate.recall);
+    const recall = modelInBrand(comparable(candidate.recall), item);
     return recall.models.some((model) => namesModel(model, recall, item)) || codeIn(recallRefs(recall), item.references);
   });
-  const brands = new Set(naming.map((candidate) => comparable(candidate.recall).brandNorm ?? candidate.recall.id));
+  const brands = new Set(naming.map((candidate) => modelInBrand(comparable(candidate.recall), item).brandNorm ?? candidate.recall.id));
   const results = candidates.map((candidate) => ({
     recall: candidate.recall,
     source: candidate.recall.source,

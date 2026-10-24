@@ -1116,3 +1116,33 @@ describe("decideBest · a brand read as part of the model", () => {
     expect(result.evidence).toContainEqual({ fact: "Model Giro Drive SDrive is named in the recall", matched: true, source: "listing_text" });
   });
 });
+
+describe("decideBest · a model given as part of the recall's brand", () => {
+  const furion: CandidateRecall = {
+    id: "sg:SR/03043/26",
+    source: "safetygate",
+    brand: "HJC FURION",
+    brandNorm: "hjc furion",
+    productName: "Casque de vélo",
+    models: [],
+    refs: [],
+    gtins: [],
+    batches: [],
+    sampleBatches: [],
+    productionFrom: null,
+    productionTo: null,
+    modelRanges: [],
+  };
+
+  it("reads the rest of the brand as the model", () => {
+    const listing = item({ brand: "HJC", brandNorm: "hjc", model: "Furion", title: "Casque vélo HJC Furion" });
+    const result = decideBest({ item: listing, candidates: [candidate(furion, 0.3)], photos: new Map() });
+    expect(result.verdict).not.toBe("clear");
+    expect(result.recall?.id).toBe("sg:SR/03043/26");
+  });
+
+  it("does not flag another model of the brand", () => {
+    const listing = item({ brand: "HJC", brandNorm: "hjc", model: "Ibex 2.0", title: "Casque vélo HJC Ibex 2.0" });
+    expect(decideBest({ item: listing, candidates: [candidate(furion, 0.3)], photos: new Map() }).verdict).toBe("clear");
+  });
+});
