@@ -19,6 +19,7 @@
     "recalls:clean": "tsx --env-file-if-exists=.env.local scripts/clean-recalls.ts",
     "recalls:embed": "tsx --env-file-if-exists=.env.local scripts/embed-recalls.ts",
     "selftest": "tsx --env-file-if-exists=.env.local scripts/selftest.ts",
+    "bench": "tsx --env-file-if-exists=.env.local scripts/bench.ts",
     "ext:build": "pnpm --dir extension build",
     "ext:dev": "pnpm --dir extension dev"
   },

@@ -1,7 +1,8 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type { Recall } from "../../db/schema";
 import { loadBrandAliases } from "../db/brands";
-import { insertCheck } from "../db/checks";
+import { findRecentCheck, insertCheck } from "../db/checks";
+import { getRecall } from "../db/recalls";
 import { withinDailyBudget } from "../ai/spend";
 import { uploadObject } from "../storage";
 import { normalizeBrand } from "../text";
@@ -28,7 +29,48 @@ export class CheckInputError extends Error {
 const BLOCKS_LINK_READING = /(^|\.)leboncoin\.fr$/;
 
 // unreadPhotos: photos the caller could not download, so the check can say they weren't seen.
-export type CheckInput = { text?: string; url?: string; photos: Uint8Array[]; unreadPhotos?: number };
+// cacheKey: what identifies the listing when the caller has it before the photos (the extension);
+// otherwise the key is built from the link, the text and the photo bytes. cache: false neither reuses a
+// result nor offers its own, for measuring and evaluation.
+export type CheckInput = { text?: string; url?: string; photos: Uint8Array[]; unreadPhotos?: number; cacheKey?: string; cache?: boolean };
+
+const CACHE_FOR_MS = 24 * 60 * 60 * 1000;
+
+const sha256 = (data: string | Uint8Array) => createHash("sha256").update(data).digest("hex");
+
+export function checkCacheKey(parts: (string | Uint8Array | null | undefined)[]) {
+  return sha256(parts.map((part) => (part instanceof Uint8Array ? sha256(part) : (part ?? "").trim())).join("\n"));
+}
+
+// The same listing checked again within a day gets the earlier result, saved as a check of its own
+// so a label photo added to one never shows on the other.
+export async function cachedCheck(cacheKey: string): Promise<CheckResult | null> {
+  const row = await findRecentCheck(cacheKey, new Date(Date.now() - CACHE_FOR_MS));
+  if (!row?.verdict) return null;
+  const evidence = row.evidence as StoredEvidence;
+  const extracted = row.extracted as StoredExtracted;
+  const recall = row.recallId ? await getRecall(row.recallId) : undefined;
+  const id = await insertCheck({
+    input: row.input,
+    extracted: row.extracted,
+    candidates: row.candidates,
+    verdict: row.verdict,
+    recallId: row.recallId,
+    evidence: row.evidence,
+  });
+  return {
+    id,
+    verdict: row.verdict as Verdict,
+    evidence: evidence.items,
+    notes: evidence.notes,
+    alsoMatched: evidence.alsoMatched ?? [],
+    recall:
+      recall && evidence.relation
+        ? { id: recall.id, relation: evidence.relation, productName: recall.productName, sourceRef: recall.sourceRef, url: recall.url }
+        : null,
+    extracted,
+  };
+}
 
 const PHOTOS_SKIPPED: Evidence = {
   fact: "Photos weren't checked: today's photo budget is used up, so only the text was read",
@@ -165,21 +207,8 @@ export function toItemFacts(extracted: ExtractedItem, brandNorm: string | null, 
 }
 
 // Finds the candidate recalls for what was read from a listing, compares photos and lets the rules decide.
-export async function matchListing({
-  extracted,
-  title,
-  photos,
-  aliases,
-  lap = () => {},
-}: {
-  extracted: ExtractedItem;
-  title: string | null;
-  photos: Buffer[];
-  aliases: ReadonlyMap<string, string>;
-  lap?: (step: string) => void;
-}) {
-  const brandNorm = extracted.brand ? normalizeBrand(extracted.brand, aliases) : null;
-  const ranked = await findCandidates({
+function candidatesFor(extracted: ExtractedItem, brandNorm: string | null, title: string | null) {
+  return findCandidates({
     brandNorm,
     model: [extracted.model, extracted.modelVariant].filter(Boolean).join(" ") || null,
     gtin: extracted.gtin,
@@ -188,9 +217,41 @@ export async function matchListing({
     searchText: [extracted.brand, extracted.model, extracted.modelVariant, title].filter(Boolean).join(" "),
     embeddingText: listingEmbeddingText(extracted, title),
   });
+}
+
+// Reading the photos is the slow step, so a quick read of the text alone finds the likely candidates
+// and starts their photo comparisons meanwhile. Only the full read decides which comparisons count.
+async function compareEarly(text: string, photos: Buffer[], title: string | null, aliases: Promise<ReadonlyMap<string, string>>) {
+  try {
+    const extracted = await extractListing(text, []);
+    const brandNorm = extracted.brand ? normalizeBrand(extracted.brand, await aliases) : null;
+    const ranked = await candidatesFor(extracted, brandNorm, title);
+    return await comparePhotos(photos, ranked.map((candidate) => candidate.recall));
+  } catch {
+    return new Map<string, PhotoResult>();
+  }
+}
+
+export async function matchListing({
+  extracted,
+  title,
+  photos,
+  aliases,
+  early,
+  lap = () => {},
+}: {
+  extracted: ExtractedItem;
+  title: string | null;
+  photos: Buffer[];
+  aliases: ReadonlyMap<string, string>;
+  early?: Promise<ReadonlyMap<string, PhotoResult>>;
+  lap?: (step: string) => void;
+}) {
+  const brandNorm = extracted.brand ? normalizeBrand(extracted.brand, aliases) : null;
+  const ranked = await candidatesFor(extracted, brandNorm, title);
   lap(`candidates (${ranked.length})`);
 
-  const photoResults = await comparePhotos(photos, ranked.map((candidate) => candidate.recall));
+  const photoResults = await comparePhotos(photos, ranked.map((candidate) => candidate.recall), await early);
   lap(`compare photos (${photoResults.size})`);
 
   const item = toItemFacts(extracted, brandNorm, title);
@@ -199,6 +260,12 @@ export async function matchListing({
 
 export async function runCheck(input: CheckInput, log: Log = () => {}): Promise<CheckResult> {
   const lap = timer(log);
+  const cacheKey = input.cache === false ? null : (input.cacheKey ?? checkCacheKey([input.url, input.text, ...input.photos]));
+  const cached = cacheKey ? await cachedCheck(cacheKey) : null;
+  if (cached) {
+    lap("reused a check from the last 24 hours");
+    return cached;
+  }
   const { text, page, uploads, photos: readPhotos, photosUnread } = await readInput(input, log);
   // Past the daily budget the model reads the text only; photos are still kept with the check.
   const photosSkipped = readPhotos.length > 0 && !(await withinDailyBudget());
@@ -209,20 +276,17 @@ export async function runCheck(input: CheckInput, log: Log = () => {}): Promise<
   lap("read input");
 
   const photoKeys = uploads.map(() => `checks/${randomUUID()}.jpg`);
+  const title = titleOf(page, text);
+  const aliasesLoaded = loadBrandAliases();
+  const early = photos.length > 0 && text ? compareEarly(text, photos, title, aliasesLoaded) : undefined;
   const [extracted, aliases] = await Promise.all([
     extractListing(text, photos),
-    loadBrandAliases(),
+    aliasesLoaded,
     ...uploads.map((photo, i) => uploadObject(photoKeys[i], photo, "image/jpeg")),
   ]);
   lap("extract");
 
-  const { brandNorm, ranked, photoResults, result } = await matchListing({
-    extracted,
-    title: titleOf(page, text),
-    photos,
-    aliases,
-    lap,
-  });
+  const { brandNorm, ranked, photoResults, result } = await matchListing({ extracted, title, photos, aliases, early, lap });
   const evidence = [...result.evidence, ...(photosUnread ? [PHOTOS_UNREAD] : []), ...(photosSkipped ? [PHOTOS_SKIPPED] : [])];
   const matched: Recall | undefined = ranked.find((candidate) => candidate.recall.id === result.recall?.id)?.recall;
 
@@ -247,6 +311,8 @@ export async function runCheck(input: CheckInput, log: Log = () => {}): Promise<
     })),
     verdict: result.verdict,
     recallId: result.recall?.id ?? null,
+    // A check that couldn't look at the photos isn't reused for the same photos later.
+    inputHash: photosUnread || photosSkipped ? null : cacheKey,
   });
   lap("decide and save");
 

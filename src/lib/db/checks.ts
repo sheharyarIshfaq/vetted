@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, desc, eq, gte, isNotNull, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { checks } from "../../db/schema";
 import { db } from "./client";
@@ -8,6 +8,17 @@ export type NewCheck = typeof checks.$inferInsert;
 export async function insertCheck(check: NewCheck) {
   const [row] = await db().insert(checks).values(check).returning({ id: checks.id });
   return row.id;
+}
+
+// The latest decided check of the same input since the given time, unless a label photo changed it.
+export async function findRecentCheck(inputHash: string, since: Date) {
+  const [row] = await db()
+    .select()
+    .from(checks)
+    .where(and(eq(checks.inputHash, inputHash), gte(checks.createdAt, since), isNotNull(checks.verdict), isNull(checks.label)))
+    .orderBy(desc(checks.createdAt))
+    .limit(1);
+  return row;
 }
 
 const idSchema = z.uuid();

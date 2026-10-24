@@ -50,13 +50,25 @@ describe("comparePhotos", () => {
     expect(parse).not.toHaveBeenCalled();
   });
 
-  it("downloads at most 3 official images and compares at most 3 recalls", async () => {
+  it("downloads at most 3 official images and compares at most 2 recalls", async () => {
     downloadImage.mockResolvedValue(Buffer.from("ok"));
     const images = ["1", "2", "3", "4", "5"].map((n) => `https://x/${n}.jpg`);
     const recalls = ["a", "b", "c", "d"].map((id) => recall(id, images));
     const results = await comparePhotos([listingPhoto], recalls);
-    expect(results.size).toBe(3);
-    expect(downloadImage).toHaveBeenCalledTimes(9);
+    expect(results.size).toBe(2);
+    expect(downloadImage).toHaveBeenCalledTimes(6);
+  });
+
+  it("reuses comparisons already made and drops those for recalls no longer on top", async () => {
+    downloadImage.mockResolvedValue(Buffer.from("ok"));
+    const known = new Map([
+      ["a", { sameProduct: "yes" as const, officialPhotoUnavailable: false, reasons: [], officialImagesUsed: 1 }],
+      ["z", { sameProduct: "no" as const, officialPhotoUnavailable: false, reasons: [], officialImagesUsed: 1 }],
+    ]);
+    const results = await comparePhotos([listingPhoto], [recall("a", ["https://x/1.jpg"]), recall("b", ["https://x/2.jpg"])], known);
+    expect(results.get("a")?.sameProduct).toBe("yes");
+    expect(results.has("z")).toBe(false);
+    expect(downloadImage).toHaveBeenCalledTimes(1);
   });
 
   it("keeps going when the model call fails", async () => {

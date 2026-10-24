@@ -39,3 +39,13 @@ describe("readInput", () => {
     await expect(other).rejects.toMatchObject({ code: undefined, message: expect.stringContaining("couldn't read that page") });
   });
 });
+
+describe("checkCacheKey", () => {
+  it("is the same for the same listing and changes with any part of it", async () => {
+    const { checkCacheKey } = await import("./run");
+    const bytes = new Uint8Array([1, 2, 3]);
+    expect(checkCacheKey(["https://x/1", " Poussette ", bytes])).toBe(checkCacheKey(["https://x/1", "Poussette", new Uint8Array([1, 2, 3])]));
+    expect(checkCacheKey(["https://x/1", "Poussette", bytes])).not.toBe(checkCacheKey(["https://x/1", "Poussette", new Uint8Array([1, 2, 4])]));
+    expect(checkCacheKey(["https://x/1", "Poussette"])).not.toBe(checkCacheKey(["https://x/2", "Poussette"]));
+  });
+});

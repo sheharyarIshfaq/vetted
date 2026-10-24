@@ -9,10 +9,10 @@ const { downloadImage, prepareImage, toDataUrl } = await import("./images");
 const square = (background: string) => sharp({ create: { width: 64, height: 64, channels: 3, background } });
 
 describe("prepareImage", () => {
-  it("shrinks large photos to 1024px on the long side as JPEG", async () => {
+  it("shrinks large photos to 768px on the long side as JPEG", async () => {
     const png = await sharp({ create: { width: 3000, height: 1500, channels: 3, background: "#0f6b4f" } }).png().toBuffer();
     const meta = await sharp(await prepareImage(png)).metadata();
-    expect(meta).toMatchObject({ format: "jpeg", width: 1024, height: 512 });
+    expect(meta).toMatchObject({ format: "jpeg", width: 768, height: 384 });
   });
 
   it("does not enlarge small photos", async () => {

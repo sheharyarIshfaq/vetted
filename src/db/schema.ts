@@ -84,8 +84,12 @@ export const checks = pgTable(
     label: jsonb(),
     flagged: boolean().notNull().default(false),
     flagNote: text("flag_note"),
+    inputHash: text("input_hash"), // what was sent, for reusing the result of the same check within a day
   },
-  (t) => [check("checks_verdict_check", sql`${t.verdict} in ('recalled', 'check_label', 'clear')`)],
+  (t) => [
+    check("checks_verdict_check", sql`${t.verdict} in ('recalled', 'check_label', 'clear')`),
+    index("checks_input_hash_idx").on(t.inputHash, t.createdAt),
+  ],
 );
 
 export const watches = pgTable("watches", {

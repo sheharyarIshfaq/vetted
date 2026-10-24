@@ -9,7 +9,7 @@ import { downloadImage, shortestSide, toDataUrl } from "./images";
 
 export type PhotoResult = PhotoComparison & { reasons: string[]; officialImagesUsed: number };
 
-const MAX_COMPARED_RECALLS = 3;
+const MAX_COMPARED_RECALLS = 2;
 const MAX_OFFICIAL_IMAGES = 3;
 const DOWNLOAD_TIMEOUT_MS = 5000;
 // Below this a thumbnail shows too little detail to rule a product out.
@@ -55,12 +55,13 @@ export async function compareWithRecall(listingPhotos: Buffer[], recall: Pick<Re
   }
 }
 
-// Compares the listing photos with the official photos of the first few candidates that have any.
-export async function comparePhotos(listingPhotos: Buffer[], candidates: Recall[]) {
+// Compares the listing photos with the official photos of the first two candidates that have any,
+// reusing comparisons already made for them.
+export async function comparePhotos(listingPhotos: Buffer[], candidates: Recall[], known: ReadonlyMap<string, PhotoResult> = new Map()) {
   const results = new Map<string, PhotoResult>();
   if (listingPhotos.length === 0) return results;
   const compared = candidates.filter((recall) => recall.images.length > 0).slice(0, MAX_COMPARED_RECALLS);
-  const outcomes = await Promise.all(compared.map((recall) => compareWithRecall(listingPhotos, recall)));
+  const outcomes = await Promise.all(compared.map((recall) => known.get(recall.id) ?? compareWithRecall(listingPhotos, recall)));
   compared.forEach((recall, i) => results.set(recall.id, outcomes[i]));
   return results;
 }

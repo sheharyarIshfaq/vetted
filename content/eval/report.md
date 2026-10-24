@@ -1,6 +1,6 @@
 # Evaluation
 
-Run on 2026-10-24. 74 labelled listings scored; 7 excluded, 0 not labelled.
+Run on 2026-10-24. 74 labelled listings scored; 7 excluded, 5 not labelled.
 
 - Correct: 74 of 74 (100%)
 - Flag precision: 100% (15 of 15 flags name the expected recall)

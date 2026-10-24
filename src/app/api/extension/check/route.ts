@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { downloadImage } from "@/lib/check/images";
 import { panelSummary } from "@/lib/check/panel";
-import { CheckInputError, runCheck } from "@/lib/check/run";
+import { cachedCheck, checkCacheKey, CheckInputError, runCheck } from "@/lib/check/run";
 import { getRecall, recallStats } from "@/lib/db/recalls";
 import { limitReached } from "../../rate-limits";
 
@@ -41,6 +41,12 @@ export function OPTIONS(request: Request) {
 
 const log = (message: string) => process.stdout.write(`${message}\n`);
 
+async function checkPage(text: string, imageUrls: string[], pageUrl: string, cacheKey: string) {
+  const downloadedPhotos = await Promise.all(imageUrls.map((url) => downloadImage(url, { referer: pageUrl, log })));
+  const photos = downloadedPhotos.filter((photo) => photo !== null);
+  return runCheck({ text, photos, unreadPhotos: downloadedPhotos.length - photos.length, cacheKey }, log);
+}
+
 export async function POST(request: Request) {
   const origin = request.headers.get("origin");
   const headers = corsHeaders(origin);
@@ -61,10 +67,10 @@ export async function POST(request: Request) {
   }
 
   try {
-    const downloadedPhotos = await Promise.all(parsed.data.imageUrls.slice(0, 3).map((url) => downloadImage(url, { referer: parsed.data.pageUrl, log })));
-    const photos = downloadedPhotos.filter((photo) => photo !== null);
+    const imageUrls = parsed.data.imageUrls.slice(0, 3);
     const text = [parsed.data.title, parsed.data.description].filter(Boolean).join("\n").slice(0, 5000);
-    const result = await runCheck({ text, photos, unreadPhotos: downloadedPhotos.length - photos.length }, log);
+    const cacheKey = checkCacheKey([parsed.data.pageUrl, text, ...imageUrls]);
+    const result = (await cachedCheck(cacheKey)) ?? (await checkPage(text, imageUrls, parsed.data.pageUrl, cacheKey));
     const [recall, stats] = await Promise.all([
       result.recall ? getRecall(result.recall.id) : undefined,
       recallStats(),

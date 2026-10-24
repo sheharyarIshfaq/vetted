@@ -2,7 +2,7 @@ import sharp from "sharp";
 import { safeFetch } from "./safe-fetch";
 
 export const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
-const MAX_SIDE = 1024;
+const MAX_SIDE = 768;
 
 // Smaller images keep the model fast and cheap; rotate() applies the EXIF orientation from phone photos.
 export async function prepareImage(bytes: Uint8Array, maxSide = MAX_SIDE) {

@@ -64,6 +64,13 @@
       "when": 1792872856001,
       "tag": "0008_daily_spend",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792873866143,
+      "tag": "0009_check_input_hash",
+      "breakpoints": true
     }
   ]
 }

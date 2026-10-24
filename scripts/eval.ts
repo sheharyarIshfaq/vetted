@@ -15,7 +15,7 @@ async function check(listing: EvalListing) {
     listing.photos.map(async (name) => new Uint8Array(await readFile(path.join(PHOTOS_DIR, name)))),
   );
   try {
-    return await runCheck({ text: `${listing.title}\n${listing.description}`, photos });
+    return await runCheck({ text: `${listing.title}\n${listing.description}`, photos, cache: false });
   } catch (error) {
     log(`${listing.id}: check failed: ${error instanceof Error ? error.message : String(error)}`);
     return null;
