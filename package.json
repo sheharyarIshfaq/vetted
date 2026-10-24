@@ -15,7 +15,9 @@
     "db:studio": "node --env-file-if-exists=.env.local node_modules/drizzle-kit/bin.cjs studio",
     "check:openai": "tsx --env-file-if-exists=.env.local scripts/check-openai.ts",
     "ingest": "tsx --env-file-if-exists=.env.local scripts/ingest.ts",
-    "eval": "tsx --env-file-if-exists=.env.local scripts/eval.ts"
+    "eval": "tsx --env-file-if-exists=.env.local scripts/eval.ts",
+    "ext:build": "pnpm --dir extension build",
+    "ext:dev": "pnpm --dir extension dev"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1156.0",

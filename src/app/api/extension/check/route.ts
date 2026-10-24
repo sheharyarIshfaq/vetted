@@ -1,0 +1,72 @@
+import { z } from "zod";
+import { downloadImage } from "@/lib/check/images";
+import { CheckInputError, runCheck } from "@/lib/check/run";
+
+const pinnedExtensionOrigin = "chrome-extension://blbmfaapgjjfdolfklhjgckmpcghggem";
+const extensionOrigin = process.env.EXTENSION_ORIGIN || pinnedExtensionOrigin;
+const supportedPageUrl = z.url({ protocol: /^https$/ }).refine((rawUrl) => {
+  const url = new URL(rawUrl);
+  return (
+    (url.hostname === "www.leboncoin.fr" && /^\/ad\//.test(url.pathname)) ||
+    (url.hostname === "www.vinted.fr" && /^\/items\//.test(url.pathname))
+  );
+}, "Use an open Leboncoin or Vinted listing");
+
+const bodySchema = z.object({
+  pageUrl: supportedPageUrl,
+  title: z.string().trim().min(1).max(1000),
+  description: z.string().trim().max(5000),
+  imageUrls: z.array(z.url({ protocol: /^https$/ })).max(12),
+});
+
+function corsHeaders(origin: string | null) {
+  const headers = new Headers({ Vary: "Origin" });
+  if (origin === extensionOrigin) {
+    headers.set("Access-Control-Allow-Origin", extensionOrigin);
+    headers.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+    headers.set("Access-Control-Allow-Headers", "Content-Type");
+    headers.set("Access-Control-Max-Age", "600");
+  }
+  return headers;
+}
+
+export function OPTIONS(request: Request) {
+  const origin = request.headers.get("origin");
+  if (origin !== extensionOrigin) return new Response(null, { status: 403, headers: corsHeaders(origin) });
+  return new Response(null, { status: 204, headers: corsHeaders(origin) });
+}
+
+const log = (message: string) => process.stdout.write(`${message}\n`);
+
+export async function POST(request: Request) {
+  const origin = request.headers.get("origin");
+  const headers = corsHeaders(origin);
+  if (origin !== extensionOrigin) return Response.json({ error: "This endpoint is for the Tiko extension." }, { status: 403, headers });
+
+  let input: unknown;
+  try {
+    input = await request.json();
+  } catch {
+    return Response.json({ error: "Send a JSON listing payload." }, { status: 400, headers });
+  }
+
+  const parsed = bodySchema.safeParse(input);
+  if (!parsed.success) {
+    return Response.json({ error: parsed.error.issues[0]?.message || "The listing details are invalid." }, { status: 400, headers });
+  }
+
+  try {
+    const downloadedPhotos = await Promise.all(parsed.data.imageUrls.slice(0, 3).map((url) => downloadImage(url)));
+    const photos: Uint8Array[] = downloadedPhotos.flatMap((photo) => (photo ? [photo] : []));
+    const text = [parsed.data.title, parsed.data.description].filter(Boolean).join("\n").slice(0, 5000);
+    const result = await runCheck({ text, photos }, log);
+    return Response.json(
+      { id: result.id, verdict: result.verdict, evidence: result.evidence, recall: result.recall },
+      { headers },
+    );
+  } catch (error) {
+    if (error instanceof CheckInputError) return Response.json({ error: error.message }, { status: 422, headers });
+    log(`[extension-check] failed: ${error instanceof Error ? error.message : String(error)}`);
+    return Response.json({ error: "The check failed. Please try again." }, { status: 500, headers });
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "@tiko/extension",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "wxt build",
+    "dev": "wxt -b chrome"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.36",
+    "wxt": "^0.20.6"
+  }
+}
