@@ -109,6 +109,7 @@ export async function runCheck(input: CheckInput, log: Log = () => {}): Promise<
   const brandNorm = extracted.brand ? normalizeBrand(extracted.brand, aliases) : null;
   const ranked = await findCandidates({
     brandNorm,
+    model: [extracted.model, extracted.modelVariant].filter(Boolean).join(" ") || null,
     gtin: extracted.gtin,
     searchText: [extracted.brand, extracted.model, extracted.modelVariant, page?.title ?? text.split("\n")[0]]
       .filter(Boolean)
