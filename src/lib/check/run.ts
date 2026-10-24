@@ -62,7 +62,7 @@ function timer(log: Log) {
   };
 }
 
-async function readInput(input: CheckInput) {
+async function readInput(input: CheckInput, log: Log) {
   let page: ListingPage | null = null;
   if (input.url) {
     try {
@@ -84,7 +84,7 @@ async function readInput(input: CheckInput) {
   } catch {
     throw new CheckInputError("One of the photos could not be read. Try a JPEG or PNG.");
   }
-  const pagePhoto = page?.image && uploads.length < MAX_PHOTOS ? await downloadImage(page.image) : null;
+  const pagePhoto = page?.image && uploads.length < MAX_PHOTOS ? await downloadImage(page.image, { referer: input.url, log }) : null;
   const photos = pagePhoto ? [...uploads, pagePhoto] : uploads;
 
   if (!text && photos.length === 0) {
@@ -116,7 +116,7 @@ export function toItemFacts(extracted: ExtractedItem, brandNorm: string | null, 
 
 export async function runCheck(input: CheckInput, log: Log = () => {}): Promise<CheckResult> {
   const lap = timer(log);
-  const { text, page, uploads, photos } = await readInput(input);
+  const { text, page, uploads, photos } = await readInput(input, log);
   lap("read input");
 
   const photoKeys = uploads.map(() => `checks/${randomUUID()}.jpg`);

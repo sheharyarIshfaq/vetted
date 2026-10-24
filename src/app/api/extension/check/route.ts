@@ -56,7 +56,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const downloadedPhotos = await Promise.all(parsed.data.imageUrls.slice(0, 3).map((url) => downloadImage(url)));
+    const downloadedPhotos = await Promise.all(parsed.data.imageUrls.slice(0, 3).map((url) => downloadImage(url, { referer: parsed.data.pageUrl, log })));
     const photos: Uint8Array[] = downloadedPhotos.flatMap((photo) => (photo ? [photo] : []));
     const text = [parsed.data.title, parsed.data.description].filter(Boolean).join("\n").slice(0, 5000);
     const result = await runCheck({ text, photos }, log);

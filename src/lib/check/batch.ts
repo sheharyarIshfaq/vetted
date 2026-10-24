@@ -86,7 +86,7 @@ export async function runBatch(rows: BatchRow[], onResult: (result: BatchResult)
   await mapWithConcurrency(rows, CONCURRENCY, async (row) => {
     const base = { line: row.line, title: row.title || row.description.slice(0, 80) };
     try {
-      const photo = row.imageUrl ? await downloadImage(row.imageUrl) : null;
+      const photo = row.imageUrl ? await downloadImage(row.imageUrl, { log }) : null;
       const text = [row.title, row.description].filter(Boolean).join("\n").slice(0, MAX_TEXT);
       const check = await runCheck({ text, photos: photo ? [photo] : [] }, log);
       onResult({

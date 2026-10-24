@@ -95,7 +95,7 @@ export function collectListing(input: CollectInput, today = new Date().toISOStri
 
     const source = sourceOf(url);
     const id = nextId(listings, source);
-    const downloads = await Promise.all([...new Set(input.images)].slice(0, MAX_PHOTOS * 2).map((image) => downloadImage(image)));
+    const downloads = await Promise.all([...new Set(input.images)].slice(0, MAX_PHOTOS * 2).map((image) => downloadImage(image, { referer: url })));
     const photos = downloads.filter((photo) => photo !== null).slice(0, MAX_PHOTOS);
     await mkdir(PHOTOS_DIR, { recursive: true });
     const names = photos.map((_, i) => `${id}-${i + 1}.jpg`);

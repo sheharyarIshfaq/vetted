@@ -15,7 +15,7 @@ const DOWNLOAD_TIMEOUT_MS = 5000;
 // Official images are downloaded here and sent inline: the model never gets their URLs.
 async function compareOne(listingPhotos: Buffer[], recall: Recall): Promise<PhotoResult> {
   const urls = recall.images.slice(0, MAX_OFFICIAL_IMAGES);
-  const downloaded = await Promise.all(urls.map((url) => downloadImage(url, DOWNLOAD_TIMEOUT_MS)));
+  const downloaded = await Promise.all(urls.map((url) => downloadImage(url, { timeoutMs: DOWNLOAD_TIMEOUT_MS })));
   const official = downloaded.filter((image) => image !== null);
   const officialPhotoUnavailable = official.length < urls.length;
   if (official.length === 0) {

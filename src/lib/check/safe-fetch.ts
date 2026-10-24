@@ -71,7 +71,10 @@ async function readLimited(response: Response, maxBytes: number) {
 }
 
 // Fetches a URL we did not choose ourselves: public hosts only, checked again on every redirect.
-export async function safeFetch(rawUrl: string, { timeoutMs, maxBytes }: { timeoutMs: number; maxBytes: number }) {
+export async function safeFetch(
+  rawUrl: string,
+  { timeoutMs, maxBytes, headers }: { timeoutMs: number; maxBytes: number; headers?: Record<string, string> },
+) {
   const signal = AbortSignal.timeout(timeoutMs);
   let url = new URL(rawUrl);
   for (let redirects = 0; ; redirects++) {
@@ -79,7 +82,7 @@ export async function safeFetch(rawUrl: string, { timeoutMs, maxBytes }: { timeo
     const response = await fetch(url, {
       redirect: "manual",
       signal,
-      headers: { "User-Agent": USER_AGENT, "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8" },
+      headers: { "User-Agent": USER_AGENT, "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8", ...headers },
     });
     const location = response.headers.get("location");
     if (response.status >= 300 && response.status < 400 && location) {
@@ -87,8 +90,9 @@ export async function safeFetch(rawUrl: string, { timeoutMs, maxBytes }: { timeo
       url = new URL(location, url);
       continue;
     }
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status} ${response.headers.get("content-type") ?? ""}`.trim());
     return {
+      status: response.status,
       body: await readLimited(response, maxBytes),
       contentType: response.headers.get("content-type") ?? "",
       url: url.toString(),
