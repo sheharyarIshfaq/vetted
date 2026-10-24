@@ -28,6 +28,15 @@ export type CheckResult = {
   extracted: ExtractedItem;
 };
 
+// Shapes of the JSON columns saved on a check.
+export type StoredInput = { text: string | null; url: string | null; page: ListingPage | null; photoKeys: string[] };
+export type StoredExtracted = ExtractedItem & { brandNorm: string | null };
+export type StoredEvidence = {
+  items: Evidence[];
+  notes: string[];
+  relation: "match" | "other_dates" | "not_a_match" | null;
+};
+
 type Log = (message: string) => void;
 
 function timer(log: Log) {
@@ -70,7 +79,7 @@ async function readInput(input: CheckInput) {
   return { text, page, uploads, photos };
 }
 
-function toItemFacts(extracted: ExtractedItem, brandNorm: string | null): ItemFacts {
+export function toItemFacts(extracted: ExtractedItem, brandNorm: string | null): ItemFacts {
   return {
     brand: extracted.brand,
     brandNorm,
@@ -114,9 +123,13 @@ export async function runCheck(input: CheckInput, log: Log = () => {}): Promise<
   const result = decideBest({ item, candidates: ranked, photos: photoResults });
   const matched: Recall | undefined = ranked.find((candidate) => candidate.recall.id === result.recall?.id)?.recall;
 
-  const id = await insertCheck({
+  const stored: { input: StoredInput; extracted: StoredExtracted; evidence: StoredEvidence } = {
     input: { text: input.text ?? null, url: input.url ?? null, page, photoKeys },
     extracted: { ...extracted, brandNorm },
+    evidence: { items: result.evidence, notes: result.notes, relation: result.recall?.relation ?? null },
+  };
+  const id = await insertCheck({
+    ...stored,
     candidates: ranked.map(({ recall, titleSimilarity, brandSimilarity }) => ({
       recallId: recall.id,
       titleSimilarity,
@@ -125,7 +138,6 @@ export async function runCheck(input: CheckInput, log: Log = () => {}): Promise<
     })),
     verdict: result.verdict,
     recallId: result.recall?.id ?? null,
-    evidence: { items: result.evidence, notes: result.notes, relation: result.recall?.relation ?? null },
   });
   lap("decide and save");
 

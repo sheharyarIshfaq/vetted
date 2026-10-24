@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, sql, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, gte, max, sql, type SQL } from "drizzle-orm";
 import { recalls, type NewRecall, type Recall } from "../../db/schema";
 import { normalizeText } from "../text";
 import { db } from "./client";
@@ -85,4 +85,17 @@ export function recallsPublishedSince(since: string, limit = 8) {
 export async function countRecalls() {
   const [{ total }] = await db().select({ total: count() }).from(recalls);
   return total;
+}
+
+// What a check searches: how many recalls, from which sources, and when the data was last refreshed.
+export async function recallStats() {
+  const rows = await db()
+    .select({ source: recalls.source, total: count(), updatedAt: max(recalls.updatedAt) })
+    .from(recalls)
+    .groupBy(recalls.source);
+  return {
+    total: rows.reduce((sum, row) => sum + row.total, 0),
+    sources: rows.map((row) => row.source as "rappelconso" | "safetygate"),
+    updatedAt: rows.reduce<Date | null>((latest, row) => (row.updatedAt && (!latest || row.updatedAt > latest) ? row.updatedAt : latest), null),
+  };
 }

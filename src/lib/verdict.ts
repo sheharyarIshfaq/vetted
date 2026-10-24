@@ -93,7 +93,7 @@ export function isInRange(month: string, from: string | null, to: string | null)
   return true;
 }
 
-function itemModels(item: ItemFacts) {
+function itemModels(item: Pick<ItemFacts, "model" | "modelVariant">) {
   const names = [item.model, item.modelVariant, item.model && item.modelVariant ? `${item.model} ${item.modelVariant}` : null];
   return new Set(names.filter((name): name is string => Boolean(name)).map(normalizeModel).filter(Boolean));
 }
@@ -104,12 +104,25 @@ function codeIn(codes: readonly string[], values: readonly string[]) {
 }
 
 // The per-model entry for this item, matched by model name or by one of its references.
-function matchingRange(item: ItemFacts, recall: CandidateRecall) {
+function matchingRange(item: Pick<ItemFacts, "model" | "modelVariant" | "references">, recall: CandidateRecall) {
   const models = itemModels(item);
   return (
     recall.modelRanges.find((range) => models.has(normalizeModel(range.model))) ??
     recall.modelRanges.find((range) => codeIn(range.refs, item.references))
   );
+}
+
+export type RecallLimits = { from: string | null; to: string | null; batches: string[]; refs: string[]; model: string | null };
+
+// The date and batch limits that apply to this item: its model's entry if there is one, else the whole recall.
+export function recallLimits(
+  item: Pick<ItemFacts, "model" | "modelVariant" | "references">,
+  recall: CandidateRecall,
+): RecallLimits {
+  const range = matchingRange(item, recall);
+  return range
+    ? { from: range.from, to: range.to, batches: range.batches, refs: range.refs.length ? range.refs : recall.refs, model: range.model }
+    : { from: recall.productionFrom, to: recall.productionTo, batches: recall.batches, refs: recall.refs, model: null };
 }
 
 function identityEvidence(
@@ -203,9 +216,7 @@ export function decideVerdict({
     return { verdict: "clear", recall: { id: recall.id, relation: "not_a_match" }, evidence, notes };
   }
 
-  const from = range ? range.from : recall.productionFrom;
-  const to = range ? range.to : recall.productionTo;
-  const batches = range ? range.batches : recall.batches;
+  const { from, to, batches } = recallLimits(item, recall);
   const hasRange = from !== null || to !== null;
   const hasBatches = batches.length > 0;
 

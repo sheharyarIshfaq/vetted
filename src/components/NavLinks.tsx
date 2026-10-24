@@ -15,12 +15,12 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function NavLinks() {
-  const pathname = usePathname();
+// Without a pathname (while the URL is not known yet) no link is marked as active.
+export function NavLinkList({ pathname }: { pathname: string | null }) {
   return (
     <>
       {LINKS.map(({ href, label }) => {
-        const active = isActive(pathname, href);
+        const active = pathname !== null && isActive(pathname, href);
         return (
           <Link
             key={href}
@@ -38,4 +38,8 @@ export function NavLinks() {
       })}
     </>
   );
+}
+
+export function NavLinks() {
+  return <NavLinkList pathname={usePathname()} />;
 }

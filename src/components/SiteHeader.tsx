@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { NavLinks } from "./NavLinks";
+import { Suspense } from "react";
+import { NavLinkList, NavLinks } from "./NavLinks";
 import { VerdictSticker } from "./VerdictSticker";
 
 export function SiteHeader() {
@@ -11,7 +12,9 @@ export function SiteHeader() {
           <span className="text-[26px] font-extrabold tracking-[-0.04em]">tiko</span>
         </Link>
         <nav aria-label="Main" className="flex flex-wrap items-center gap-1">
-          <NavLinks />
+          <Suspense fallback={<NavLinkList pathname={null} />}>
+            <NavLinks />
+          </Suspense>
           <Link
             href="/how-it-works#extension"
             className="ml-2 rounded-[10px] bg-ink px-4 py-[9px] text-[15px] font-bold text-white no-underline hover:text-white"
