@@ -11,12 +11,15 @@ import { britaxSmileRow, hamaxBuddyRow } from "./rappelconso.fixtures";
 
 describe("splitIdentification", () => {
   it("separates barcodes from other identifiers and drops 'non concerné'", () => {
+    // The notice's "70297755203498" fails the check digit (an extra 8 on 7029775520349), so it is a reference.
     expect(splitIdentification(hamaxBuddyRow.identification_produits)).toEqual({
-      gtins: ["70297755203498"],
+      gtins: [],
+      codes: ["70297755203498"],
       identifiers: [],
     });
     expect(splitIdentification(britaxSmileRow.identification_produits)).toEqual({
       gtins: [],
+      codes: [],
       identifiers: ["4000984-204346, -204377, -204384"],
     });
   });
@@ -24,7 +27,7 @@ describe("splitIdentification", () => {
   it("reads several products separated by '|'", () => {
     expect(
       splitIdentification(["5027148039315", "batch n°10154", "non concerné", "|8053634016260", "coussi carotte", "non concerné"]),
-    ).toEqual({ gtins: ["5027148039315", "8053634016260"], identifiers: ["batch n°10154", "coussi carotte"] });
+    ).toEqual({ gtins: ["5027148039315", "8053634016260"], codes: [], identifiers: ["batch n°10154", "coussi carotte"] });
   });
 
   it("does not treat over-long numbers as barcodes", () => {
@@ -36,6 +39,7 @@ describe("splitIdentification · barcodes inside text", () => {
   it("keeps a barcode with a valid check digit and the text for parsing", () => {
     expect(splitIdentification(["r23189 mascot car turquoise 8904001231895", "non concerné"])).toEqual({
       gtins: ["8904001231895"],
+      codes: [],
       identifiers: ["r23189 mascot car turquoise 8904001231895"],
     });
   });
@@ -58,14 +62,15 @@ describe("groupByFiche", () => {
       ...hamaxBuddyRow,
       id: 23900,
       numero_version: 2,
-      identification_produits: ["7029775520351", "non concerné"],
+      identification_produits: ["7029775520349", "non concerné"],
       liens_vers_les_images: "https://rappel.conso.gouv.fr/image/new.jpg",
     };
     const groups = groupByFiche([hamaxBuddyRow, update, britaxSmileRow]);
     expect(groups).toHaveLength(2);
     const hamax = groups.find((group) => group.row.numero_fiche === "2026-10-0171")!;
     expect(hamax.row.id).toBe(23900);
-    expect(hamax.gtins).toEqual(["70297755203498", "7029775520351"]);
+    expect(hamax.gtins).toEqual(["7029775520349"]);
+    expect(hamax.codes).toEqual(["70297755203498"]);
     expect(hamax.images).toHaveLength(3);
     expect(hamax.rows).toHaveLength(2);
   });
@@ -116,15 +121,15 @@ describe("toRecall", () => {
       brandNorm: "hamax",
       productName: "porte-bébé hamax buddy",
       models: ["buddy"],
-      refs: ["4091054", "8591602"],
-      gtins: ["70297755203498"],
+      refs: ["4091054", "8591602", "70297755203498"],
+      gtins: [],
       productionFrom: "2022-01-01",
       productionTo: "2026-08-06",
       soldFrom: "2022-01-01",
       soldTo: "2026-08-06",
       risk: "étouffement",
       whatToDo: "contacter le point de vente",
-      searchText: "hamax porte bebe hamax buddy buddy 4091054 8591602",
+      searchText: "hamax porte bebe hamax buddy buddy 4091054 8591602 70297755203498",
     });
     expect(recall.images).toHaveLength(2);
   });

@@ -69,6 +69,7 @@ export type RappelConsoRow = z.infer<typeof rappelConsoRowSchema>;
 export type RecallGroup = {
   row: RappelConsoRow; // the latest version
   gtins: string[];
+  codes: string[]; // given as barcodes but not valid ones: kept as references
   identifiers: string[];
   images: string[];
   rows: RappelConsoRow[];
@@ -116,22 +117,24 @@ function rowText(row: RappelConsoRow) {
 
 // Entries look like ["4000984-204346, -204377", "non concerné", "|5027148039315", "batch n°10154", ...],
 // where "|" starts the next product. Barcodes go to gtins, the rest is kept as text for parsing.
+// A barcode-field value that isn't a valid barcode ("9503007000", 10 digits) is a reference.
 // A barcode inside other text ("r23189 mascot car 8904001231895") counts only with a valid check digit.
 export function splitIdentification(entries: readonly string[] | null | undefined) {
   const gtins: string[] = [];
+  const codes: string[] = [];
   const identifiers: string[] = [];
   for (const entry of entries ?? []) {
     const value = entry.replace(/^\|/, "").trim();
     if (!value || /^non concern[ée]$/i.test(value)) continue;
     const digits = value.replace(/\s/g, "");
     if (/^\d{8,14}$/.test(digits)) {
-      gtins.push(digits);
+      (isValidGtin(digits) ? gtins : codes).push(digits);
       continue;
     }
     gtins.push(...(value.match(/(?<!\d)\d{8,14}(?!\d)/g) ?? []).filter(isValidGtin));
     identifiers.push(value);
   }
-  return { gtins, identifiers };
+  return { gtins, codes, identifiers };
 }
 
 export function splitImages(value: string | null) {
@@ -151,6 +154,7 @@ export function groupByFiche(rows: readonly RappelConsoRow[]): RecallGroup[] {
     return {
       row: latest,
       gtins: unique(split.flatMap((part) => part.gtins)),
+      codes: unique(split.flatMap((part) => part.codes)),
       identifiers: unique(split.flatMap((part) => part.identifiers)),
       images: unique(group.flatMap((row) => splitImages(row.liens_vers_les_images))),
       rows: group,
@@ -185,7 +189,7 @@ export function toRecall(group: RecallGroup, details: RecallDetails | null, bran
   const { row } = group;
   const productName = row.libelle?.trim() || row.modeles_ou_references?.trim() || row.numero_fiche;
   const models = details?.models.length ? details.models : fallbackModels(row);
-  const refs = details?.refs ?? [];
+  const refs = unique([...(details?.refs ?? []), ...group.codes]);
   return {
     id: `rc:${row.id}`,
     source: "rappelconso",

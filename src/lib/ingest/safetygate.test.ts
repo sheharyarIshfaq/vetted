@@ -89,9 +89,9 @@ describe("field splitting", () => {
     expect(splitValues("unknown, -, AB12")).toEqual(["AB12"]);
   });
 
-  it("keeps pure-digit barcodes and checks the digit inside text", () => {
-    expect(barcodesIn(["21828069545", "4250383846504"])).toEqual(["21828069545", "4250383846504"]);
-    expect(barcodesIn(["EAN 4250383846504", "ref 12345678"])).toEqual(["4250383846504"]);
+  it("keeps valid barcodes, and an all-digit value that isn't one as a reference", () => {
+    expect(barcodesIn(["21828069545", "4250383846504"])).toEqual({ gtins: ["4250383846504"], codes: ["21828069545"] });
+    expect(barcodesIn(["EAN 4250383846504", "ref 12345678"])).toEqual({ gtins: ["4250383846504"], codes: [] });
   });
 });
 
@@ -107,13 +107,14 @@ describe("toRecall", () => {
       url: "https://ec.europa.eu/safety-gate-alerts/screen/webReport/alertDetail/10118690",
       publishedAt: "2026-10-23",
       productName: "Ensemble de jouets",
-      refs: ["816937989081", "LH02", "cn1082977006febae"],
+      refs: ["816937989081", "LH02", "cn1082977006febae", "21828069545"],
       batches: [],
       sampleBatches: ["C202432256412"],
       risk: "Étouffement",
       whatToDo: null,
     });
-    expect(recall.gtins).toContain("21828069545");
+    expect(recall.gtins).not.toContain("21828069545");
+    expect(recall.refs).toContain("21828069545");
     expect(recall.images).toHaveLength(2);
   });
 

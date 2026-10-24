@@ -139,15 +139,16 @@ export function splitValues(value: string) {
     .filter((part) => part && !UNKNOWN_VALUE.test(part));
 }
 
-// Barcodes come as published when the whole value is digits; inside other text only with a valid check digit.
+// Only valid barcodes count, whole or inside other text; an all-digit value that isn't one is a reference.
 export function barcodesIn(values: readonly string[]) {
   const gtins: string[] = [];
+  const codes: string[] = [];
   for (const value of values) {
     const digits = value.replace(/\s/g, "");
-    if (/^\d{8,14}$/.test(digits)) gtins.push(digits);
+    if (/^\d{8,14}$/.test(digits)) (isValidGtin(digits) ? gtins : codes).push(digits);
     else gtins.push(...(value.match(/(?<!\d)\d{8,14}(?!\d)/g) ?? []).filter(isValidGtin));
   }
-  return [...new Set(gtins)];
+  return { gtins: [...new Set(gtins)], codes: [...new Set(codes)] };
 }
 
 // Only the production dates are free text; models, codes and batches have their own fields.
@@ -159,7 +160,8 @@ export function datesText(alert: SafetyGateAlert) {
 export function toRecall(alert: SafetyGateAlert, details: RecallDetails | null, brandNorm: string | null): NewRecall {
   const types = splitValues(alert.type_numberOfModel);
   const models = types.filter((type) => !/\d/.test(type));
-  const refs = types.filter((type) => /\d/.test(type));
+  const barcodes = barcodesIn([...splitValues(alert.barcode), ...types.filter((type) => /\d/.test(type))]);
+  const refs = [...new Set([...types.filter((type) => /\d/.test(type)), ...barcodes.codes])];
   const brand = alert.brand && !UNKNOWN_VALUE.test(alert.brand) ? alert.brand : null;
   const productName = alert.product || alert.name || alert.caseNumber;
   return {
@@ -175,7 +177,7 @@ export function toRecall(alert: SafetyGateAlert, details: RecallDetails | null, 
     productName,
     models,
     refs,
-    gtins: barcodesIn([...splitValues(alert.barcode), ...refs]),
+    gtins: barcodes.gtins,
     batches: [],
     sampleBatches: splitValues(alert.batchNumber),
     productionFrom: details?.productionFrom ?? null,
