@@ -177,6 +177,15 @@ describe("decideVerdict · Britax Smile (22625, per-model ranges)", () => {
     });
     expect(result.verdict).toBe("recalled");
   });
+
+  it("matches a reference whose numeral is written the other way", () => {
+    const result = decideVerdict({
+      item: item({ brand: "Britax", brandNorm: "britax romer", model: "King", references: ["King 2"] }),
+      candidate: candidate({ ...britax22625, models: ["king ii"], refs: ["KING II"], modelRanges: [], productionFrom: null, productionTo: null }, 0.2),
+      photo: noPhoto,
+    });
+    expect(result.verdict).toBe("recalled");
+  });
 });
 
 describe("decideVerdict · Hamax Buddy (open-ended range from 2022-01-01)", () => {

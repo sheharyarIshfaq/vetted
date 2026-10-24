@@ -6,7 +6,7 @@ import type { NewRecall } from "../../db/schema";
 import { loadBrandAliases } from "../db/brands";
 import { upsertRecalls } from "../db/recalls";
 import { isValidGtin } from "../gtin";
-import { normalizeBrand, normalizeText } from "../text";
+import { normalizeBrand, normalizeModelText } from "../text";
 import {
   cacheKey,
   estimateCost,
@@ -244,7 +244,7 @@ export function toRecall(alert: SafetyGateAlert, details: RecallDetails | null, 
     images: alert.pictures.filter((url) => url.startsWith("https://")),
     datesQuote: details?.quote ?? null,
     raw: alert,
-    searchText: normalizeText([brand, productName, alert.name, ...models, ...refs].filter(Boolean).join(" ")),
+    searchText: normalizeModelText([brand, productName, alert.name, ...models, ...refs].filter(Boolean).join(" ")),
   };
 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeBrand, normalizeText } from "./text";
+import { normalizeBrand, normalizeModelText, normalizeText } from "./text";
 
 describe("normalizeText", () => {
   it("removes accents and lowers case", () => {
@@ -11,6 +11,19 @@ describe("normalizeText", () => {
     expect(normalizeText("Maxi-Cosi")).toBe("maxi cosi");
     expect(normalizeText("B'TWIN")).toBe("b twin");
     expect(normalizeText("  Smile  III / 4000984-001 ")).toBe("smile iii 4000984 001");
+  });
+});
+
+describe("normalizeModelText", () => {
+  it("writes Roman numerals as digits", () => {
+    expect(normalizeModelText("Smile III")).toBe("smile 3");
+    expect(normalizeModelText("KING II / Smile IV")).toBe("king 2 smile 4");
+    expect(normalizeModelText("chassis de poussette smile iii, smile 4")).toBe("chassis de poussette smile 3 smile 4");
+  });
+
+  it("leaves single letters and words containing numerals alone", () => {
+    expect(normalizeModelText("Smile V, Pack X")).toBe("smile v pack x");
+    expect(normalizeModelText("Vivid Mix")).toBe("vivid mix");
   });
 });
 

@@ -1,7 +1,7 @@
 import { desc, getTableColumns, gte, or, sql, type SQL } from "drizzle-orm";
 import { recalls, type Recall } from "../../db/schema";
 import { db } from "../db/client";
-import { normalizeText } from "../text";
+import { normalizeModelText } from "../text";
 
 export type RankedRecall = { recall: Recall; titleSimilarity: number; brandSimilarity: number };
 
@@ -37,8 +37,8 @@ export async function findCandidates({
   gtin: string | null;
   searchText: string;
 }): Promise<RankedRecall[]> {
-  const query = normalizeText(searchText);
-  const modelQuery = normalizeText(model ?? "");
+  const query = normalizeModelText(searchText);
+  const modelQuery = normalizeModelText(model ?? "");
   const { titleSimilarity, brandSimilarity, modelSimilarity, columns } = select(brandNorm, query, modelQuery);
 
   if (gtin) {

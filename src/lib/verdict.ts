@@ -1,5 +1,5 @@
 import type { ModelRange } from "../db/schema";
-import { normalizeText } from "./text";
+import { normalizeModelText } from "./text";
 
 export type Verdict = "recalled" | "check_label" | "clear";
 
@@ -61,19 +61,12 @@ export type BestResult = VerdictResult & { alsoMatched: string[] };
 const TITLE_MATCH_THRESHOLD = 0.55;
 const BRAND_MATCH_THRESHOLD = 0.6;
 
-const ROMAN: Record<string, string> = { ii: "2", iii: "3", iv: "4", vi: "6", vii: "7", viii: "8", ix: "9" };
-
-// "Smile III" and "smile-3" both become "smile3". Single-letter numerals are left alone: they are too ambiguous.
+// "Smile III" and "smile-3" both become "smile3".
 export function normalizeModel(value: string) {
-  return normalizeText(value)
-    .split(" ")
-    .map((word) => ROMAN[word] ?? word)
-    .join("");
+  return normalizeModelText(value).replaceAll(" ", "");
 }
 
-export function normalizeCode(value: string) {
-  return normalizeText(value).replaceAll(" ", "");
-}
+export const normalizeCode = normalizeModel;
 
 function normalizeGtin(value: string) {
   return value.replace(/\D/g, "").replace(/^0+/, "");

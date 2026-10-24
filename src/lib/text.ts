@@ -8,6 +8,17 @@ export function normalizeText(value: string) {
     .trim();
 }
 
+const ROMAN: Record<string, string> = { ii: "2", iii: "3", iv: "4", vi: "6", vii: "7", viii: "8", ix: "9" };
+
+// normalizeText with Roman numerals as digits, for model names and codes: "Smile III" -> "smile 3".
+// Single-letter numerals are left alone: they are too ambiguous.
+export function normalizeModelText(value: string) {
+  return normalizeText(value)
+    .split(" ")
+    .map((word) => ROMAN[word] ?? word)
+    .join(" ");
+}
+
 // Words that stand in for a missing brand; an unbranded product must never match on a shared "sans marque".
 const NO_BRAND = /^(?:inconnue?s?|unknown|not specified|non (?:specifiee?|definie?|communiquee?|connue?)|sans(?: marques?)?|pas de marque(?: specifique)?|aucune?|no brand|unbranded|n ?a|nc|generi(?:c|que)s?|toutes marques)$/;
 

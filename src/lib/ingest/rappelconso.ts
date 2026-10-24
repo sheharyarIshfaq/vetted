@@ -3,7 +3,7 @@ import type { NewRecall } from "../../db/schema";
 import { loadBrandAliases } from "../db/brands";
 import { upsertRecalls } from "../db/recalls";
 import { isValidGtin } from "../gtin";
-import { normalizeBrand, normalizeText } from "../text";
+import { normalizeBrand, normalizeModelText } from "../text";
 import { toIsoDate } from "./dates";
 import {
   cacheKey,
@@ -212,7 +212,7 @@ export function toRecall(group: RecallGroup, details: RecallDetails | null, bran
     images: group.images,
     datesQuote: details?.quote ?? null,
     raw: group.rows.length === 1 ? group.row : group.rows,
-    searchText: normalizeText([row.marque_produit, productName, ...models, ...refs].filter(Boolean).join(" ")),
+    searchText: normalizeModelText([row.marque_produit, productName, ...models, ...refs].filter(Boolean).join(" ")),
   };
 }
 
