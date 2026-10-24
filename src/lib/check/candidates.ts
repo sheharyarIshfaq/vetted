@@ -22,8 +22,8 @@ const MIN_BRAND_SIMILARITY = 0.6;
 // "Scooter auto-équilibrage (hoverboard)" scores 0.24, and the rules still decide whether it matches.
 const MIN_SAME_BRAND_SIMILARITY = 0.1;
 const MIN_MODEL_SIMILARITY = 0.6;
-// Set from the self-test (pnpm selftest): below this the nearest recalls are unrelated products.
-export const MIN_SEMANTIC_SIMILARITY = 0.3;
+// From the self-test (pnpm selftest): the right recall scored 0.57 or more for 99% of the listings naming it.
+export const MIN_SEMANTIC_SIMILARITY = 0.5;
 // Reciprocal rank fusion: a recall ranked high by several routes beats one ranked first by a single route.
 const RRF_K = 60;
 

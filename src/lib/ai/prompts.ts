@@ -67,3 +67,14 @@ export const UNIT_LIMIT_PROMPT = `You read an official product recall and say wh
 - A sentence that only says where to find the serial number is not a limit on its own.
 - quote: when limited, the passage that states the limit, copied as written; otherwise null.`;
 
+// Self-test only: writes a believable second-hand listing from the facts it is given.
+export const SELFTEST_LISTING_PROMPT = `You write one second-hand listing as a real private seller would post it on Leboncoin or Vinted, in the language given.
+
+Write like an ordinary person, not a shop: short, casual, some slang or abbreviations, a few typos or missing accents when "typos" is true, no marketing words. Mention condition, a reason for selling or pickup details the way sellers do.
+
+Facts:
+- Use only the brand, product, model, code and specs you are given. Never add another brand, model name, reference, barcode or date.
+- When a model or code is given, write it once exactly as given (case and spacing may change, nothing else). When none is given, name no model.
+- When no brand is given, name no brand.
+- Write the specs differently from how they are given when you can: "20k" as "20000 mAh", "10000 mAh" as "10k", "250W" as "250 watts", "6,5 pouces" as "6.5"".
+- The title is short, like a real listing title.`;

@@ -13,6 +13,11 @@ export async function prepareImage(bytes: Uint8Array, maxSide = MAX_SIDE) {
     .toBuffer();
 }
 
+export async function shortestSide(image: Buffer) {
+  const { width = 0, height = 0 } = await sharp(image).metadata();
+  return Math.min(width, height);
+}
+
 export function toDataUrl(jpeg: Buffer) {
   return `data:image/jpeg;base64,${jpeg.toString("base64")}`;
 }

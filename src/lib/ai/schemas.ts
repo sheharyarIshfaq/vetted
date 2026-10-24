@@ -86,6 +86,11 @@ export const labelReadingSchema = z.object({
 
 export type LabelReading = z.infer<typeof labelReadingSchema>;
 
+export const syntheticListingSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+});
+
 export const unitLimitSchema = z.object({
   limited: z.boolean(),
   quote: z.string().nullable(),
