@@ -46,6 +46,7 @@ Decide whether the listing shows the same product model as the recall, not just 
 - yes: shape, design details and visible branding match the recalled model.
 - no: it is clearly a different product or model (different shape, frame, design or brand).
 - unsure: the photos are too small, blurry or partial, or the products are too similar to tell apart.
+Colour, finish, wear, and accessories shown or missing are not reasons for no: a model is often sold in several colours.
 Give short, concrete reasons that point at visible details.`;
 
 export const LABEL_READING_PROMPT = `You read the photo of a product label (a sticker or plate on a stroller, child seat, toy or appliance) and copy out what is printed on it.

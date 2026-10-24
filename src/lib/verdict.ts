@@ -524,10 +524,22 @@ export function decideVerdict({
     return { verdict: "check_label", recall: { id: recall.id, relation: "match" }, evidence, notes };
   }
   // The brand has a recalled product of exactly this type, but the listing names no model: only the seller can say which.
+  // When the notice names no model either, photos can't rule it out: brands sell one model in several colours.
   const modelUnknown = !item.model && !item.modelVariant && item.references.length === 0 && item.gtin === null;
-  if (!identified && !unbranded && brandMatch && modelUnknown && isSpecificType(itemType) && itemType === recallType && photo.sameProduct !== "no") {
+  const recallNamesNoModel = recall.models.length === 0 && refs.length === 0 && recall.gtins.length === 0;
+  if (
+    !identified &&
+    !unbranded &&
+    brandMatch &&
+    modelUnknown &&
+    isSpecificType(itemType) &&
+    itemType === recallType &&
+    (photo.sameProduct !== "no" || recallNamesNoModel)
+  ) {
     evidence.push({
-      fact: `This brand has a recalled ${recallType}. Ask the seller for the exact model`,
+      fact: recallNamesNoModel
+        ? `This brand has a recalled ${recallType} and the notice names no model. Ask the seller for the exact model`
+        : `This brand has a recalled ${recallType}. Ask the seller for the exact model`,
       matched: false,
       source: "official_data",
     });

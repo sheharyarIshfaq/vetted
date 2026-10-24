@@ -1181,3 +1181,29 @@ describe("decideBest · product type wording", () => {
     expect(fact).toMatch(/^Not this recall: the recall is for an e-scooter, this is (a laptop|another electrical product)$/);
   });
 });
+
+describe("decideBest · a recall naming no model", () => {
+  const dryer: CandidateRecall = {
+    id: "sg:SR/02907/26",
+    source: "safetygate",
+    brand: "*JOOAYOU*",
+    brandNorm: "jooayou",
+    productName: "Sèche-cheveux",
+    models: [],
+    productType: "hair appliance",
+    refs: [],
+    gtins: [],
+    batches: [],
+    sampleBatches: [],
+    productionFrom: null,
+    productionTo: null,
+    modelRanges: [],
+  };
+  const listing = item({ brand: "Jooayou", brandNorm: "jooayou", productType: "hair appliance", title: "Sèche cheveux Jooayou" });
+
+  it("needs the exact model even when the photos look different", () => {
+    const result = decideBest({ item: listing, candidates: [candidate(dryer, 0.4)], photos: new Map([[dryer.id, { sameProduct: "no" as const }]]) });
+    expect(result.verdict).toBe("check_label");
+    expect(result.evidence.map((fact) => fact.fact)).toContain("This brand has a recalled hair appliance and the notice names no model. Ask the seller for the exact model");
+  });
+});
