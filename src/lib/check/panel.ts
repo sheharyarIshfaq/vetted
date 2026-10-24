@@ -1,5 +1,5 @@
 import type { Recall } from "../../db/schema";
-import { recallLimits, type Verdict } from "../verdict";
+import { recallLimits, type Evidence, type Verdict } from "../verdict";
 import { capitalize, dayName, itemName, monthNumber, riskWord, sellerMessage, sourcesLabel } from "./copy";
 import type { ExtractedItem } from "./extract";
 
@@ -18,7 +18,8 @@ export type PanelSummary = {
 
 type PanelInput = {
   verdict: Verdict;
-  recall: Recall | null; // the recall behind the verdict; null when nothing matched
+  recall: Recall | null; // the recall behind the verdict, or the closest one on a clear verdict
+  evidence?: Evidence[];
   extracted: ExtractedItem;
   listingTitle: string;
   searched: { total: number; sources: string[] };
@@ -65,6 +66,10 @@ function lookFor(input: PanelInput, recall: Recall) {
   ].filter((line): line is string => line !== null);
 }
 
+function sourceOf(recall: Recall) {
+  return { label: `${SOURCE_NAMES[recall.source] ?? recall.source} · ${dayName(recall.publishedAt)}`, url: recall.url };
+}
+
 export function panelSummary(input: PanelInput): PanelSummary {
   const { verdict, recall, extracted, listingTitle, searched } = input;
   const title = productTitle(extracted, recall, listingTitle);
@@ -72,11 +77,13 @@ export function panelSummary(input: PanelInput): PanelSummary {
   if (verdict === "clear" || !recall) {
     const category = extracted.category?.trim().toLowerCase();
     const target = itemName(extracted) ?? (category ? `this ${category}` : "this listing");
+    const searchedLine = `Tiko searched ${searched.total.toLocaleString("en-GB")} ${sourcesLabel(searched.sources)} recalls for ${target} and found no match. That doesn't prove it's safe.`;
+    const why = input.evidence?.find((item) => !item.matched && item.fact.startsWith("Not this recall: "));
     return {
       title,
-      line: `Tiko searched ${searched.total.toLocaleString("en-GB")} ${sourcesLabel(searched.sources)} recalls for ${target} and found no match. That doesn't prove it's safe.`,
+      line: recall && why ? `A recall for ${capitalize(recall.productName)} came close. ${capitalize(why.fact.slice("Not this recall: ".length))}.` : searchedLine,
       risk: null,
-      source: null,
+      source: recall && why ? sourceOf(recall) : null,
       lookFor: [],
       whatToDo: [],
       sellerMessage: null,
@@ -91,7 +98,7 @@ export function panelSummary(input: PanelInput): PanelSummary {
         ? "This item matches the recalled units. Don't buy it as it is."
         : "Only some units of this model are recalled. Check the label before you buy.",
     risk: risk ? `Risk: ${risk}` : null,
-    source: { label: `${SOURCE_NAMES[recall.source] ?? recall.source} · ${dayName(recall.publishedAt)}`, url: recall.url },
+    source: sourceOf(recall),
     lookFor: lookFor(input, recall),
     whatToDo: verdict === "recalled" ? (recall.whatToDo ?? "").split("\n").map((line) => line.trim()).filter(Boolean).map(capitalize) : [],
     sellerMessage:

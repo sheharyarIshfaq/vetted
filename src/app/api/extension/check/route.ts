@@ -63,12 +63,13 @@ export async function POST(request: Request) {
     const text = [parsed.data.title, parsed.data.description].filter(Boolean).join("\n").slice(0, 5000);
     const result = await runCheck({ text, photos, unreadPhotos: downloadedPhotos.length - photos.length }, log);
     const [recall, stats] = await Promise.all([
-      result.recall?.relation === "match" ? getRecall(result.recall.id) : undefined,
+      result.recall ? getRecall(result.recall.id) : undefined,
       recallStats(),
     ]);
     const panel = panelSummary({
       verdict: result.verdict,
       recall: recall ?? null,
+      evidence: result.evidence,
       extracted: result.extracted,
       listingTitle: parsed.data.title,
       searched: { total: stats.total, sources: stats.sources },

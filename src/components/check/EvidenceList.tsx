@@ -14,7 +14,8 @@ function Fact({ text }: { text: string }) {
   );
 }
 
-export function EvidenceList({ items, fromRecall = false }: { items: Evidence[]; fromRecall?: boolean }) {
+// On a clear verdict a matching fact only explains why a recall came close, so it's shown in grey, never green.
+export function EvidenceList({ items, fromRecall = false, clear = false }: { items: Evidence[]; fromRecall?: boolean; clear?: boolean }) {
   return (
     <section className="flex flex-col gap-3 rounded-[18px] border border-line bg-surface px-5 py-5 sm:px-6">
       <h2 className="m-0 text-lg font-bold">Why Tiko says so</h2>
@@ -24,12 +25,12 @@ export function EvidenceList({ items, fromRecall = false }: { items: Evidence[];
             <span
               aria-hidden="true"
               className={`flex size-[26px] shrink-0 items-center justify-center rounded-full text-sm font-bold ${
-                item.matched ? "bg-brand-soft text-safe" : "bg-recalled-soft text-recalled"
+                !item.matched ? "bg-recalled-soft text-recalled" : clear ? "bg-line text-muted" : "bg-brand-soft text-safe"
               }`}
             >
               {item.matched ? "✓" : "!"}
             </span>
-            <span className="sr-only">{item.matched ? "Matches:" : "Does not match:"}</span>
+            <span className="sr-only">{!item.matched ? "Does not match:" : clear ? "Partly matches:" : "Matches:"}</span>
             <span className="min-w-0 grow">
               <Fact text={item.fact} />
             </span>

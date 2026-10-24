@@ -299,6 +299,21 @@ describe("decideVerdict · other rules", () => {
     });
   });
 
+  it("photo comparison 'no' clears a match on the title alone, and says why first", () => {
+    const result = decideVerdict({
+      item: item({ brand: "Hamax", brandNorm: "hamax", title: "Siège vélo Hamax enfant" }),
+      candidate: candidate(hamaxBuddy, 0.7),
+      photo: { sameProduct: "no" },
+    });
+    expect(result.verdict).toBe("clear");
+    expect(result.recall).toEqual({ id: "rc:23843", relation: "not_a_match" });
+    expect(result.evidence[0]).toEqual({
+      fact: "Not this recall: photos show a different product from the official photo",
+      matched: false,
+      source: "listing_photo",
+    });
+  });
+
   it("an unrelated brand is clear, with the closest recall shown as not a match", () => {
     const result = decideVerdict({
       item: item({ brand: "Ikea", brandNorm: "ikea", model: "Antilop" }),
@@ -335,7 +350,7 @@ describe("decideVerdict · other rules", () => {
       photo: noPhoto,
     });
     expect(result.verdict).toBe("clear");
-    expect(result.evidence).toContainEqual({ fact: "Model Caress is not named in the recall", matched: false, source: "listing_text" });
+    expect(result.evidence[0]).toEqual({ fact: "Not this recall: model Caress is not named in the recall", matched: false, source: "listing_text" });
   });
 
   it("notes an unavailable official photo without failing", () => {
@@ -589,7 +604,7 @@ describe("decideVerdict · Bébé Confort car seat in Breeze and Sunlite packs (
       photo: noPhoto,
     });
     expect(result.verdict).toBe("clear");
-    expect(result.evidence).toContainEqual({ fact: "The recall is for a car seat, not a stroller", matched: false, source: "listing_text" });
+    expect(result.evidence[0]).toEqual({ fact: "Not this recall: the recall is for a car seat, this is a stroller", matched: false, source: "listing_text" });
   });
 
   it("a Sunlite stroller is clear too", () => {
@@ -700,5 +715,16 @@ describe("decideVerdict · Ouxi V8 fatbike (Safety Gate, vehicle types)", () => 
         source: "official_data",
       });
     }
+  });
+
+  it("a clear verdict never stands on matching evidence alone", () => {
+    const result = decideVerdict({
+      item: { ...listing, model: "X5", modelVariant: null, title: "Vélo électrique Ouxi X5" },
+      candidate: candidate(ouxiV8, 0.6),
+      photo: { sameProduct: "no" },
+    });
+    expect(result.verdict).toBe("clear");
+    expect(result.evidence[0].matched).toBe(false);
+    expect(result.evidence[0].fact).toMatch(/^Not this recall: /);
   });
 });

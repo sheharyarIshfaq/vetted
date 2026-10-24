@@ -92,6 +92,25 @@ describe("panelSummary", () => {
     expect(panel.sellerMessage).toBeNull();
   });
 
+  it("clear next to a close recall: says why it isn't a match and links the notice", () => {
+    const panel = panelSummary({
+      verdict: "clear",
+      recall: bebeConfort,
+      evidence: [
+        { fact: "Not this recall: the recall is for a car seat, this is a stroller", matched: false, source: "listing_text" },
+        { fact: "Brand Bébé Confort matches the recall", matched: true, source: "listing_text" },
+      ],
+      extracted: extracted({ brand: "Bébé Confort", model: "Breeze", category: "stroller" }),
+      listingTitle: "Poussette Breeze",
+      searched,
+    });
+    expect(panel.line).toBe(
+      "A recall for Siège auto bébé des sunlite duo, breeze trio et brume trio came close. The recall is for a car seat, this is a stroller.",
+    );
+    expect(panel.source?.url).toBe(bebeConfort.url);
+    expect(panel.lookFor).toEqual([]);
+  });
+
   it("clear: one line saying what was searched, never that it's safe", () => {
     const panel = panelSummary({ verdict: "clear", recall: null, extracted: extracted({ brand: "Safety 1st", category: "high chair" }), listingTitle: "Chaise haute", searched });
     expect(panel).toMatchObject({ title: "Safety 1st high chair", risk: null, source: null, lookFor: [], sellerMessage: null });

@@ -70,7 +70,7 @@ export function ClearLayout({ check }: { check: LoadedCheck }) {
       </VerdictPanel>
 
       {check.label && <LabelRead read={check.label.read} photo={check.labelPhoto} />}
-      {evidence.items.length > 0 && <EvidenceList items={evidence.items} fromRecall={check.fromRecall} />}
+      {evidence.items.length > 0 && <EvidenceList items={evidence.items} fromRecall={check.fromRecall} clear />}
 
       <section
         aria-label="Watch this item"

@@ -214,6 +214,21 @@ function unnamedVariant(item: ItemFacts, recall: CandidateRecall, exactCode: boo
   return variant.length > 0 && variant.some((word) => !recallWords.has(word));
 }
 
+// A clear verdict next to a close recall always leads with why it isn't a match.
+function explained(evidence: Evidence[], recall: CandidateRecall): Evidence[] {
+  const reason = evidence.find((item) => !item.matched && item.source !== "official_data") ?? evidence.find((item) => !item.matched);
+  const lead: Evidence = {
+    fact: reason ? `Not this recall: ${lowerFirst(reason.fact)}` : `Not this recall: the listing doesn't name the recalled ${recall.productName}`,
+    matched: false,
+    source: reason?.source ?? "listing_text",
+  };
+  return [lead, ...evidence.filter((item) => item !== reason)];
+}
+
+function lowerFirst(value: string) {
+  return /^[A-Z][a-z]/.test(value) ? value.charAt(0).toLowerCase() + value.slice(1) : value;
+}
+
 export function decideVerdict({
   item,
   candidate,
@@ -275,7 +290,7 @@ export function decideVerdict({
   } else {
     evidence.push(...identityEvidence(item, recall, { brandMatch, modelNameMatch, refMatch, modelMatch }));
     if (otherType) {
-      evidence.push({ fact: `The recall is for a ${recallType}, not a ${itemType}`, matched: false, source: "listing_text" });
+      evidence.push({ fact: `The recall is for a ${recallType}, this is a ${itemType}`, matched: false, source: "listing_text" });
     }
   }
   if (sampleBatchMatch) {
@@ -309,7 +324,7 @@ export function decideVerdict({
     });
   }
   if (!identified || (photo.sameProduct === "no" && !namedInRecall)) {
-    return { verdict: "clear", recall: { id: recall.id, relation: "not_a_match" }, evidence, notes };
+    return { verdict: "clear", recall: { id: recall.id, relation: "not_a_match" }, evidence: explained(evidence, recall), notes };
   }
 
   // A recall is only certain when nothing leaves the product in doubt; otherwise the label has to settle it.
