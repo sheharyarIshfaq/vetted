@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Recall } from "../../db/schema";
 import type { ExtractedItem } from "./extract";
 import { panelSummary, productTitle } from "./panel";
+import { panelSummaryFr } from "./panel-fr";
 
 const hamax = {
   id: "rc:23843",
@@ -72,7 +73,7 @@ describe("panelSummary", () => {
       whatToDo: [],
     });
     expect(panel.sellerMessage).toBe(
-      "Bonjour, votre Hamax Buddy m'intéresse. Ce modèle fait l'objet d'un rappel pour certaines dates de fabrication. Pourriez-vous m'envoyer une photo de l'étiquette avec la date de fabrication ? Merci !",
+      "Hello, I'm interested in your Hamax Buddy. Some production dates of this model are recalled. Could you send me a photo of the label showing the production date? Thanks!",
     );
   });
 
@@ -133,6 +134,26 @@ describe("panelSummary", () => {
     });
     expect(panel.line).toBe(
       "A recall for Siège auto bébé des sunlite duo came close. The recall covers the car seat of the Sunlite; if this stroller comes with one, check that car seat's label.",
+    );
+  });
+});
+
+describe("panelSummaryFr", () => {
+  it("check_label in French, with the French seller message", () => {
+    const panel = panelSummaryFr({ verdict: "check_label", recall: hamax, extracted: buddy, listingTitle: "Siège enfant HAMAX BUDDY", searched });
+    expect(panel).toMatchObject({
+      title: "Hamax Buddy",
+      line: "Seules certaines unités de ce modèle sont rappelées. Vérifiez l'étiquette avant d'acheter.",
+      lookFor: ["Rappelé si fabriqué entre 01/2022 et 08/2026", "Codes 4091054 / 8591602"],
+    });
+    expect(panel.source?.label).toMatch(/^RappelConso · 19 oct\.? 2026$/);
+    expect(panel.sellerMessage).toContain("Bonjour, votre Hamax Buddy m'intéresse.");
+  });
+
+  it("clear in French says what was searched", () => {
+    const panel = panelSummaryFr({ verdict: "clear", recall: null, extracted: extracted({ brand: "Safety 1st" }), listingTitle: "Chaise haute", searched });
+    expect(panel.line.replace(/\s/g, " ")).toBe(
+      "Tiko a cherché « Safety 1st » parmi 14 433 rappels français et européens sans trouver de correspondance. Cela ne prouve pas que le produit est sûr.",
     );
   });
 });

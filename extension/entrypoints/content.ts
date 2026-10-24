@@ -1,6 +1,18 @@
 import { browser } from "wxt/browser";
 import { defineContentScript } from "wxt/utils/define-content-script";
-import { isListingUrl, resultUrl, toCheckResponse, type CheckResponse, type CheckResult, type ListingPayload, type Verdict } from "../utils/check";
+import {
+  defaultLang,
+  isListingUrl,
+  panelFor,
+  resultUrl,
+  STRINGS,
+  toCheckResponse,
+  type CheckResponse,
+  type CheckResult,
+  type Lang,
+  type ListingPayload,
+  type Verdict,
+} from "../utils/check";
 import { PALETTE, sticker } from "../utils/sticker";
 
 export default defineContentScript({
@@ -69,7 +81,7 @@ style.textContent = `
   :host { all: initial; }
   * { box-sizing: border-box; }
   .panel { position: fixed; left: 20px; bottom: 20px; width: min(360px, calc(100vw - 32px)); max-height: min(440px, calc(100vh - 40px)); display: flex; flex-direction: column; background: #fff; color: #16202B; border: 2px solid #CBD2CC; border-radius: 16px; box-shadow: 0 12px 40px #16202b2b; overflow: hidden; font: 13px/1.45 Onest, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; z-index: 2147483647; }
-  .head { position: relative; display: flex; gap: 12px; align-items: flex-start; padding: 14px 40px 14px 14px; }
+  .head { position: relative; display: flex; gap: 12px; align-items: flex-start; padding: 14px 84px 14px 14px; }
   .head svg { flex: 0 0 auto; }
   .eyebrow { font: 11px/1.4 "IBM Plex Mono", ui-monospace, monospace; letter-spacing: .06em; text-transform: uppercase; }
   h2 { margin: 2px 0 0; font-size: 16px; line-height: 1.3; font-weight: 700; }
@@ -88,6 +100,7 @@ style.textContent = `
   .secondary, button { background: #fff; color: #16202B; border: 1px solid #CBD2CC; }
   .message { padding: 16px 44px 16px 16px; }
   .message p { margin: 0 0 12px; }
+  .lang { position: absolute; right: 42px; top: 12px; min-height: auto; padding: 3px 7px; border: 1px solid #CBD2CC; background: #fff; color: #16202B; font: 600 11px/1.3 "IBM Plex Mono", ui-monospace, monospace; border-radius: 8px; }
   .close { position: absolute; right: 10px; top: 10px; width: 28px; height: 28px; min-height: auto; padding: 0; border: 0; background: transparent; color: #6B7684; font-size: 20px; }
   .loading { display: flex; align-items: center; gap: 10px; padding: 14px 16px; color: #3A4552; }
   .spinner { flex: 0 0 18px; width: 18px; height: 18px; border: 2.5px solid #E2E6E1; border-top-color: #0F6B4F; border-radius: 50%; animation: spin .8s linear infinite; }
@@ -108,11 +121,14 @@ function removeChildren() {
   photoSticker = null;
 }
 
+let lang: Lang = defaultLang(location.hostname);
+let shownResult: CheckResult | null = null;
+
 function showLoading() {
   removeChildren();
   const panel = document.createElement("section"); panel.className = "panel loading"; panel.setAttribute("role", "status");
   const spinner = document.createElement("span"); spinner.className = "spinner"; spinner.setAttribute("aria-hidden", "true");
-  const text = document.createElement("span"); text.textContent = "Tiko is checking this listing against official recalls…";
+  const text = document.createElement("span"); text.textContent = STRINGS[lang].checking;
   panel.append(spinner, text);
   shadow.append(panel);
 }
@@ -134,24 +150,38 @@ function list(heading: string, lines: string[]) {
 }
 
 function copyButton(message: string) {
-  const button = element("button", "primary", "Copy a message for the seller");
+  const strings = STRINGS[lang];
+  const button = element("button", "primary", strings.copy);
   button.type = "button";
   button.addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(message);
-      button.textContent = "Message copied";
+      button.textContent = strings.copied;
     } catch {
-      button.textContent = "Copy failed, open the full result";
+      button.textContent = strings.copyFailed;
     }
-    setTimeout(() => { button.textContent = "Copy a message for the seller"; }, 2500);
+    setTimeout(() => { button.textContent = strings.copy; }, 2500);
+  });
+  return button;
+}
+
+function langButton() {
+  const button = element("button", "lang", lang === "fr" ? "EN" : "FR");
+  button.type = "button";
+  button.setAttribute("aria-label", lang === "fr" ? "Show in English" : "Afficher en français");
+  button.addEventListener("click", () => {
+    lang = lang === "fr" ? "en" : "fr";
+    if (shownResult) showResult(shownResult);
   });
   return button;
 }
 
 function showResult(result: CheckResult) {
   removeChildren();
+  shownResult = result;
+  const strings = STRINGS[lang];
   const colors = PALETTE[result.verdict];
-  const summary = result.panel;
+  const summary = panelFor(result, lang);
   const panel = element("section", "panel");
   panel.setAttribute("aria-label", "Tiko recall check");
   panel.style.borderColor = colors.color;
@@ -159,22 +189,24 @@ function showResult(result: CheckResult) {
   const head = element("div", "head");
   head.style.background = colors.soft;
   const text = element("div", "summary");
-  const eyebrow = element("div", "eyebrow", `tiko · ${colors.eyebrow}`);
+  const eyebrow = element("div", "eyebrow", `tiko · ${strings[result.verdict]}`);
   eyebrow.style.color = colors.text;
   text.append(eyebrow, element("h2", "", summary?.title ?? result.recall?.productName ?? "This listing"));
   text.append(element("p", "", summary?.line ?? result.evidence[0]?.fact ?? ""));
-  head.append(sticker(result.verdict, 40), text, closeButton(panel));
+  if (lang === "fr") text.lang = "fr";
+  head.append(sticker(result.verdict, 40), text, langButton(), closeButton(panel));
 
   const body = element("div", "body");
-  if (summary?.lookFor.length) body.append(list("What to look for", summary.lookFor));
-  if (summary?.whatToDo.length) body.append(list("What the notice says to do", summary.whatToDo));
+  if (lang === "fr") body.lang = "fr";
+  if (summary?.lookFor.length) body.append(list(strings.lookFor, summary.lookFor));
+  if (summary?.whatToDo.length) body.append(list(strings.whatToDo, summary.whatToDo));
   if (summary?.risk || summary?.source) {
     const meta = element("div", "meta");
     if (summary.risk) meta.append(element("span", "risk", summary.risk));
     if (summary.source) {
       const source = element("a", "source", summary.source.label);
       source.href = summary.source.url; source.target = "_blank"; source.rel = "noopener noreferrer";
-      source.title = "Open the official notice";
+      source.title = strings.notice;
       meta.append(source);
     }
     body.append(meta);
@@ -182,7 +214,7 @@ function showResult(result: CheckResult) {
 
   const actions = element("div", "actions");
   if (summary?.sellerMessage) actions.append(copyButton(summary.sellerMessage));
-  const full = element("a", "secondary", "Full result");
+  const full = element("a", "secondary", strings.full);
   full.href = resultUrl(result); full.target = "_blank"; full.rel = "noopener noreferrer";
   actions.append(full);
   body.append(actions);
@@ -214,7 +246,7 @@ function placePhotoSticker(verdict: Verdict) {
 }
 
 function closeButton(panel: HTMLElement) {
-  const close = document.createElement("button"); close.className = "close"; close.type = "button"; close.setAttribute("aria-label", "Close panel"); close.textContent = "×";
+  const close = document.createElement("button"); close.className = "close"; close.type = "button"; close.setAttribute("aria-label", STRINGS[lang].close); close.textContent = "×";
   close.addEventListener("click", () => panel.remove());
   return close;
 }
@@ -223,7 +255,7 @@ function showError(message: string) {
   removeChildren();
   const panel = document.createElement("section"); panel.className = "panel message"; panel.setAttribute("role", "alert");
   const text = document.createElement("p"); text.textContent = message;
-  const retry = document.createElement("button"); retry.type = "button"; retry.textContent = "Try again"; retry.addEventListener("click", () => void runCheck());
+  const retry = document.createElement("button"); retry.type = "button"; retry.textContent = STRINGS[lang].retry; retry.addEventListener("click", () => void runCheck());
   panel.append(text, retry, closeButton(panel));
   shadow.append(panel);
 }

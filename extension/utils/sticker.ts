@@ -1,9 +1,9 @@
 import type { Verdict } from "./check";
 
-export const PALETTE: Record<Verdict, { color: string; soft: string; text: string; eyebrow: string }> = {
-  recalled: { color: "#C2362B", soft: "#FBE9E7", text: "#8F2219", eyebrow: "recalled" },
-  check_label: { color: "#B86A00", soft: "#FBF1E3", text: "#7A4700", eyebrow: "possibly recalled" },
-  clear: { color: "#1E7F55", soft: "#E7F1EC", text: "#145C3E", eyebrow: "no recall found" },
+export const PALETTE: Record<Verdict, { color: string; soft: string; text: string }> = {
+  recalled: { color: "#C2362B", soft: "#FBE9E7", text: "#8F2219" },
+  check_label: { color: "#B86A00", soft: "#FBF1E3", text: "#7A4700" },
+  clear: { color: "#1E7F55", soft: "#E7F1EC", text: "#145C3E" },
 };
 
 const MARKS: Record<Verdict, { d: string; dot?: boolean }> = {

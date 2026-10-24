@@ -17,7 +17,52 @@ export type CheckResult = {
   evidence: { fact: string; matched: boolean; source: string }[];
   recall: { productName: string; url: string; sourceRef: string } | null;
   panel?: PanelSummary; // absent on results saved before the panel summary
+  panelFr?: PanelSummary;
 };
+
+export type Lang = "fr" | "en";
+
+// Both supported sites are French, so the panel starts in French; the switch in its header changes it.
+export function defaultLang(hostname: string): Lang {
+  return hostname.endsWith(".fr") ? "fr" : "en";
+}
+
+export const STRINGS: Record<Lang, Record<"checking" | "lookFor" | "whatToDo" | "copy" | "copied" | "copyFailed" | "full" | "notice" | "close" | "retry" | Verdict, string>> = {
+  en: {
+    checking: "Tiko is checking this listing against official recalls…",
+    lookFor: "What to look for",
+    whatToDo: "What the notice says to do",
+    copy: "Copy a message for the seller",
+    copied: "Message copied",
+    copyFailed: "Copy failed, open the full result",
+    full: "Full result",
+    notice: "Open the official notice",
+    close: "Close panel",
+    retry: "Try again",
+    recalled: "recalled",
+    check_label: "possibly recalled",
+    clear: "no recall found",
+  },
+  fr: {
+    checking: "Tiko compare cette annonce aux rappels officiels…",
+    lookFor: "À vérifier",
+    whatToDo: "Ce que dit la fiche de rappel",
+    copy: "Copier un message pour le vendeur",
+    copied: "Message copié",
+    copyFailed: "Échec de la copie, ouvrez le résultat complet",
+    full: "Résultat complet",
+    notice: "Ouvrir la fiche officielle",
+    close: "Fermer",
+    retry: "Réessayer",
+    recalled: "rappelé",
+    check_label: "peut-être rappelé",
+    clear: "aucun rappel trouvé",
+  },
+};
+
+export function panelFor(result: CheckResult, lang: Lang) {
+  return lang === "fr" ? (result.panelFr ?? result.panel) : result.panel;
+}
 
 export type ListingPayload = { pageUrl: string; title: string; description: string; imageUrls: string[] };
 

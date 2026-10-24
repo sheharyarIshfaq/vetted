@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { downloadImage } from "@/lib/check/images";
 import { panelSummary } from "@/lib/check/panel";
+import { panelSummaryFr } from "@/lib/check/panel-fr";
 import { cachedCheck, checkCacheKey, CheckInputError, runCheck } from "@/lib/check/run";
 import { getRecall, recallStats } from "@/lib/db/recalls";
 import { limitReached } from "../../rate-limits";
@@ -75,16 +76,23 @@ export async function POST(request: Request) {
       result.recall ? getRecall(result.recall.id) : undefined,
       recallStats(),
     ]);
-    const panel = panelSummary({
+    const panelInput = {
       verdict: result.verdict,
       recall: recall ?? null,
       evidence: result.evidence,
       extracted: result.extracted,
       listingTitle: parsed.data.title,
       searched: { total: stats.total, sources: stats.sources },
-    });
+    };
     return Response.json(
-      { id: result.id, verdict: result.verdict, evidence: result.evidence, recall: result.recall, panel },
+      {
+        id: result.id,
+        verdict: result.verdict,
+        evidence: result.evidence,
+        recall: result.recall,
+        panel: panelSummary(panelInput),
+        panelFr: panelSummaryFr(panelInput),
+      },
       { headers },
     );
   } catch (error) {

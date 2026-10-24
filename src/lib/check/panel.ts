@@ -1,11 +1,11 @@
 import type { Recall } from "../../db/schema";
 import { PART_OF_MODEL, recallLimits, type Evidence, type Verdict } from "../verdict";
-import { capitalize, dayName, itemName, monthNumber, riskWord, sellerMessage, sourcesLabel } from "./copy";
+import { capitalize, dayName, itemName, monthNumber, riskWord, sellerMessageEnglish, sourcesLabel } from "./copy";
 import { batchInEnglish, remedyInEnglish } from "../official-text";
 import type { ExtractedItem } from "./extract";
 
-const SOURCE_NAMES: Record<string, string> = { rappelconso: "RappelConso", safetygate: "EU Safety Gate" };
-const MAX_CODES = 3;
+export const SOURCE_NAMES: Record<string, string> = { rappelconso: "RappelConso", safetygate: "EU Safety Gate" };
+export const MAX_CODES = 3;
 
 export type PanelSummary = {
   title: string;
@@ -17,7 +17,7 @@ export type PanelSummary = {
   sellerMessage: string | null;
 };
 
-type PanelInput = {
+export type PanelInput = {
   verdict: Verdict;
   recall: Recall | null; // the recall behind the verdict, or the closest one on a clear verdict
   evidence?: Evidence[];
@@ -106,7 +106,7 @@ export function panelSummary(input: PanelInput): PanelSummary {
     whatToDo: verdict === "recalled" ? (recall.whatToDo ?? "").split("\n").map((line) => line.trim()).filter(Boolean).map(remedyInEnglish).map(capitalize) : [],
     sellerMessage:
       verdict === "check_label"
-        ? sellerMessage("check_label", itemName(extracted) ?? listingTitle, recallLimits({ ...extracted, title: listingTitle }, recall), recall.url)
+        ? sellerMessageEnglish("check_label", itemName(extracted) ?? listingTitle, recallLimits({ ...extracted, title: listingTitle }, recall), recall.url)
         : null,
   };
 }

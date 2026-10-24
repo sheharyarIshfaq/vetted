@@ -189,6 +189,17 @@ export function sellerMessage(verdict: Verdict, productLabel: string, limits: Re
   return `Bonjour, votre ${productLabel} m'intéresse. Ce modèle fait l'objet d'un rappel pour certains numéros de lot. Pourriez-vous m'envoyer une photo de l'étiquette avec le numéro de lot ? Merci !`;
 }
 
+// The same request in English, for buyers who read the panel in English.
+export function sellerMessageEnglish(verdict: Verdict, productLabel: string, limits: RecallLimits, noticeUrl: string) {
+  if (verdict === "recalled") {
+    return `Hello, I'm interested in your ${productLabel}, but this model has an official recall: ${noticeUrl}. Could you check it before selling? Thanks!`;
+  }
+  if (!limits.batches.length && (limits.from || limits.to)) {
+    return `Hello, I'm interested in your ${productLabel}. Some production dates of this model are recalled. Could you send me a photo of the label showing the production date? Thanks!`;
+  }
+  return `Hello, I'm interested in your ${productLabel}. Some batches of this model are recalled. Could you send me a photo of the label showing the batch number? Thanks!`;
+}
+
 const SOURCE_LABELS: Record<EvidenceSource, string> = {
   listing_text: "listing text",
   listing_photo: "listing photo",
