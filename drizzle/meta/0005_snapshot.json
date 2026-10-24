@@ -1,5 +1,5 @@
 {
-  "id": "5c646d1c-ca80-448f-83ac-b26bdb578e67",
+  "id": "ceea7176-3379-482f-88a5-e980dbc14f61",
   "prevId": "eef96711-e8b6-4f04-84da-16dfa38d40bd",
   "version": "7",
   "dialect": "postgresql",
@@ -353,11 +353,12 @@
           "primaryKey": false,
           "notNull": false
         },
-        "model_name": {
-          "name": "model_name",
-          "type": "text",
+        "model_names": {
+          "name": "model_names",
+          "type": "text[]",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": "'{}'"
         },
         "codes": {
           "name": "codes",

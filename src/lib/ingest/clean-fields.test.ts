@@ -44,7 +44,7 @@ describe("validateFields", () => {
       {
         brand: { value: "Belkin", quote: "belkin" },
         productType: { value: "power bank", quote: "batterie externe" },
-        modelName: { value: "boostcharge", quote: "boostcharge usb-c pd" },
+        modelNames: [{ value: "boostcharge", quote: "boostcharge usb-c pd" }],
         refs: [{ value: "bpb002", quote: "(bpb002)" }, { value: "BPB002BTBK", quote: "bpb002btbk" }],
         specs: [{ value: "20k", quote: "power bank 20k" }],
       },
@@ -55,7 +55,7 @@ describe("validateFields", () => {
       brandClean: "belkin",
       brandCleanNorm: "belkin",
       productType: "power bank",
-      modelName: "boostcharge",
+      modelNames: ["boostcharge"],
       codes: ["bpb002", "BPB002BTBK"],
       specs: ["20k"],
     });
@@ -67,26 +67,26 @@ describe("validateFields", () => {
       {
         brand: { value: "Anker", quote: "anker powercore" },
         productType: { value: "charger", quote: "chargeur mural" },
-        modelName: { value: "boostcharge pro", quote: "boostcharge usb-c" },
+        modelNames: [{ value: "boostcharge pro", quote: "boostcharge usb-c" }],
         refs: [{ value: "745883797622", quote: "745883797622" }, { value: "bpb003", quote: "bpb002" }],
         specs: [],
       },
       "unspecified",
       aliases,
     );
-    expect(clean).toEqual({ brandClean: null, brandCleanNorm: null, productType: null, modelName: null, codes: [], specs: [] });
+    expect(clean).toEqual({ brandClean: null, brandCleanNorm: null, productType: null, modelNames: [], codes: [], specs: [] });
   });
 
   it("takes the brand from the text when the brand field is empty", () => {
     const noBrand = fieldsInput({ ...belkin, brand: null, raw: { ...belkin.raw, marque_produit: "" } });
     const clean = validateFields(
       noBrand,
-      { brand: { value: "Belkin", quote: "boostcharge" }, productType: null, modelName: null, refs: [], specs: [] },
+      { brand: { value: "Belkin", quote: "boostcharge" }, productType: null, modelNames: [], refs: [], specs: [] },
       null,
       aliases,
     );
     expect(clean.brandClean).toBeNull();
     const named = fieldsInput({ ...belkin, brand: null, raw: { ...belkin.raw, marque_produit: "", libelle: "batterie externe belkin boostcharge" } });
-    expect(validateFields(named, { brand: { value: "Belkin", quote: "belkin boostcharge" }, productType: null, modelName: null, refs: [], specs: [] }, null, aliases).brandCleanNorm).toBe("belkin");
+    expect(validateFields(named, { brand: { value: "Belkin", quote: "belkin boostcharge" }, productType: null, modelNames: [], refs: [], specs: [] }, null, aliases).brandCleanNorm).toBe("belkin");
   });
 });

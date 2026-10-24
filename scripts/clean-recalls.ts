@@ -6,6 +6,7 @@ import { cleanRecalls, type FieldsPlan } from "../src/lib/ingest/clean-fields";
 const { values } = parseArgs({
   options: {
     limit: { type: "string" },
+    concurrency: { type: "string" },
     yes: { type: "boolean", default: false },
   },
 });
@@ -26,7 +27,12 @@ async function confirm(plan: FieldsPlan) {
 }
 
 try {
-  const result = await cleanRecalls({ limit: values.limit ? Number(values.limit) : undefined, confirm, log });
+  const result = await cleanRecalls({
+    limit: values.limit ? Number(values.limit) : undefined,
+    concurrency: values.concurrency ? Number(values.concurrency) : undefined,
+    confirm,
+    log,
+  });
   if (result) {
     log(`Stored clean fields for ${result.stored} recalls (${result.failed} failed)`);
     if (result.calls) {

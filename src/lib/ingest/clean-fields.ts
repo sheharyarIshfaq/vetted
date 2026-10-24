@@ -14,7 +14,7 @@ export type CleanFields = {
   brandClean: string | null;
   brandCleanNorm: string | null;
   productType: string | null;
-  modelName: string | null;
+  modelNames: string[];
   codes: string[];
   specs: string[];
 };
@@ -83,7 +83,7 @@ export function validateFields(
     brandClean,
     brandCleanNorm: brandClean ? normalizeBrand(brandClean, aliases) : null,
     productType: backed(text, output.productType, false) ? output.productType!.value : null,
-    modelName: backed(text, output.modelName),
+    modelNames: unique(output.modelNames.map((model) => backed(text, model))),
     codes: unique(output.refs.map((ref) => backed(text, ref))).filter((code) => /\d/.test(code) && !GTIN.test(code.replace(/\s/g, ""))),
     specs: unique(output.specs.map((spec) => backed(text, spec))),
   };
@@ -126,17 +126,19 @@ async function readWithModel(text: string, key: string) {
 
 export type FieldsPlan = { recalls: number; cached: number; calls: number; estimatedCost: number };
 
-const CONCURRENCY = 8;
+const DEFAULT_CONCURRENCY = 8;
 
 // Reads the clean fields of recalls whose input changed; cached answers cost nothing.
 export async function cleanRecalls({
   updatedSince,
   limit,
+  concurrency = DEFAULT_CONCURRENCY,
   confirm,
   log,
 }: {
   updatedSince?: Date; // only recalls stored or updated since then, as an ingestion run does
   limit?: number;
+  concurrency?: number;
   confirm: (plan: FieldsPlan) => Promise<boolean>;
   log: (message: string) => void;
 }) {
@@ -157,7 +159,7 @@ export async function cleanRecalls({
   let outputTokens = 0;
   let failed = 0;
   let done = 0;
-  await mapWithConcurrency(pending, CONCURRENCY, async ({ text, key }) => {
+  await mapWithConcurrency(pending, concurrency, async ({ text, key }) => {
     try {
       const result = await readWithModel(text, key);
       cached.set(key, result.output);
@@ -175,7 +177,7 @@ export async function cleanRecalls({
     const output = cached.get(key);
     return output ? [{ id: recall.id, key, ...validateFields(text, output, recall.brand, aliases) }] : [];
   });
-  await mapWithConcurrency(fields, CONCURRENCY, ({ id, key, ...clean }) =>
+  await mapWithConcurrency(fields, DEFAULT_CONCURRENCY, ({ id, key, ...clean }) =>
     db().update(recalls).set({ ...clean, cleanHash: key }).where(eq(recalls.id, id)),
   );
   const cost = inputTokens * INPUT_PRICE + outputTokens * OUTPUT_PRICE;

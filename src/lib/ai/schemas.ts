@@ -27,7 +27,7 @@ const quoted = z.object({ value: z.string(), quote: z.string() });
 export const recallFieldsSchema = z.object({
   brand: quoted.nullable(),
   productType: z.object({ value: z.enum(PRODUCT_TYPES), quote: z.string() }).nullable(),
-  modelName: quoted.nullable(),
+  modelNames: z.array(quoted),
   refs: z.array(quoted),
   specs: z.array(quoted),
 });

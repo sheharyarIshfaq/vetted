@@ -45,7 +45,7 @@ export const recalls = pgTable(
     brandClean: text("brand_clean"),
     brandCleanNorm: text("brand_clean_norm"),
     productType: text("product_type"),
-    modelName: text("model_name"),
+    modelNames: text("model_names").array().notNull().default(sql`'{}'`),
     codes: text().array().notNull().default(sql`'{}'`),
     specs: text().array().notNull().default(sql`'{}'`),
     cleanHash: text("clean_hash"), // input hash of the clean fields, so unchanged recalls aren't read again
