@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, max, sql, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, max, sql, type SQL } from "drizzle-orm";
 import { recalls, type NewRecall, type Recall } from "../../db/schema";
 import { normalizeText } from "../text";
 import { db } from "./client";
@@ -47,6 +47,11 @@ export async function upsertRecalls(rows: NewRecall[]) {
 export async function getRecall(id: string): Promise<Recall | undefined> {
   const [row] = await db().select().from(recalls).where(eq(recalls.id, id)).limit(1);
   return row;
+}
+
+export function getRecalls(ids: string[]): Promise<Recall[]> {
+  if (ids.length === 0) return Promise.resolve([]);
+  return db().select().from(recalls).where(inArray(recalls.id, ids));
 }
 
 type ListOptions = { q?: string; category?: string; page?: number; pageSize?: number };

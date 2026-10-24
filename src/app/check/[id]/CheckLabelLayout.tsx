@@ -1,5 +1,7 @@
 import { CopyMessageButton } from "@/components/check/CopyMessageButton";
 import { EvidenceList } from "@/components/check/EvidenceList";
+import { LabelRead } from "@/components/check/LabelRead";
+import { LabelUpload } from "@/components/check/LabelUpload";
 import { RemoteImage } from "@/components/check/RemoteImage";
 import { ReportWrongMatch } from "@/components/check/ReportWrongMatch";
 import { VerdictPanel } from "@/components/check/VerdictPanel";
@@ -54,6 +56,8 @@ export function CheckLabelLayout({ check }: Props) {
           )}
           <div className="text-sm leading-normal text-ink-2">Tiko looks for these on the label:</div>
           <div className="rounded-[10px] bg-[#F2F4F1] px-3 py-2.5 font-mono text-sm text-ink">{labelTargets(limits)}</div>
+          {check.label && <LabelRead read={check.label.read} photo={check.labelPhoto} />}
+          <LabelUpload checkId={check.id} />
         </section>
 
         <section

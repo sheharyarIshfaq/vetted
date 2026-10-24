@@ -1,5 +1,6 @@
 import { CopyMessageButton } from "@/components/check/CopyMessageButton";
 import { EvidenceList } from "@/components/check/EvidenceList";
+import { LabelRead } from "@/components/check/LabelRead";
 import { ListingSummary } from "@/components/check/ListingSummary";
 import { PhotoPair } from "@/components/check/PhotoPair";
 import { ReportWrongMatch } from "@/components/check/ReportWrongMatch";
@@ -21,7 +22,10 @@ export function RecalledLayout({ check }: Props) {
         entries
       </Breadcrumb>
       <div className="flex flex-wrap items-start gap-6">
-        <ListingSummary title={check.listingTitle} photo={check.listingPhoto} extracted={extracted} />
+        <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-4">
+          <ListingSummary title={check.listingTitle} photo={check.listingPhoto} extracted={extracted} />
+          {check.label && <LabelRead read={check.label.read} photo={check.labelPhoto} />}
+        </div>
         <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-4">
           <VerdictPanel
             verdict="recalled"

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { RecallLimits } from "../verdict";
 import {
+  capitalize,
   checkLabelSummary,
   dayName,
   eyebrow,
@@ -41,6 +42,8 @@ describe("labels", () => {
     expect(rangePhrase(null, "2020-05-31")).toBe("up to May 2020");
     expect(madeLabel("2020-03", "label_photo")).toBe("03/2020 · from label");
     expect(titleCase("britax römer")).toBe("Britax Römer");
+    expect(capitalize("châssis de poussette smile iii")).toBe("Châssis de poussette smile iii");
+    expect(capitalize("")).toBe("");
   });
 });
 

@@ -1,8 +1,9 @@
 import { EvidenceList } from "@/components/check/EvidenceList";
+import { LabelRead } from "@/components/check/LabelRead";
 import { ReportWrongMatch } from "@/components/check/ReportWrongMatch";
 import { VerdictPanel } from "@/components/check/VerdictPanel";
 import { WatchForm } from "@/components/check/WatchForm";
-import { eyebrow, headline, searchedSummary } from "@/lib/check/copy";
+import { capitalize, eyebrow, headline, searchedSummary } from "@/lib/check/copy";
 import { Breadcrumb } from "./Breadcrumb";
 import type { LoadedCheck } from "./load-check";
 
@@ -23,7 +24,7 @@ function ClosestRecall({ check }: { check: LoadedCheck }) {
   const label = evidence.relation === "other_dates" ? "same model, other dates" : "not a match";
   return (
     <a href={recall.url} target="_blank" rel="noopener noreferrer" className="text-ink hover:text-brand">
-      {recall.productName} · {label}
+      {capitalize(recall.productName)} · {label}
     </a>
   );
 }
@@ -60,6 +61,7 @@ export function ClearLayout({ check }: { check: LoadedCheck }) {
         <p className="m-0">{searched}</p>
       </VerdictPanel>
 
+      {check.label && <LabelRead read={check.label.read} photo={check.labelPhoto} />}
       {evidence.items.length > 0 && <EvidenceList items={evidence.items} />}
 
       <section
@@ -69,8 +71,9 @@ export function ClearLayout({ check }: { check: LoadedCheck }) {
         <div className="flex min-w-0 flex-[999_1_420px] flex-col gap-1.5">
           <h2 className="m-0 text-xl font-bold">Bought it? Tiko can keep watching.</h2>
           <p className="m-0 text-[15px] leading-normal text-ink-2">
-            Recalls can come later. Leave your email and Tiko tells you if this model is ever recalled.
+            Leave your email and we&apos;ll tell you if this model is recalled later.
           </p>
+          <p className="m-0 text-[13px] text-muted">Email alerts are coming soon.</p>
         </div>
         <WatchForm brandNorm={extracted.brandNorm} model={[extracted.model, extracted.modelVariant].filter(Boolean).join(" ") || null} />
       </section>

@@ -45,6 +45,11 @@ export function rangePhrase(from: string | null, to: string | null) {
   return null;
 }
 
+// Official product names are stored in lower case; only the display gets a capital.
+export function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 export function titleCase(value: string) {
   return value.replace(/(^|[\s-])(\p{L})/gu, (_, separator: string, letter: string) => separator + letter.toUpperCase());
 }

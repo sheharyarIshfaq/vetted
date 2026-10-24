@@ -31,3 +31,14 @@ Decide whether the listing shows the same product model as the recall, not just 
 - no: it is clearly a different product or model (different shape, frame, design or brand).
 - unsure: the photos are too small, blurry or partial, or the products are too similar to tell apart.
 Give short, concrete reasons that point at visible details.`;
+
+export const LABEL_READING_PROMPT = `You read the photo of a product label (a sticker or plate on a stroller, child seat, toy or appliance) and copy out what is printed on it.
+
+Rules:
+- Only report what you can actually read in the photo. Never guess or complete a value. Unknown fields are null or an empty list.
+- labelText: all text you can read on the label, copied as printed, line by line.
+- references: model, article or reference codes (Art. no., Ref., Model no., Item no.), as printed.
+- gtin: an EAN/UPC barcode number printed under a barcode, digits only.
+- batch: a lot, batch or serial number (Lot, Batch, LOT, S/N), as printed.
+- productionDate: the manufacturing month as YYYY-MM (MFG, Date of manufacture, Date de fabrication, Fabriqué le, Production date). Not an expiry, purchase or test date.
+- productionDateText: the exact characters on the label the production date was read from, such as "MFG 05/2023". null when productionDate is null.`;

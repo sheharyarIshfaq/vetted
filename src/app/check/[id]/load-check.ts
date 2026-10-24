@@ -1,5 +1,6 @@
 import type { StoredEvidence, StoredExtracted, StoredInput } from "@/lib/check/run";
-import { titleCase } from "@/lib/check/copy";
+import { capitalize, titleCase } from "@/lib/check/copy";
+import type { StoredLabel } from "@/lib/check/label";
 import { getCheck } from "@/lib/db/checks";
 import { getRecall, recallStats } from "@/lib/db/recalls";
 import { presignedGetUrl } from "@/lib/storage";
@@ -30,10 +31,12 @@ export async function loadCheck(id: string) {
   const input = check.input as StoredInput;
   const extracted = check.extracted as StoredExtracted;
   const evidence = check.evidence as StoredEvidence;
-  const [recall, stats, listingPhoto] = await Promise.all([
+  const label = check.label as StoredLabel | null;
+  const [recall, stats, listingPhoto, labelPhoto] = await Promise.all([
     check.recallId ? getRecall(check.recallId) : undefined,
     recallStats(),
     input.photoKeys[0] ? presignedGetUrl(input.photoKeys[0]) : (input.page?.image ?? null),
+    label ? presignedGetUrl(label.photoKey) : null,
   ]);
 
   const model = [extracted.model, extracted.modelVariant].filter(Boolean).join(" ");
@@ -51,8 +54,10 @@ export async function loadCheck(id: string) {
     evidence,
     searchedFor,
     // How the recalled product is named in prose: the model the listing gave, else the notice's product name.
-    productLabel: model ? titleCase(model) : (recall?.productName ?? listingTitle),
+    productLabel: model ? titleCase(model) : recall ? capitalize(recall.productName) : listingTitle,
     sellerLabel: searchedFor ? titleCase(searchedFor) : listingTitle,
+    label,
+    labelPhoto,
     recall: recall ?? null,
     limits: recall ? recallLimits(extracted, recall) : null,
     stats: { ...stats, updatedAt: stats.updatedAt ? UPDATED_AT.format(stats.updatedAt).replace(",", "") : null },

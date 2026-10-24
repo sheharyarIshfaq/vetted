@@ -60,3 +60,14 @@ export const photoComparisonSchema = z.object({
 });
 
 export type PhotoComparisonOutput = z.infer<typeof photoComparisonSchema>;
+
+export const labelReadingSchema = z.object({
+  labelText: z.string().nullable(),
+  references: z.array(z.string()),
+  gtin: z.string().nullable(),
+  batch: z.string().nullable(),
+  productionDate: z.string().nullable(),
+  productionDateText: z.string().nullable(),
+});
+
+export type LabelReading = z.infer<typeof labelReadingSchema>;

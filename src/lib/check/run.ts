@@ -6,7 +6,7 @@ import { uploadObject } from "../storage";
 import { normalizeBrand } from "../text";
 import { decideBest, type Evidence, type ItemFacts, type Verdict } from "../verdict";
 import { findCandidates } from "./candidates";
-import { comparePhotos } from "./compare";
+import { comparePhotos, type PhotoResult } from "./compare";
 import { extractListing, type ExtractedItem } from "./extract";
 import { downloadImage, prepareImage } from "./images";
 import { readListingPage, type ListingPage } from "./listing-page";
@@ -31,6 +31,12 @@ export type CheckResult = {
 // Shapes of the JSON columns saved on a check.
 export type StoredInput = { text: string | null; url: string | null; page: ListingPage | null; photoKeys: string[] };
 export type StoredExtracted = ExtractedItem & { brandNorm: string | null };
+export type StoredCandidate = {
+  recallId: string;
+  titleSimilarity: number;
+  brandSimilarity: number;
+  photo: PhotoResult | null;
+};
 export type StoredEvidence = {
   items: Evidence[];
   notes: string[];
@@ -131,7 +137,7 @@ export async function runCheck(input: CheckInput, log: Log = () => {}): Promise<
   };
   const id = await insertCheck({
     ...stored,
-    candidates: ranked.map(({ recall, titleSimilarity, brandSimilarity }) => ({
+    candidates: ranked.map(({ recall, titleSimilarity, brandSimilarity }): StoredCandidate => ({
       recallId: recall.id,
       titleSimilarity,
       brandSimilarity,

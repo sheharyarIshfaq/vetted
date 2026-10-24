@@ -28,7 +28,7 @@ export function WatchForm({ brandNorm, model }: { brandNorm: string | null; mode
   if (state === "saved") {
     return (
       <p role="status" className="m-0 flex-[1_1_340px] text-[15px] text-ink-2">
-        Saved. Tiko will watch this model for {email}.
+        Saved for {email}. Email alerts are coming soon.
       </p>
     );
   }

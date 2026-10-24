@@ -27,3 +27,7 @@ export async function flagCheck(id: string, note: string | null) {
     .returning({ id: checks.id });
   return rows.length > 0;
 }
+
+export async function updateCheck(id: string, changes: Partial<NewCheck>) {
+  await db().update(checks).set(changes).where(eq(checks.id, id));
+}

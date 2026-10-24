@@ -5,10 +5,10 @@ export const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
 const MAX_SIDE = 1024;
 
 // Smaller images keep the model fast and cheap; rotate() applies the EXIF orientation from phone photos.
-export async function prepareImage(bytes: Uint8Array) {
+export async function prepareImage(bytes: Uint8Array, maxSide = MAX_SIDE) {
   return sharp(bytes)
     .rotate()
-    .resize(MAX_SIDE, MAX_SIDE, { fit: "inside", withoutEnlargement: true })
+    .resize(maxSide, maxSide, { fit: "inside", withoutEnlargement: true })
     .jpeg({ quality: 80 })
     .toBuffer();
 }

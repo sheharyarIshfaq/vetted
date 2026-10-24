@@ -16,7 +16,7 @@ function Row({ label, value, mono = false }: { label: string; value: string; mon
 export function ListingSummary({ title, photo, extracted }: Props) {
   const model = [extracted.model, extracted.modelVariant].filter(Boolean).join(" ");
   return (
-    <aside aria-label="The listing" className="flex min-w-0 flex-[1_1_320px] flex-col overflow-hidden rounded-[18px] border border-line bg-surface">
+    <aside aria-label="The listing" className="flex min-w-0 flex-col overflow-hidden rounded-[18px] border border-line bg-surface">
       {photo && <RemoteImage src={photo} alt="Photo from the listing" className="h-60 w-full bg-placeholder object-cover" />}
       <div className="flex flex-col gap-3.5 p-[18px]">
         <div className="flex flex-col gap-1">
