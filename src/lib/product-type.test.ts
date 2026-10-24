@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { productType } from "./product-type";
+import { productType, typesConflict } from "./product-type";
 
 describe("productType", () => {
   it("reads the type from a recall's French product name", () => {
@@ -21,5 +21,29 @@ describe("productType", () => {
     expect(productType("toy")).toBeNull();
     expect(productType("stroller with car seat")).toBeNull();
     expect(productType(null)).toBeNull();
+  });
+
+  it("reads e-bikes, scooters and other vehicles", () => {
+    expect(productType("Fatbike Ouxi V8 Ultra Max vélo électrique neuf")).toBe("e-bike");
+    expect(productType("electric bicycle")).toBe("e-bike");
+    expect(productType("Vélo électrique")).toBe("e-bike");
+    expect(productType("Véhicules à moteur")).toBe("motor vehicle");
+    expect(productType("Trottinette électrique")).toBe("vehicle");
+    expect(productType("cyclomoteur")).toBe("moped");
+  });
+});
+
+describe("typesConflict", () => {
+  it("separates clearly different products", () => {
+    expect(typesConflict("stroller", "car seat")).toBe(true);
+    expect(typesConflict("car seat base", "car seat")).toBe(true);
+    expect(typesConflict("e-bike", "helmet")).toBe(true);
+  });
+
+  it("never separates a vehicle from its variants, or an unknown type", () => {
+    expect(typesConflict("e-bike", "motor vehicle")).toBe(false);
+    expect(typesConflict("e-scooter", "moped")).toBe(false);
+    expect(typesConflict("vehicle", "e-bike")).toBe(false);
+    expect(typesConflict("stroller", null)).toBe(false);
   });
 });

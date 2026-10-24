@@ -1,5 +1,5 @@
 import type { ModelRange } from "../db/schema";
-import { productType } from "./product-type";
+import { productType, typesConflict } from "./product-type";
 import { normalizeModelText } from "./text";
 
 export type Verdict = "recalled" | "check_label" | "clear";
@@ -247,10 +247,10 @@ export function decideVerdict({
     refMatch ||
     sampleBatchMatch ||
     (!otherModel && candidate.titleSimilarity >= TITLE_MATCH_THRESHOLD);
-  // When both product types are known they must agree: the Breeze stroller is not the Breeze car seat.
-  const itemType = productType(item.category ?? null);
+  // Clearly different product types rule a match out: the Breeze stroller is not the Breeze car seat.
+  const itemType = productType(item.category ?? null) ?? productType(item.title ?? null);
   const recallType = productType(recall.productName);
-  const otherType = itemType !== null && recallType !== null && itemType !== recallType;
+  const otherType = typesConflict(itemType, recallType);
   // A barcode identifies the product like a model match does; date and batch limits still apply.
   const gtinMatch =
     item.gtin !== null && recall.gtins.some((gtin) => normalizeGtin(gtin) === normalizeGtin(item.gtin!));
