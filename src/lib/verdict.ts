@@ -204,6 +204,16 @@ function identityEvidence(
   return evidence;
 }
 
+// A variant the recall never mentions ("V8 Ultra Max" against a recall for the "V8"): the recall may or may not cover it.
+// A barcode or reference match identifies the exact product, so it leaves no doubt.
+function unnamedVariant(item: ItemFacts, recall: CandidateRecall, exactCode: boolean) {
+  if (exactCode || !item.model || !item.modelVariant) return false;
+  const recallWords = words([recall.productName, ...recall.models, ...recall.refs, ...recall.modelRanges.map((r) => r.model)].join(" "));
+  const brand = words(recall.brandNorm);
+  const variant = [...words(item.modelVariant)].filter((word) => !FILLER.has(word) && !brand.has(word));
+  return variant.length > 0 && variant.some((word) => !recallWords.has(word));
+}
+
 export function decideVerdict({
   item,
   candidate,
@@ -237,11 +247,16 @@ export function decideVerdict({
     item.brandNorm !== null &&
     (item.brandNorm === recall.brandNorm || candidate.brandSimilarity >= BRAND_MATCH_THRESHOLD);
   const range = matchingRange(item, recall);
-  const modelNameMatch = range !== undefined || recall.models.some((model) => namesModel(model, recall, item));
+  // Safety Gate often gives the model only as the type reference ("V8"), so a listing's model can name it there too.
+  const models = itemModels(item);
+  const modelNameMatch =
+    range !== undefined ||
+    recall.models.some((model) => namesModel(model, recall, item)) ||
+    recall.refs.some((ref) => models.has(normalizeModel(ref)));
   const refMatch = codeIn(recall.refs, item.references);
   const sampleBatchMatch = item.batch !== null && codeIn(recall.sampleBatches, [item.batch]);
   // A close title stands in for the model only when the listing and the recall don't name different models.
-  const otherModel = itemModels(item).size > 0 && recall.models.length > 0 && !modelNameMatch;
+  const otherModel = models.size > 0 && recall.models.length > 0 && !modelNameMatch;
   const modelMatch =
     modelNameMatch ||
     refMatch ||
@@ -267,10 +282,18 @@ export function decideVerdict({
     evidence.push({ fact: `Batch ${item.batch} is the batch named in the alert`, matched: true, source: source("batch") });
   }
 
+  // The listing names the recalled brand and model, or its barcode or reference: photos alone can't overrule that.
+  const namedInRecall = gtinMatch || (brandMatch && (modelNameMatch || refMatch || sampleBatchMatch) && !otherType);
   if (photo.sameProduct === "yes") {
     evidence.push({ fact: "Photos show the same product as the official photo", matched: true, source: "listing_photo" });
   } else if (photo.sameProduct === "no") {
-    evidence.push({ fact: "Photos show a different product from the official photo", matched: false, source: "listing_photo" });
+    evidence.push({
+      fact: namedInRecall
+        ? "Photos look different from the official photo, but the listing names the recalled model"
+        : "Photos show a different product from the official photo",
+      matched: false,
+      source: "listing_photo",
+    });
   }
 
   // Without a brand, a similar title proves nothing ("peluche ours"): it takes a barcode, or a shared code and the photos.
@@ -285,8 +308,19 @@ export function decideVerdict({
       source: "official_data",
     });
   }
-  if (!identified || photo.sameProduct === "no") {
+  if (!identified || (photo.sameProduct === "no" && !namedInRecall)) {
     return { verdict: "clear", recall: { id: recall.id, relation: "not_a_match" }, evidence, notes };
+  }
+
+  // A recall is only certain when nothing leaves the product in doubt; otherwise the label has to settle it.
+  const variantInDoubt = unnamedVariant(item, recall, gtinMatch || refMatch);
+  const doubt = photo.sameProduct === "no" || variantInDoubt;
+  if (variantInDoubt) {
+    evidence.push({
+      fact: `The recall names the ${item.model}; it doesn't say whether the ${[item.model, item.modelVariant].join(" ")} is included`,
+      matched: false,
+      source: "official_data",
+    });
   }
 
   const { from, to, batches } = recallLimits(item, recall);
@@ -296,7 +330,7 @@ export function decideVerdict({
   // No date or batch limit: the model, reference or barcode match is enough.
   if (!hasRange && !hasBatches) {
     evidence.push({ fact: "Every unit of this model is recalled", matched: true, source: "official_data" });
-    return { verdict: "recalled", recall: { id: recall.id, relation: "match" }, evidence, notes };
+    return { verdict: doubt ? "check_label" : "recalled", recall: { id: recall.id, relation: "match" }, evidence, notes };
   }
 
   // A batch list is the most precise limit, so it decides on its own; dates only decide when there is none.
@@ -308,7 +342,7 @@ export function decideVerdict({
         matched: batchInside,
         source: source("batch"),
       });
-      if (batchInside) return { verdict: "recalled", recall: { id: recall.id, relation: "match" }, evidence, notes };
+      if (batchInside) return { verdict: doubt ? "check_label" : "recalled", recall: { id: recall.id, relation: "match" }, evidence, notes };
       notes.push("This model has a recall for other batches.");
       return { verdict: "clear", recall: { id: recall.id, relation: "other_dates" }, evidence, notes };
     }
@@ -327,7 +361,7 @@ export function decideVerdict({
       matched: dateInside,
       source: source("productionDate"),
     });
-    if (dateInside) return { verdict: "recalled", recall: { id: recall.id, relation: "match" }, evidence, notes };
+    if (dateInside) return { verdict: doubt ? "check_label" : "recalled", recall: { id: recall.id, relation: "match" }, evidence, notes };
     notes.push(`This model has a recall for units made ${rangeLabel(from, to)}.`);
     return { verdict: "clear", recall: { id: recall.id, relation: "other_dates" }, evidence, notes };
   }
@@ -363,9 +397,12 @@ export function decideBest({
   }
   const results = candidates.map((candidate) => ({
     source: candidate.recall.source,
+    photoSaysNo: photos.get(candidate.recall.id)?.sameProduct === "no",
     result: decideVerdict({ item, candidate, photo: photos.get(candidate.recall.id) ?? { sameProduct: null } }),
   }));
-  const order = (entry: (typeof results)[number]) => rank(entry.result) * 2 + (entry.source === "rappelconso" ? 0 : 1);
+  // On equal verdicts, a recall the photos agree with comes before one they don't.
+  const order = (entry: (typeof results)[number]) =>
+    rank(entry.result) * 4 + (entry.photoSaysNo ? 2 : 0) + (entry.source === "rappelconso" ? 0 : 1);
   const best = results.reduce((top, entry) => (order(entry) < order(top) ? entry : top));
   if (best.result.verdict === "clear") return { ...best.result, alsoMatched: [] };
   const also = results.find(

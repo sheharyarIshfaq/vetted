@@ -284,14 +284,19 @@ describe("decideVerdict · other rules", () => {
     );
   });
 
-  it("photo comparison 'no' is clear, even with a matching date", () => {
+  it("photo comparison 'no' can't clear a listing that names the recalled model: the label decides", () => {
     const result = decideVerdict({
       item: { ...smileIII, productionDate: "2020-03" },
       candidate: candidate(britax22625),
       photo: { sameProduct: "no" },
     });
-    expect(result.verdict).toBe("clear");
-    expect(result.recall).toEqual({ id: "rc:22625", relation: "not_a_match" });
+    expect(result.verdict).toBe("check_label");
+    expect(result.recall).toEqual({ id: "rc:22625", relation: "match" });
+    expect(result.evidence).toContainEqual({
+      fact: "Photos look different from the official photo, but the listing names the recalled model",
+      matched: false,
+      source: "listing_photo",
+    });
   });
 
   it("an unrelated brand is clear, with the closest recall shown as not a match", () => {
@@ -650,5 +655,50 @@ describe("decideVerdict · Britax Smile models that aren't the Smile III", () =>
       photo: noPhoto,
     });
     expect(result.verdict).toBe("clear");
+  });
+});
+
+describe("decideVerdict · Ouxi V8 fatbike (Safety Gate, vehicle types)", () => {
+  const ouxiV8: CandidateRecall = {
+    id: "sg:A12/02611/24",
+    source: "safetygate",
+    brand: "Ouxi",
+    brandNorm: "ouxi",
+    productName: "Vélo électrique",
+    models: [],
+    refs: ["V8"],
+    gtins: [],
+    batches: [],
+    sampleBatches: [],
+    productionFrom: null,
+    productionTo: null,
+    modelRanges: [],
+  };
+  const listing = item({
+    brand: "Ouxi",
+    brandNorm: "ouxi",
+    model: "V8",
+    modelVariant: "Ultra Max",
+    category: "electric bicycle",
+    title: "Fatbike Ouxi V8 Ultra Max vélo électrique neuf",
+  });
+
+  it("an e-bike, a fatbike and a motor vehicle are one type", () => {
+    const result = decideVerdict({ item: { ...listing, modelVariant: null }, candidate: candidate(ouxiV8, 0.67), photo: noPhoto });
+    expect(result.verdict).toBe("recalled");
+    expect(result.evidence).toContainEqual({ fact: "Model V8 is named in the recall", matched: true, source: "listing_text" });
+  });
+
+  it("a variant the alert doesn't name is check_label, even when the photos differ", () => {
+    for (const photo of [noPhoto, { sameProduct: "no" as const }]) {
+      const result = decideVerdict({ item: listing, candidate: candidate(ouxiV8, 0.67), photo });
+      expect(result.verdict).toBe("check_label");
+      expect(result.recall).toEqual({ id: "sg:A12/02611/24", relation: "match" });
+      expect(result.evidence).toContainEqual({
+        fact: "The recall names the V8; it doesn't say whether the V8 Ultra Max is included",
+        matched: false,
+        source: "official_data",
+      });
+    }
   });
 });
