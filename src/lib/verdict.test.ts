@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  decideBest,
   decideVerdict,
   isInRange,
   normalizeModel,
@@ -324,5 +325,41 @@ describe("decideVerdict · other rules", () => {
     });
     expect(result.verdict).toBe("recalled");
     expect(result.evidence).toContainEqual({ fact: "Official photo unavailable", matched: false, source: "official_data" });
+  });
+});
+
+describe("decideBest", () => {
+  it("keeps the most serious outcome across candidates", () => {
+    const result = decideBest({
+      item: { ...buddy, productionDate: "2023-05" },
+      candidates: [candidate(britax22625, 0.5), candidate(hamaxBuddy, 0.4)],
+      photos: new Map(),
+    });
+    expect(result.verdict).toBe("recalled");
+    expect(result.recall?.id).toBe("rc:23843");
+  });
+
+  it("lets a photo 'no' on the top candidate fall through to the next", () => {
+    const second = { ...hamaxBuddy, id: "rc:buddy-2" };
+    const result = decideBest({
+      item: buddy,
+      candidates: [candidate(hamaxBuddy), candidate(second)],
+      photos: new Map([["rc:23843", { sameProduct: "no" as const }]]),
+    });
+    expect(result.verdict).toBe("check_label");
+    expect(result.recall?.id).toBe("rc:buddy-2");
+  });
+
+  it("prefers 'other dates' over 'not a match' for a clear verdict, and the first on ties", () => {
+    const result = decideBest({
+      item: { ...smileIII, productionDate: "2021-07" },
+      candidates: [candidate(hamaxBuddy, 0.3), candidate(britax22625, 0.3)],
+      photos: new Map(),
+    });
+    expect(result.recall).toEqual({ id: "rc:22625", relation: "other_dates" });
+  });
+
+  it("is clear with no recall when there are no candidates", () => {
+    expect(decideBest({ item: buddy, candidates: [], photos: new Map() })).toMatchObject({ verdict: "clear", recall: null });
   });
 });

@@ -256,3 +256,28 @@ export function decideVerdict({
   });
   return { verdict: "check_label", recall: { id: recall.id, relation: "match" }, evidence, notes };
 }
+
+const RANK = { recalled: 0, check_label: 1, other_dates: 2, not_a_match: 3, none: 4 } as const;
+
+function rank(result: VerdictResult) {
+  if (result.verdict !== "clear") return RANK[result.verdict];
+  return result.recall ? RANK[result.recall.relation === "other_dates" ? "other_dates" : "not_a_match"] : RANK.none;
+}
+
+// Decides every candidate and keeps the most serious outcome; candidates come in similarity order, which breaks ties.
+export function decideBest({
+  item,
+  candidates,
+  photos,
+}: {
+  item: ItemFacts;
+  candidates: Candidate[];
+  photos: ReadonlyMap<string, PhotoComparison>;
+}): VerdictResult {
+  if (candidates.length === 0) return decideVerdict({ item, candidate: null, photo: { sameProduct: null } });
+  return candidates
+    .map((candidate) =>
+      decideVerdict({ item, candidate, photo: photos.get(candidate.recall.id) ?? { sameProduct: null } }),
+    )
+    .reduce((best, result) => (rank(result) < rank(best) ? result : best));
+}

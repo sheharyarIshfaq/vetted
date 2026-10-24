@@ -20,3 +20,43 @@ export const recallDetailsSchema = z.object({
 });
 
 export type RecallDetailsOutput = z.infer<typeof recallDetailsSchema>;
+
+export const extractedFieldSchema = z.enum([
+  "category",
+  "brand",
+  "model",
+  "modelVariant",
+  "references",
+  "gtin",
+  "batch",
+  "productionDate",
+]);
+
+export const listingExtractionSchema = z.object({
+  category: z.string().nullable(),
+  brand: z.string().nullable(),
+  model: z.string().nullable(),
+  modelVariant: z.string().nullable(),
+  references: z.array(z.string()),
+  gtin: z.string().nullable(),
+  batch: z.string().nullable(),
+  productionDate: z.string().nullable(),
+  labelTextSeen: z.string().nullable(),
+  confidence: z.number(),
+  quotes: z.array(
+    z.object({
+      field: extractedFieldSchema,
+      from: z.enum(["text", "photo"]),
+      text: z.string(),
+    }),
+  ),
+});
+
+export type ListingExtraction = z.infer<typeof listingExtractionSchema>;
+
+export const photoComparisonSchema = z.object({
+  sameProduct: z.enum(["yes", "no", "unsure"]),
+  reasons: z.array(z.string()),
+});
+
+export type PhotoComparisonOutput = z.infer<typeof photoComparisonSchema>;
