@@ -5,6 +5,7 @@ import { labelReadingSchema, type LabelReading } from "../ai/schemas";
 import { getCheck, updateCheck } from "../db/checks";
 import { getRecalls } from "../db/recalls";
 import { isValidGtin } from "../gtin";
+import { recordSpend, withinDailyBudget } from "../ai/spend";
 import { openai, openaiModel } from "../openai";
 import { uploadObject } from "../storage";
 import { normalizeText } from "../text";
@@ -34,6 +35,7 @@ async function readLabel(photo: Buffer) {
     input: [{ role: "user", content: [{ type: "input_image", detail: "high", image_url: toDataUrl(photo) }] }],
     text: { format: zodTextFormat(labelReadingSchema, "label_reading") },
   });
+  await recordSpend(response.usage);
   return labelReadingSchema.parse(response.output_parsed);
 }
 
@@ -88,6 +90,9 @@ export async function runLabelCheck(id: string, bytes: Uint8Array, log: Log = ()
   const check = await getCheck(id);
   if (!check) return null;
   if (check.verdict !== "check_label") throw new CheckInputError("This check doesn't need a label photo.");
+  if (!(await withinDailyBudget())) {
+    throw new CheckInputError("Label reading is paused until tomorrow: today's photo budget is used up. Open the official notice to compare the label.");
+  }
 
   let photo: Buffer;
   try {

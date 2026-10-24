@@ -1,6 +1,7 @@
 import { zodTextFormat } from "openai/helpers/zod";
 import { LISTING_EXTRACTION_PROMPT } from "../ai/prompts";
 import { listingExtractionSchema, type ListingExtraction } from "../ai/schemas";
+import { recordSpend } from "../ai/spend";
 import { openai, openaiModel } from "../openai";
 import { normalizeText } from "../text";
 import type { EvidenceSource } from "../verdict";
@@ -39,6 +40,7 @@ export async function extractListing(text: string, photos: Buffer[]) {
     ],
     text: { format: zodTextFormat(listingExtractionSchema, "listing_extraction") },
   });
+  await recordSpend(response.usage);
   return groundExtraction(text, listingExtractionSchema.parse(response.output_parsed));
 }
 

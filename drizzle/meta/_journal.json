@@ -57,6 +57,13 @@
       "when": 1792862173572,
       "tag": "0007_recall_unit_limits",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792872856001,
+      "tag": "0008_daily_spend",
+      "breakpoints": true
     }
   ]
 }

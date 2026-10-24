@@ -20,6 +20,8 @@ export const openaiEnvSchema = z.object({
   OPENAI_API_KEY: z.string().min(1),
   OPENAI_MODEL: z.string().min(1).default("gpt-6.1-sol"),
   OPENAI_EMBEDDING_MODEL: z.string().min(1).default("text-embedding-3-small"),
+  // Past this many dollars of model use in a day (UTC), checks stop sending photos to the model.
+  OPENAI_DAILY_BUDGET_USD: z.coerce.number().positive().optional(),
 });
 
 export const ingestEnvSchema = z.object({

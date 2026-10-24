@@ -3,6 +3,7 @@ import { downloadImage } from "@/lib/check/images";
 import { panelSummary } from "@/lib/check/panel";
 import { CheckInputError, runCheck } from "@/lib/check/run";
 import { getRecall, recallStats } from "@/lib/db/recalls";
+import { limitReached } from "../../rate-limits";
 
 const pinnedExtensionOrigin = "chrome-extension://blbmfaapgjjfdolfklhjgckmpcghggem";
 const extensionOrigin = process.env.EXTENSION_ORIGIN || pinnedExtensionOrigin;
@@ -44,6 +45,8 @@ export async function POST(request: Request) {
   const origin = request.headers.get("origin");
   const headers = corsHeaders(origin);
   if (origin !== extensionOrigin) return Response.json({ error: "This endpoint is for the Tiko extension." }, { status: 403, headers });
+  const limited = limitReached(request, "check", headers);
+  if (limited) return limited;
 
   let input: unknown;
   try {

@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Recall } from "../../db/schema";
 import { loadBrandAliases } from "../db/brands";
 import { insertCheck } from "../db/checks";
+import { withinDailyBudget } from "../ai/spend";
 import { uploadObject } from "../storage";
 import { normalizeBrand } from "../text";
 import { decideBest, type Evidence, type ItemFacts, type Verdict } from "../verdict";
@@ -28,6 +29,12 @@ const BLOCKS_LINK_READING = /(^|\.)leboncoin\.fr$/;
 
 // unreadPhotos: photos the caller could not download, so the check can say they weren't seen.
 export type CheckInput = { text?: string; url?: string; photos: Uint8Array[]; unreadPhotos?: number };
+
+const PHOTOS_SKIPPED: Evidence = {
+  fact: "Photos weren't checked: today's photo budget is used up, so only the text was read",
+  matched: false,
+  source: "listing_photo",
+};
 
 const PHOTOS_UNREAD: Evidence = {
   fact: "The photos could not be read, so only the text was checked",
@@ -192,7 +199,13 @@ export async function matchListing({
 
 export async function runCheck(input: CheckInput, log: Log = () => {}): Promise<CheckResult> {
   const lap = timer(log);
-  const { text, page, uploads, photos, photosUnread } = await readInput(input, log);
+  const { text, page, uploads, photos: readPhotos, photosUnread } = await readInput(input, log);
+  // Past the daily budget the model reads the text only; photos are still kept with the check.
+  const photosSkipped = readPhotos.length > 0 && !(await withinDailyBudget());
+  const photos = photosSkipped ? [] : readPhotos;
+  if (photosSkipped && !text) {
+    throw new CheckInputError("Photo checks are paused until tomorrow: today's photo budget is used up. Paste the listing text instead.");
+  }
   lap("read input");
 
   const photoKeys = uploads.map(() => `checks/${randomUUID()}.jpg`);
@@ -210,7 +223,7 @@ export async function runCheck(input: CheckInput, log: Log = () => {}): Promise<
     aliases,
     lap,
   });
-  const evidence = photosUnread ? [...result.evidence, PHOTOS_UNREAD] : result.evidence;
+  const evidence = [...result.evidence, ...(photosUnread ? [PHOTOS_UNREAD] : []), ...(photosSkipped ? [PHOTOS_SKIPPED] : [])];
   const matched: Recall | undefined = ranked.find((candidate) => candidate.recall.id === result.recall?.id)?.recall;
 
   const stored: { input: StoredInput; extracted: StoredExtracted; evidence: StoredEvidence } = {

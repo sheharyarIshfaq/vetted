@@ -2,6 +2,7 @@ import { zodTextFormat } from "openai/helpers/zod";
 import type { Recall } from "../../db/schema";
 import { PHOTO_COMPARISON_PROMPT } from "../ai/prompts";
 import { photoComparisonSchema } from "../ai/schemas";
+import { recordSpend } from "../ai/spend";
 import { openai, openaiModel } from "../openai";
 import type { PhotoComparison } from "../verdict";
 import { downloadImage, shortestSide, toDataUrl } from "./images";
@@ -44,6 +45,7 @@ export async function compareWithRecall(listingPhotos: Buffer[], recall: Pick<Re
       ],
       text: { format: zodTextFormat(photoComparisonSchema, "photo_comparison") },
     });
+    await recordSpend(response.usage);
     const output = photoComparisonSchema.parse(response.output_parsed);
     const tooSmall = output.sameProduct === "no" && ((await allSmall(listingPhotos)) || (await allSmall(official)));
     return { ...output, sameProduct: tooSmall ? "unsure" : output.sameProduct, officialPhotoUnavailable, officialImagesUsed: official.length };

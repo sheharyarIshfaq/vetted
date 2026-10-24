@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { MAX_UPLOAD_BYTES } from "@/lib/check/images";
 import { CheckInputError, runCheck } from "@/lib/check/run";
+import { limitReached } from "../rate-limits";
 
 const formSchema = z
   .object({
@@ -20,6 +21,9 @@ const formSchema = z
 const log = (message: string) => process.stdout.write(`${message}\n`);
 
 export async function POST(request: Request) {
+  const limited = limitReached(request, "check");
+  if (limited) return limited;
+
   let form: FormData;
   try {
     form = await request.formData();

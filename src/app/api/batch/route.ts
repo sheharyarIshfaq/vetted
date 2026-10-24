@@ -1,4 +1,5 @@
 import { BatchInputError, parseBatchCsv, runBatch } from "@/lib/check/batch";
+import { limitReached } from "../rate-limits";
 
 const MAX_FILE_BYTES = 1024 * 1024;
 
@@ -6,6 +7,9 @@ const log = (message: string) => process.stdout.write(`${message}\n`);
 
 // Streams one JSON line per listing as it's decided, then a "done" line, so the queue fills in as it goes.
 export async function POST(request: Request) {
+  const limited = limitReached(request, "batch");
+  if (limited) return limited;
+
   let file: FormDataEntryValue | null;
   try {
     file = (await request.formData()).get("file");

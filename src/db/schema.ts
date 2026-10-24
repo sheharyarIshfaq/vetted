@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, date, index, jsonb, pgTable, real, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, date, doublePrecision, index, jsonb, pgTable, real, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 // One entry per model when a recall gives each model its own limits. Dates are YYYY-MM-DD; either end may be open.
 export type ModelRange = {
@@ -104,3 +104,9 @@ export const parseCache = pgTable("parse_cache", {
 
 export type Recall = typeof recalls.$inferSelect;
 export type NewRecall = typeof recalls.$inferInsert;
+
+// What the checks spent on the model each day (UTC), for the daily budget.
+export const dailySpend = pgTable("daily_spend", {
+  day: date().primaryKey(),
+  costUsd: doublePrecision("cost_usd").notNull().default(0),
+});
