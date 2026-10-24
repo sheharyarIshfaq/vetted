@@ -35,6 +35,13 @@
 }
 
 @layer base {
+  /* Anchor links glide to their section; Next turns it off for page changes via data-scroll-behavior */
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
   body {
     background: var(--surface);
     color: var(--ink);
