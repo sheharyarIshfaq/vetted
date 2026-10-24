@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isCorrect, mistake, reportMarkdown, score, type Outcome } from "./score";
+import { isCorrect, mistake, reportMarkdown, score, withBaseline, type Outcome } from "./score";
 
 const outcome = (overrides: Partial<Outcome>): Outcome => ({
   id: "lbc-001",
@@ -70,5 +70,17 @@ describe("reportMarkdown", () => {
     const report = reportMarkdown(score([outcome({ id: "lbc-009", verdict: "clear", recallId: null })]), { excluded: 4, unlabelled: 2 }, "2026-10-24");
     expect(report).toContain("1 labelled listings scored; 4 excluded, 2 not labelled.");
     expect(report).toContain("| lbc-009 | missed recall | check_label | rc:23843 | clear |  |");
+  });
+});
+
+describe("withBaseline", () => {
+  it("carries the recorded earlier run over unchanged", () => {
+    const previous = "# Evaluation\n\nold numbers\n\n## Before fixes\n\nfirst run\n";
+    expect(withBaseline("# Evaluation\n\nnew numbers\n", previous)).toBe("# Evaluation\n\nnew numbers\n\n## Before fixes\n\nfirst run\n");
+  });
+
+  it("adds nothing when there is no earlier run on record", () => {
+    expect(withBaseline("# Evaluation\n", "# Evaluation\n\nold numbers\n")).toBe("# Evaluation\n");
+    expect(withBaseline("# Evaluation\n", null)).toBe("# Evaluation\n");
   });
 });

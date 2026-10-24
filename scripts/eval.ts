@@ -4,7 +4,7 @@ import { runCheck, type CheckResult } from "../src/lib/check/run";
 import { db } from "../src/lib/db/client";
 import { mapWithConcurrency } from "../src/lib/ingest/concurrency";
 import { EVAL_DIR, PHOTOS_DIR, readListings, type EvalListing } from "../src/lib/eval/listings";
-import { VERDICTS, mistake, reportMarkdown, score, type Outcome } from "../src/lib/eval/score";
+import { VERDICTS, mistake, reportMarkdown, score, withBaseline, type Outcome } from "../src/lib/eval/score";
 
 const CONCURRENCY = 3;
 
@@ -51,8 +51,10 @@ const outcomes: Outcome[] = labelled.map((listing) => {
   };
 });
 const result = score(outcomes);
-const report = reportMarkdown(result, { excluded, unlabelled }, new Date().toISOString().slice(0, 10));
-await writeFile(path.join(EVAL_DIR, "report.md"), report);
+const reportFile = path.join(EVAL_DIR, "report.md");
+const previous = await readFile(reportFile, "utf8").catch(() => null);
+const report = withBaseline(reportMarkdown(result, { excluded, unlabelled }, new Date().toISOString().slice(0, 10)), previous);
+await writeFile(reportFile, report);
 log(`\n${report}`);
 
 // Locally only: what the pipeline read for each wrong case, to see why.

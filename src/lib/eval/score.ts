@@ -95,3 +95,11 @@ export function reportMarkdown(result: Score, counts: { excluded: number; unlabe
   }
   return `${lines.join("\n")}\n`;
 }
+
+const BASELINE_HEADING = "## Before fixes";
+
+// A recorded earlier run is carried over unchanged, so a new run never overwrites the numbers it is compared with.
+export function withBaseline(report: string, previous: string | null) {
+  const at = previous?.indexOf(BASELINE_HEADING) ?? -1;
+  return at === -1 ? report : `${report}\n${previous!.slice(at)}`;
+}
