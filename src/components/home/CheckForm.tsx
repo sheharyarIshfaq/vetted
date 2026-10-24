@@ -21,6 +21,20 @@ function isLink(value: string) {
 
 type CheckError = { message: string; extensionLink?: boolean };
 
+function StageMark({ state }: { state: "done" | "current" | "next" }) {
+  if (state === "done") {
+    return (
+      <span aria-hidden="true" className="flex size-[18px] shrink-0 items-center justify-center rounded-full bg-safe text-[11px] font-bold text-ink">
+        ✓
+      </span>
+    );
+  }
+  if (state === "current") {
+    return <span aria-hidden="true" className="size-[18px] shrink-0 rounded-full border-[2.5px] border-brand border-r-transparent motion-safe:animate-[spin_0.8s_linear_infinite]" />;
+  }
+  return <span aria-hidden="true" className="size-[18px] shrink-0 rounded-full border-2 border-field" />;
+}
+
 function Progress({ withPhotos }: { withPhotos: boolean }) {
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
@@ -31,12 +45,10 @@ function Progress({ withPhotos }: { withPhotos: boolean }) {
   const stages = withPhotos ? STAGES : STAGES.slice(0, 2);
   const current = stages.findLastIndex((stage) => elapsed >= stage.after);
   return (
-    <ol role="status" aria-live="polite" className="m-0 flex list-none flex-col gap-1.5 p-0 text-[15px]">
+    <ol role="status" aria-live="polite" className="m-0 flex list-none flex-col gap-2.5 self-center p-0 text-sm">
       {stages.map((stage, i) => (
-        <li key={stage.label} className={i <= current ? "text-ink" : "text-muted"}>
-          <span aria-hidden="true" className="inline-block w-5 font-mono">
-            {i < current ? "✓" : i === current ? "…" : ""}
-          </span>
+        <li key={stage.label} className={`flex items-center gap-2.5 ${i <= current ? "text-ink" : "text-muted"}`}>
+          <StageMark state={i < current ? "done" : i === current ? "current" : "next"} />
           {stage.label}
           {i === current && <span className="sr-only"> (in progress)</span>}
         </li>
@@ -95,41 +107,48 @@ export function CheckForm() {
   }
 
   return (
-    <div className="flex flex-col gap-3.5">
-      <form
-        onSubmit={submit}
-        aria-busy={running !== null}
-        className="flex flex-wrap gap-2.5 rounded-2xl border border-field bg-surface p-2 shadow-[0_6px_24px_rgba(22,32,43,0.06)]"
-      >
-        <label htmlFor="listing" className="sr-only">
-          Listing link or text
+    <div className="flex w-full max-w-[42rem] flex-col gap-2 text-left">
+      <form onSubmit={submit} aria-busy={running !== null} className="flex flex-col gap-2">
+        <label htmlFor="listing" className="text-[13px] text-ink-2">
+          Listing title and description, or a Vinted link
         </label>
-        <textarea
-          id="listing"
-          ref={textarea}
-          rows={2}
-          value={value}
-          onChange={(event) => setValue(event.target.value)}
-          onKeyDown={(event) => {
-            // Enter checks, as in a search box; Shift+Enter adds a line.
-            if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
-              event.preventDefault();
-              event.currentTarget.form?.requestSubmit();
-            }
-          }}
-          placeholder="Paste the listing title and description, or a Vinted link"
-          maxLength={5000}
-          disabled={running !== null}
-          className="min-w-0 flex-[999_1_280px] resize-none self-center border-0 bg-transparent px-3.5 py-3.5 text-[17px] leading-snug text-ink outline-none"
-        />
-        <button
-          type="button"
-          onClick={() => photoInput.current?.click()}
-          disabled={running !== null || photos.length >= MAX_PHOTOS}
-          className="min-h-11 cursor-pointer rounded-xl border border-field bg-surface px-3.5 py-3 text-[15px] font-semibold text-ink disabled:cursor-default disabled:opacity-60"
-        >
-          {photos.length ? `Photos (${photos.length}/${MAX_PHOTOS})` : "Add photos"}
-        </button>
+        <div className="flex flex-wrap items-center gap-2 rounded-[28px] border border-field bg-surface py-1.5 pr-1.5 pl-5 shadow-[0_18px_40px_-24px_rgba(70,52,30,0.4)] focus-within:border-brand">
+          <textarea
+            id="listing"
+            ref={textarea}
+            rows={1}
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+            onKeyDown={(event) => {
+              // Enter checks, as in a search box; Shift+Enter adds a line.
+              if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+                event.preventDefault();
+                event.currentTarget.form?.requestSubmit();
+              }
+            }}
+            placeholder="Trottinette électrique Acer ES Series 5…"
+            maxLength={5000}
+            disabled={running !== null}
+            className="min-h-11 min-w-0 flex-[999_1_200px] resize-none self-center border-0 bg-transparent py-2.5 text-base leading-snug text-ink outline-none placeholder:text-muted"
+          />
+          <div className="ml-auto flex gap-1.5">
+            <button
+              type="button"
+              onClick={() => photoInput.current?.click()}
+              disabled={running !== null || photos.length >= MAX_PHOTOS}
+              className="min-h-[46px] cursor-pointer rounded-full border border-field bg-surface px-4 text-sm font-medium text-ink hover:border-ink disabled:cursor-default disabled:opacity-60"
+            >
+              {photos.length ? `Photos (${photos.length}/${MAX_PHOTOS})` : "Add photos"}
+            </button>
+            <button
+              type="submit"
+              disabled={running !== null}
+              className="min-h-[46px] cursor-pointer rounded-full bg-ink px-[22px] text-[15px] font-semibold text-paper hover:bg-brand disabled:opacity-60"
+            >
+              {running ? "Checking…" : "Check it"}
+            </button>
+          </div>
+        </div>
         <input
           ref={photoInput}
           type="file"
@@ -143,25 +162,18 @@ export function CheckForm() {
             event.target.value = "";
           }}
         />
-        <button
-          type="submit"
-          disabled={running !== null}
-          className="min-h-11 cursor-pointer rounded-xl bg-brand px-[22px] py-3.5 text-base font-bold text-white disabled:opacity-60"
-        >
-          {running ? "Checking…" : "Check"}
-        </button>
       </form>
 
       {photos.length > 0 && !running && (
         <ul className="m-0 flex list-none flex-wrap gap-2 p-0 text-sm">
           {photos.map((photo, i) => (
-            <li key={`${photo.name}-${i}`} className="flex items-center gap-1.5 rounded-full bg-[#ECEFEC] py-1 pr-1.5 pl-3">
+            <li key={`${photo.name}-${i}`} className="flex items-center gap-1.5 rounded-full border border-line bg-surface py-1 pr-1.5 pl-3">
               <span className="max-w-[180px] truncate">{photo.name}</span>
               <button
                 type="button"
                 onClick={() => setPhotos((current) => current.filter((_, j) => j !== i))}
                 aria-label={`Remove ${photo.name}`}
-                className="size-7 cursor-pointer rounded-full text-base text-ink-2 hover:bg-surface"
+                className="size-7 cursor-pointer rounded-full text-base text-ink-2 hover:bg-paper"
               >
                 ×
               </button>
@@ -173,26 +185,31 @@ export function CheckForm() {
       {running ? (
         <Progress withPhotos={running.withPhotos} />
       ) : (
-        <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
-          <span>Try:</span>
-          {EXAMPLES.map((example) => (
-            <button
-              key={example.label}
-              type="button"
-              onClick={() => {
-                setValue(example.text);
-                void run(example.text, []);
-              }}
-              className="min-h-8 cursor-pointer rounded-full bg-[#ECEFEC] px-3 py-1.5 text-sm text-ink hover:bg-line"
-            >
-              {example.label}
-            </button>
-          ))}
-        </div>
+        <>
+          <span className="text-center text-[13px] text-muted">
+            Shopping on Leboncoin or Vinted? <Link href="#extension">Add the Chrome extension</Link> and it checks each listing you open.
+          </span>
+          <div className="flex flex-wrap items-center justify-center gap-2 text-[13px] text-muted">
+            <span>Try:</span>
+            {EXAMPLES.map((example) => (
+              <button
+                key={example.label}
+                type="button"
+                onClick={() => {
+                  setValue(example.text);
+                  void run(example.text, []);
+                }}
+                className="min-h-11 cursor-pointer rounded-full border border-line bg-surface px-3.5 text-[13px] text-ink hover:border-ink"
+              >
+                {example.label}
+              </button>
+            ))}
+          </div>
+        </>
       )}
 
       {error && (
-        <p role="alert" className="m-0 text-[15px] text-recalled-text">
+        <p role="alert" className="m-0 text-center text-[15px] text-recalled-text">
           {error.message}
           {error.extensionLink && (
             <>

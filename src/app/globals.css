@@ -65,3 +65,17 @@
     transform: none;
   }
 }
+
+/* The hero's light: white at the top, warm kraft in the bottom corners */
+.hero-glow {
+  background:
+    radial-gradient(60rem 30rem at 50% 6%, #ffffff 0%, rgb(255 255 255 / 0) 70%),
+    radial-gradient(40rem 26rem at 10% 95%, #f1e6d2 0%, rgb(241 230 210 / 0) 70%),
+    radial-gradient(40rem 26rem at 90% 95%, #eadfc9 0%, rgb(234 223 201 / 0) 70%);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

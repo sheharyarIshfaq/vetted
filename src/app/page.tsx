@@ -1,68 +1,74 @@
-import { Suspense } from "react";
 import { CheckForm } from "@/components/home/CheckForm";
-import { ExampleCards } from "@/components/home/ExampleCards";
-import { RecentRecalls } from "@/components/home/RecentRecalls";
-import { Lists, Regions } from "@/components/home/sources";
-import { StatsStrip } from "@/components/home/StatsStrip";
+import { Cta } from "@/components/home/Cta";
+import { ExtensionSection } from "@/components/home/ExtensionSection";
+import { Faq } from "@/components/home/Faq";
+import { HowItWorks, ThreeAnswers } from "@/components/home/HowItWorks";
+import { RecalledProducts } from "@/components/home/RecalledProducts";
+import { SeeItWork } from "@/components/home/SeeItWork";
+import { WashingLine } from "@/components/home/WashingLine";
+import { WhatIsARecall } from "@/components/home/WhatIsARecall";
 
-const STEPS = [
-  { title: "Reads the listing", text: "Brand, model and references from the title, description and photos." },
-  {
-    title: "Searches official lists",
-    text: (
-      <>
-        <Suspense fallback="Official recall lists">
-          <Lists />
-        </Suspense>
-        , refreshed every night.
-      </>
-    ),
-  },
-  { title: "Compares photos and dates", text: "Same product? Made inside the recalled period? Fixed rules decide." },
-  { title: "Shows the proof", text: "Every verdict links to the government notice it comes from." },
-];
+function Hero() {
+  return (
+    // Pulled up under the transparent header, so the washing line runs behind it.
+    <section className="relative -mt-[120px] overflow-hidden border-b border-divider bg-paper md:-mt-[86px] md:min-h-[820px]">
+      <div aria-hidden="true" className="hero-glow absolute inset-0" />
+      <svg aria-hidden="true" width="100%" height="100%" className="absolute inset-0 opacity-30 mix-blend-multiply">
+        <filter id="hero-grain">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch" />
+          <feColorMatrix values="0 0 0 0 0.45  0 0 0 0 0.38  0 0 0 0 0.28  0 0 0 0.32 0" />
+        </filter>
+        <rect width="100%" height="100%" filter="url(#hero-grain)" />
+      </svg>
+      <WashingLine />
+      <div className="relative mx-auto flex max-w-[1100px] flex-col items-center gap-[22px] px-4 pt-[156px] pb-16 text-center sm:px-7 md:pt-[276px] md:pb-[72px]">
+        <div className="flex items-center gap-3 font-mono text-[13px] text-[#6A4E1E]">
+          <TanTag />
+          <span>Second-hand. Not second-guessed.</span>
+          <TanTag flip />
+        </div>
+        <h1 className="m-0 flex flex-col items-center">
+          <span className="text-[2.6rem] leading-[0.95] font-bold tracking-[-0.06em] text-balance sm:text-[4rem] lg:text-[5.6rem]">
+            Is that second-hand item
+          </span>
+          <span className="font-serif text-[3.1rem] leading-none font-normal tracking-[-0.03em] text-brand italic sm:text-[4.8rem] lg:text-[6.6rem]">
+            safe to buy?
+          </span>
+        </h1>
+        <p className="m-0 max-w-[38rem] text-lg leading-[1.6] text-ink-2 sm:text-xl">
+          Some products get pulled from sale because they&apos;re dangerous, but they keep being resold. Paste a Leboncoin or Vinted
+          listing and Vetted checks it against the official lists of dangerous products. Free, in about 5 seconds.
+        </p>
+        <CheckForm />
+      </div>
+    </section>
+  );
+}
+
+function TanTag({ flip = false }: { flip?: boolean }) {
+  return (
+    <span aria-hidden="true" className={`text-[#C9A253] ${flip ? "-scale-x-100" : ""}`}>
+      <svg width="22" height="15" viewBox="0 0 120 80">
+        <g transform="rotate(-10 60 40)">
+          <path d="M32 8 H104 a10 10 0 0 1 10 10 V62 a10 10 0 0 1 -10 10 H32 L10 46 a9 9 0 0 1 0 -12 Z" fill="currentColor" />
+        </g>
+      </svg>
+    </span>
+  );
+}
 
 export default function Home() {
   return (
     <>
-      <section className="mx-auto flex max-w-[1160px] flex-wrap items-center gap-12 px-4 pt-12 pb-14 sm:px-6 sm:pt-[72px]">
-        <div className="flex min-w-0 flex-[999_1_520px] flex-col gap-[22px]">
-          <div className="font-mono text-[13px] tracking-[0.06em] text-brand uppercase">Second-hand, checked</div>
-          <h1 className="m-0 text-[40px] leading-[1.04] font-extrabold tracking-[-0.035em] text-balance sm:text-[56px]">
-            Check it before you buy it.
-          </h1>
-          <p className="m-0 max-w-[560px] text-[19px] leading-[1.55] text-ink-2">
-            Vetted checks second-hand listings against the official recall lists
-            <Suspense>
-              <Regions />
-            </Suspense>
-            , and tells you in seconds if that car seat, stroller or toy was recalled.
-          </p>
-          <CheckForm />
-        </div>
-        <Suspense>
-          <ExampleCards />
-        </Suspense>
-      </section>
-
-      <StatsStrip />
-
-      <section className="mx-auto flex max-w-[1160px] flex-col gap-7 px-4 py-16 sm:px-6">
-        <h2 className="m-0 text-[28px] font-bold tracking-[-0.02em] sm:text-[32px]">How Vetted checks</h2>
-        <ol className="m-0 grid list-none grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4 p-0">
-          {STEPS.map((step, i) => (
-            <li key={step.title} className="flex flex-col gap-2 rounded-2xl border border-line bg-surface p-[22px]">
-              <div className="font-mono text-[13px] text-brand">{i + 1}</div>
-              <div className="text-lg font-bold">{step.title}</div>
-              <div className="text-[15px] leading-normal text-ink-2">{step.text}</div>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <Suspense>
-        <RecentRecalls />
-      </Suspense>
+      <Hero />
+      <RecalledProducts />
+      <WhatIsARecall />
+      <SeeItWork />
+      <HowItWorks />
+      <ThreeAnswers />
+      <ExtensionSection />
+      <Faq />
+      <Cta />
     </>
   );
 }
