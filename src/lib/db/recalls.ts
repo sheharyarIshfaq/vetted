@@ -6,6 +6,11 @@ import { db } from "./client";
 
 const UPSERT_CHUNK = 500;
 
+export async function sourceRefs(source: RecallSource) {
+  const rows = await db().select({ sourceRef: recalls.sourceRef }).from(recalls).where(eq(recalls.source, source));
+  return new Set(rows.map((row) => row.sourceRef));
+}
+
 export async function upsertRecalls(rows: NewRecall[]) {
   for (let i = 0; i < rows.length; i += UPSERT_CHUNK) {
     await db()

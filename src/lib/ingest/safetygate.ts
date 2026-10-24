@@ -4,7 +4,7 @@ import { XMLParser } from "fast-xml-parser";
 import { z } from "zod";
 import type { NewRecall } from "../../db/schema";
 import { loadBrandAliases } from "../db/brands";
-import { upsertRecalls } from "../db/recalls";
+import { sourceRefs, upsertRecalls } from "../db/recalls";
 import { isValidGtin } from "../gtin";
 import { normalizeBrand, normalizeModelText } from "../text";
 import {
@@ -18,12 +18,13 @@ import {
   type RecallDetails,
 } from "./parse-details";
 import type { IngestPlan } from "./rappelconso";
+import { alertSchema, politeFetch, type SafetyGateAlert } from "./safetygate-alert";
+import { fetchLatestAlerts } from "./safetygate-latest";
+
+export { alertSchema, type SafetyGateAlert };
 
 const REPORTS_URL = "https://ec.europa.eu/safety-gate-alerts/api/download/weeklyReport";
 const CACHE_DIR = path.join(process.cwd(), ".cache", "safety-gate");
-
-// The source asks for at most 2 requests per second.
-const MIN_REQUEST_GAP_MS = 600;
 
 // The French reports translate categories, product types and risks, which matches French listings better.
 const LANGUAGE = "fr";
@@ -46,38 +47,6 @@ const MOTOR_VEHICLES = /^v[ée]hicules [àa] moteur/i;
 const BIKE_KEYWORDS = /v[ée]lo|bicycl|bike|trottinette|scooter|gyropode|hoverboard|monoroue|draisienne|skate/i;
 const NOT_BIKES = /moto|cyclomoteur|quadricycle|voiture/i;
 
-const text = z.preprocess((value) => (typeof value === "string" || typeof value === "number" ? String(value).trim() : ""), z.string());
-
-const pictures = z.preprocess((value) => {
-  if (typeof value === "string") return value.split(/\s+/);
-  if (value && typeof value === "object" && "picture" in value) return [value.picture].flat();
-  return [];
-}, z.array(z.string()));
-
-export const alertSchema = z.looseObject({
-  caseNumber: z.string().min(1),
-  reference: z.url(),
-  category: text,
-  product: text,
-  brand: text,
-  name: text,
-  type_numberOfModel: text,
-  batchNumber: text,
-  barcode: text,
-  riskType: text,
-  danger: text,
-  measures: text,
-  description: text,
-  notifyingCountry: text,
-  type: text,
-  level: text,
-  pictures,
-  companyRecallCode: text,
-  productionDates: text,
-});
-
-export type SafetyGateAlert = z.infer<typeof alertSchema> & { reportId: string; publishedAt: string };
-
 const reportEntrySchema = z.looseObject({
   reference: z.string(),
   publicationDate: z.string().regex(/^\d{2}\/\d{2}\/\d{4}$/),
@@ -93,29 +62,6 @@ const parser = new XMLParser({
   trimValues: true,
   isArray: (name) => name === "notifications" || name === "weeklyReport" || name === "picture",
 });
-
-const RETRY_DELAYS_MS = [5_000, 20_000, 60_000];
-
-let lastRequest = 0;
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-async function politeFetch(url: string, userAgent: string) {
-  for (let attempt = 0; ; attempt++) {
-    const wait = lastRequest + MIN_REQUEST_GAP_MS - Date.now();
-    if (wait > 0) await sleep(wait);
-    lastRequest = Date.now();
-    const response = await fetch(url, { headers: { "User-Agent": userAgent } }).catch((error: unknown) => error);
-    const retryable = !(response instanceof Response) || response.status === 429 || response.status >= 500;
-    if (retryable && attempt < RETRY_DELAYS_MS.length) {
-      await sleep(RETRY_DELAYS_MS[attempt]);
-      continue;
-    }
-    if (!(response instanceof Response)) throw response;
-    if (!response.ok) throw new Error(`Safety Gate ${url}: HTTP ${response.status}`);
-    return response.text();
-  }
-}
 
 // "23/10/2026" -> "2026-10-23"
 function frenchDate(value: string) {
@@ -279,6 +225,8 @@ export async function ingestSafetyGate({
   }
   log(`Downloaded ${downloaded} reports, ${reports.length - downloaded} from cache`);
   if (invalid) log(`Skipped ${invalid} alerts that did not match the expected fields`);
+  const known = new Set([...(await sourceRefs("safetygate")), ...all.map((alert) => alert.caseNumber)]);
+  all.push(...(await fetchLatestAlerts({ known, userAgent, log })));
 
   const alerts = latestByCase(all).filter((alert) => isConsumerProduct(alert) && isInScope(alert));
   const texts = alerts.map(datesText);
