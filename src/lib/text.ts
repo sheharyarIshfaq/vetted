@@ -1,3 +1,16 @@
+const ENTITIES: Record<string, string> = { amp: "&", quot: '"', apos: "'", lt: "<", gt: ">", nbsp: " " };
+
+// "Home&amp;Marker" -> "Home&Marker": Safety Gate sends some names HTML-encoded.
+export function decodeEntities(value: string) {
+  return value.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (entity, name: string) => {
+    if (name[0] === "#") {
+      const code = name[1].toLowerCase() === "x" ? parseInt(name.slice(2), 16) : Number(name.slice(1));
+      return Number.isFinite(code) ? String.fromCodePoint(code) : entity;
+    }
+    return ENTITIES[name.toLowerCase()] ?? entity;
+  });
+}
+
 // Lower case, accents removed, punctuation turned into single spaces: "B'TWIN Römer" -> "b twin romer".
 export function normalizeText(value: string) {
   return value
@@ -20,7 +33,7 @@ export function normalizeModelText(value: string) {
 }
 
 // Words that stand in for a missing brand; an unbranded product must never match on a shared "sans marque".
-const NO_BRAND = /^(?:inconnue?s?|unknown|not specified|non (?:specifiee?|definie?|communiquee?|connue?)|sans(?: marques?)?|pas de marque(?: specifique)?|aucune?|no brand|unbranded|n ?a|nc|generi(?:c|que)s?|toutes marques)$/;
+const NO_BRAND = /^(?:inconnue?s?|unknown|(?:un|non |not )specified|not available|non (?:specifiee?|definie?|communiquee?|connue?)|sans(?: marques?)?|pas de marque(?: specifique)?|aucune?|no brand|unbranded|n ?a|nc|generi(?:c|que)s?|toutes marques)$/;
 
 export function normalizeBrand(raw: string, aliases: ReadonlyMap<string, string>) {
   const normalized = normalizeText(raw);

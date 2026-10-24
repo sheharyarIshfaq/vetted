@@ -41,6 +41,14 @@ export const recalls = pgTable(
     datesQuote: text("dates_quote"),
     raw: jsonb().notNull(),
     searchText: text("search_text").notNull(),
+    // Clean fields read once from the raw ones above, each backed by a quote of the source text.
+    brandClean: text("brand_clean"),
+    brandCleanNorm: text("brand_clean_norm"),
+    productType: text("product_type"),
+    modelName: text("model_name"),
+    codes: text().array().notNull().default(sql`'{}'`),
+    specs: text().array().notNull().default(sql`'{}'`),
+    cleanHash: text("clean_hash"), // input hash of the clean fields, so unchanged recalls aren't read again
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

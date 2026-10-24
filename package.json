@@ -16,6 +16,7 @@
     "check:openai": "tsx --env-file-if-exists=.env.local scripts/check-openai.ts",
     "ingest": "tsx --env-file-if-exists=.env.local scripts/ingest.ts",
     "eval": "tsx --env-file-if-exists=.env.local scripts/eval.ts",
+    "recalls:clean": "tsx --env-file-if-exists=.env.local scripts/clean-recalls.ts",
     "ext:build": "pnpm --dir extension build",
     "ext:dev": "pnpm --dir extension dev"
   },

@@ -3,6 +3,7 @@ import { parseArgs } from "node:util";
 import { db } from "../src/lib/db/client";
 import { ingestEnv } from "../src/lib/env";
 import { sinceDate } from "../src/lib/ingest/dates";
+import { cleanRecalls } from "../src/lib/ingest/clean-fields";
 import { ingestRappelConso, type IngestPlan } from "../src/lib/ingest/rappelconso";
 import { ingestSafetyGate } from "../src/lib/ingest/safetygate";
 
@@ -55,6 +56,8 @@ if (!sources.every((source) => source === "rappelconso" || source === "safetygat
   throw new Error("--source must be rappelconso, safetygate or all");
 }
 
+const started = new Date();
+
 try {
   const since = values.since ? sinceDate(values.since) : undefined;
   if (sources.includes("rappelconso")) {
@@ -65,6 +68,13 @@ try {
     report("Safety Gate", result);
     for (const [year, total] of [...(result?.perYear ?? [])].sort()) log(`  ${year}: ${total}`);
   }
+  // Recalls stored by this run get their clean fields; older ones are read by pnpm recalls:clean.
+  const cleaned = await cleanRecalls({
+    updatedSince: started,
+    confirm: (plan) => confirm({ fetched: plan.recalls, recalls: plan.recalls, needModel: plan.recalls, cached: plan.cached, calls: plan.calls, estimatedCost: plan.estimatedCost }),
+    log,
+  });
+  log(cleaned ? `Clean fields: ${cleaned.stored} recalls (${cleaned.failed} failed, $${cleaned.cost.toFixed(2)})` : "Clean fields: skipped");
 } finally {
   await db().$client.end();
 }

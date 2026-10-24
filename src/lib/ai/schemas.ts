@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PRODUCT_TYPES } from "../product-type";
 
 // Structured Outputs needs every key present, so unknown values are null or empty arrays.
 export const recallDetailsSchema = z.object({
@@ -20,6 +21,18 @@ export const recallDetailsSchema = z.object({
 });
 
 export type RecallDetailsOutput = z.infer<typeof recallDetailsSchema>;
+
+const quoted = z.object({ value: z.string(), quote: z.string() });
+
+export const recallFieldsSchema = z.object({
+  brand: quoted.nullable(),
+  productType: z.object({ value: z.enum(PRODUCT_TYPES), quote: z.string() }).nullable(),
+  modelName: quoted.nullable(),
+  refs: z.array(quoted),
+  specs: z.array(quoted),
+});
+
+export type RecallFieldsOutput = z.infer<typeof recallFieldsSchema>;
 
 export const extractedFieldSchema = z.enum([
   "category",

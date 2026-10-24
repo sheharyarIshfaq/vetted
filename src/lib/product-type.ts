@@ -1,5 +1,20 @@
 import { normalizeText } from "./text";
 
+// The fixed list a recall's clean product_type is chosen from. Vehicles and baby gear keep the keyword types' names.
+export const PRODUCT_TYPES = [
+  "e-bike", "e-scooter", "scooter", "hoverboard", "moped", "bicycle", "motor vehicle",
+  "car seat", "car seat base", "stroller", "bike seat", "high chair", "travel cot", "cot", "baby carrier", "baby walker",
+  "baby bouncer", "bath seat", "pacifier", "teether", "baby bottle", "baby sleeping bag", "baby monitor", "stair gate",
+  "changing table",
+  "toy", "soft toy", "magnetic toy", "slime", "ride-on toy", "toy weapon", "doll", "balloon", "costume",
+  "power bank", "charger", "cable", "phone", "headphones", "speaker", "lamp", "lighting chain", "heater", "hair appliance",
+  "kitchen appliance", "vacuum cleaner", "electric toothbrush", "extension lead", "battery", "smoke detector", "television",
+  "e-cigarette", "other electrical", "helmet", "protective gear", "clothing", "footwear", "bag", "jewellery", "furniture",
+  "decoration", "kitchenware", "stationery", "sports equipment", "tool", "cosmetics", "other",
+] as const;
+
+export type ProductType = (typeof PRODUCT_TYPES)[number];
+
 // Plain keywords, French, English and German, for the products resold most. Anything else stays unknown.
 // Types in one group are variants of each other: a recall for a "véhicule à moteur" can be a fatbike.
 const TYPES: [type: string, group: string, pattern: RegExp][] = [

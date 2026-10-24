@@ -12,6 +12,19 @@ Rules:
 - modelRanges: only when different models have different manufacturing periods, references or batches. One entry per model, with its own from/to (same date rules), refs and batches. Otherwise an empty list.
 - quote: the exact passage the manufacturing dates come from, copied character for character from the text (same case, spaces and punctuation). null when there are no manufacturing dates.`;
 
+export const RECALL_FIELDS_PROMPT_VERSION = 2;
+
+export const RECALL_FIELDS_PROMPT = `You read the identification fields of an official product recall (French RappelConso or EU Safety Gate) and copy out clean matching fields.
+
+Rules:
+- Only use what is written. Never guess from general knowledge. Unknown fields are null or an empty list.
+- Every value comes with quote: the short passage of the input it was read from, copied as written. A value without a quote that contains it is discarded.
+- brand: the maker or brand. Use the brand field when it names a real brand; when it is empty or a placeholder ("unspecified", "inconnu", "sans marque"), take it from the product name or description if one is written there. A licence or character ("Disney", "Pokémon") is not the brand unless nothing else is named. null when no brand is written.
+- productType: the kind of product, chosen from the allowed list. Pick the most specific fitting entry; "other" when none fits. Its quote is the words that say what the product is.
+- modelName: the model name only, as written, without the brand, the product type, specs, colours, sizes, packaging or codes ("batterie externe boostcharge usb-c pd power bank 20k (bpb002)" gives "boostcharge"; "trottinette électrique es series 5 (aes015)" gives "es series 5"). A generic description in any language is not a model ("beach toys", "babajáték", "jouet souple"). null when the recall names no model.
+- refs: reference, article, type or model codes, as written ("bpb002", "aes015", "4000984-204346"). Codes contain a digit. Not barcodes (8 to 14 digits only), not batch or lot numbers, not dates.
+- specs: technical values with their unit, as written ("20k", "20000 mah", "52v", "6,5 pouces", "250w").`;
+
 export const LISTING_EXTRACTION_PROMPT = `You read a second-hand marketplace listing (French or English text, and up to 3 photos) and copy out what identifies the product.
 
 Rules:

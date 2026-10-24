@@ -52,7 +52,7 @@ describe("normalizeBrand", () => {
   });
 
   it("turns placeholder brands into no brand", () => {
-    for (const raw of ["Inconnu", "SANS MARQUE", "Unknown", "no brand", "N/A", "Generic", "Générique", "pas de marque", "Not specified", "aucune", ""]) {
+    for (const raw of ["Inconnu", "SANS MARQUE", "Unknown", "no brand", "N/A", "Generic", "Générique", "pas de marque", "Not specified", "Unspecified", "non specified", "aucune", ""]) {
       expect(normalizeBrand(raw, aliases), raw).toBeNull();
     }
     expect(normalizeBrand("Brandt", aliases)).toBe("brandt");
