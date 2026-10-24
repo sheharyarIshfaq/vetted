@@ -7,9 +7,10 @@ import {
   eyebrow,
   headline,
   labelTargets,
-  madeLabel,
-  rangePhrase,
   listsPhrase,
+  madeLabel,
+  numericDate,
+  rangePhrase,
   recalledSummary,
   regionsPhrase,
   riskLabel,
@@ -17,6 +18,7 @@ import {
   searchedSummary,
   sellerMessage,
   shortDay,
+  sourceSplitPhrase,
   titleCase,
 } from "./copy";
 
@@ -125,5 +127,39 @@ describe("batch and date limits together", () => {
       "Only some batches are affected",
     );
     expect(sellerMessage("check_label", "Cathy", both, "https://x")).toContain("numéro de lot");
+  });
+});
+
+describe("sourceSplitPhrase", () => {
+  it("names only the loaded sources", () => {
+    expect(sourceSplitPhrase({ rappelconso: 2935, safetygate: 11498 })).toBe("2,935 from France and 11,498 from the EU");
+    expect(sourceSplitPhrase({ rappelconso: 2935 })).toBe("2,935 from France");
+    expect(sourceSplitPhrase({})).toBe("");
+  });
+});
+
+describe("numericDate", () => {
+  it("formats an ISO date the French way", () => {
+    expect(numericDate("2026-06-23")).toBe("23/06/2026");
+  });
+});
+
+describe("titleCase", () => {
+  it("writes Roman numerals in capitals", () => {
+    expect(titleCase("smile iii")).toBe("Smile III");
+    expect(titleCase("britax römer")).toBe("Britax Römer");
+    expect(titleCase("vivid ivory")).toBe("Vivid Ivory");
+  });
+});
+
+describe("label-only checks", () => {
+  it("asks the owner for their label instead of blaming the listing", () => {
+    expect(checkLabelSummary({ brand: "hamax", productLabel: "Buddy", publishedAt: "2026-10-19", limits: buddy, fromRecall: true })).toBe(
+      "Hamax recalled the Buddy on 19 Oct 2026. Only units made from January 2022 onwards are affected. A photo of your item's label shows whether yours is one of them.",
+    );
+  });
+
+  it("looks for a barcode or code when nothing else limits the recall", () => {
+    expect(labelTargets({ from: null, to: null, batches: [], refs: [], model: null })).toBe("Barcode or reference code");
   });
 });

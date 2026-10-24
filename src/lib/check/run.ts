@@ -29,7 +29,13 @@ export type CheckResult = {
 };
 
 // Shapes of the JSON columns saved on a check.
-export type StoredInput = { text: string | null; url: string | null; page: ListingPage | null; photoKeys: string[] };
+export type StoredInput = {
+  text: string | null;
+  url: string | null;
+  page: ListingPage | null;
+  photoKeys: string[];
+  fromRecall?: string; // a label check started from a recall page, with no listing
+};
 export type StoredExtracted = ExtractedItem & { brandNorm: string | null };
 export type StoredCandidate = {
   recallId: string;

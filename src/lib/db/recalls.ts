@@ -1,5 +1,6 @@
-import { and, count, desc, eq, gte, inArray, max, sql, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, max, or, sql, type SQL } from "drizzle-orm";
 import { recalls, type NewRecall, type Recall } from "../../db/schema";
+import type { CategoryGroup, RecallSource } from "../recalls";
 import { normalizeText } from "../text";
 import { db } from "./client";
 
@@ -55,11 +56,24 @@ export function getRecalls(ids: string[]): Promise<Recall[]> {
   return db().select().from(recalls).where(inArray(recalls.id, ids));
 }
 
-type ListOptions = { q?: string; category?: string; page?: number; pageSize?: number };
+type ListOptions = { q?: string; group?: CategoryGroup | null; source?: RecallSource | null; page?: number; pageSize?: number };
 
-export async function listRecalls({ q, category, page = 1, pageSize = 24 }: ListOptions = {}) {
+function inGroup(group: CategoryGroup) {
+  const parts: SQL[] = [];
+  for (const source of ["rappelconso", "safetygate"] as const) {
+    const rule: { categories?: readonly string[]; subcategories?: readonly string[] } = group[source];
+    const fields: SQL[] = [];
+    if (rule.categories) fields.push(inArray(recalls.category, [...rule.categories]));
+    if (rule.subcategories) fields.push(inArray(recalls.subcategory, [...rule.subcategories]));
+    parts.push(and(eq(recalls.source, source), or(...fields))!);
+  }
+  return or(...parts)!;
+}
+
+export async function listRecalls({ q, group, source, page = 1, pageSize = 24 }: ListOptions = {}) {
   const filters: SQL[] = [];
-  if (category) filters.push(eq(recalls.category, category));
+  if (group) filters.push(inGroup(group));
+  if (source) filters.push(eq(recalls.source, source));
   // search_text is already lower case and unaccented; every query word must appear, allowing small typos
   for (const word of q ? normalizeText(q).split(" ").filter(Boolean) : []) {
     filters.push(sql`(${recalls.searchText} like ${`%${word}%`} or ${word} <% ${recalls.searchText})`);
@@ -79,20 +93,17 @@ export async function listRecalls({ q, category, page = 1, pageSize = 24 }: List
   return { items, total };
 }
 
-export function recallsPublishedSince(since: string, limit = 8) {
+export function recallsPublishedSince(since: string, limit = 8, source?: RecallSource) {
   return db()
     .select()
     .from(recalls)
-    .where(gte(recalls.publishedAt, since))
+    .where(and(gte(recalls.publishedAt, since), source ? eq(recalls.source, source) : undefined))
     .orderBy(desc(recalls.publishedAt), recalls.id)
     .limit(limit);
 }
 
-export async function countRecalls(category?: string) {
-  const [{ total }] = await db()
-    .select({ total: count() })
-    .from(recalls)
-    .where(category ? eq(recalls.category, category) : undefined);
+export async function countRecallsSince(since: string) {
+  const [{ total }] = await db().select({ total: count() }).from(recalls).where(gte(recalls.publishedAt, since));
   return total;
 }
 
@@ -104,7 +115,8 @@ export async function recallStats() {
     .groupBy(recalls.source);
   return {
     total: rows.reduce((sum, row) => sum + row.total, 0),
-    sources: rows.map((row) => row.source as "rappelconso" | "safetygate"),
+    sources: rows.map((row) => row.source as RecallSource),
+    bySource: Object.fromEntries(rows.map((row) => [row.source, row.total])) as Partial<Record<RecallSource, number>>,
     updatedAt: rows.reduce<Date | null>((latest, row) => (row.updatedAt && (!latest || row.updatedAt > latest) ? row.updatedAt : latest), null),
   };
 }

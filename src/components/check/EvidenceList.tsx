@@ -14,7 +14,7 @@ function Fact({ text }: { text: string }) {
   );
 }
 
-export function EvidenceList({ items }: { items: Evidence[] }) {
+export function EvidenceList({ items, fromRecall = false }: { items: Evidence[]; fromRecall?: boolean }) {
   return (
     <section className="flex flex-col gap-3 rounded-[18px] border border-line bg-surface px-5 py-5 sm:px-6">
       <h2 className="m-0 text-lg font-bold">Why Tiko says so</h2>
@@ -33,7 +33,7 @@ export function EvidenceList({ items }: { items: Evidence[] }) {
             <span className="min-w-0 grow">
               <Fact text={item.fact} />
             </span>
-            <span className="shrink-0 text-right text-[13px] text-muted">{sourceLabel(item.source)}</span>
+            <span className="shrink-0 text-right text-[13px] text-muted">{sourceLabel(item.source, fromRecall)}</span>
           </li>
         ))}
       </ol>

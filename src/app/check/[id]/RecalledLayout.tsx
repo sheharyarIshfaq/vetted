@@ -24,14 +24,14 @@ export function RecalledLayout({ check }: Props) {
       </Breadcrumb>
       <div className="flex flex-wrap items-start gap-6">
         <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-4">
-          <ListingSummary title={check.listingTitle} photo={check.listingPhoto} extracted={extracted} />
+          <ListingSummary title={check.listingTitle} photo={check.listingPhoto} extracted={extracted} fromRecall={check.fromRecall} />
           {check.label && <LabelRead read={check.label.read} photo={check.labelPhoto} />}
         </div>
         <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-4">
           <VerdictPanel
             verdict="recalled"
             eyebrow={eyebrow("recalled", recall.risk)}
-            title={headline("recalled", extracted.category)}
+            title={check.fromRecall ? "Yours is one of the recalled units." : headline("recalled", extracted.category)}
             body={
               <>
                 <PhotoPair listingPhoto={check.listingPhoto} officialPhoto={recall.images[0] ?? null} noticeRef={recall.sourceRef} />
@@ -44,10 +44,12 @@ export function RecalledLayout({ check }: Props) {
                   >
                     Read the official notice
                   </a>
-                  <CopyMessageButton
-                    label="Copy a message for the seller"
-                    message={sellerMessage("recalled", check.sellerLabel, limits, recall.url)}
-                  />
+                  {!check.fromRecall && (
+                    <CopyMessageButton
+                      label="Copy a message for the seller"
+                      message={sellerMessage("recalled", check.sellerLabel, limits, recall.url)}
+                    />
+                  )}
                   <ReportWrongMatch checkId={check.id} alreadyFlagged={check.flagged} />
                 </div>
                 {check.secondRecall && (
@@ -74,7 +76,7 @@ export function RecalledLayout({ check }: Props) {
               </p>
             )}
           </VerdictPanel>
-          <EvidenceList items={check.evidence.items} />
+          <EvidenceList items={check.evidence.items} fromRecall={check.fromRecall} />
         </div>
       </div>
     </>

@@ -40,6 +40,11 @@ export function dayName(date: string) {
 }
 
 // "2026-10-19" -> "19 Oct"
+// "2026-06-23" -> "23/06/2026"
+export function numericDate(iso: string) {
+  return `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
+}
+
 export function shortDay(date: string) {
   return SHORT_DAY.format(new Date(`${date.slice(0, 10)}T00:00:00Z`));
 }
@@ -61,8 +66,11 @@ export function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+// "smile iii" -> "Smile III": first letters upper case, Roman numerals in full.
 export function titleCase(value: string) {
-  return value.replace(/(^|[\s-])(\p{L})/gu, (_, separator: string, letter: string) => separator + letter.toUpperCase());
+  return value
+    .replace(/(^|[\s-])(\p{L})/gu, (_, separator: string, letter: string) => separator + letter.toUpperCase())
+    .replace(/\b(?:Ii|Iii|Iv|Vi|Vii|Viii|Ix)\b/g, (numeral) => numeral.toUpperCase());
 }
 
 export function eyebrow(verdict: Verdict, risk: string | null) {
@@ -96,9 +104,20 @@ export function recalledSummary({ brand, productLabel, publishedAt, limits, item
   return sentences.join(" ");
 }
 
-export function checkLabelSummary({ brand, productLabel, publishedAt, limits }: Omit<Summary, "item">) {
+// From a listing, the label is what's missing; from a recall page, the owner's label decides.
+export function checkLabelSummary({
+  brand,
+  productLabel,
+  publishedAt,
+  limits,
+  fromRecall = false,
+}: Omit<Summary, "item"> & { fromRecall?: boolean }) {
   const recalled = `${brand ? `${titleCase(brand)} recalled` : "Recalled:"} the ${productLabel} on ${dayName(publishedAt)}.`;
   const range = limits.batches.length ? null : rangePhrase(limits.from, limits.to);
+  if (fromRecall) {
+    const which = range ? `Only units made ${range} are affected.` : limits.batches.length ? "Only some batches are affected." : null;
+    return [recalled, which, "A photo of your item's label shows whether yours is one of them."].filter(Boolean).join(" ");
+  }
   if (range) return `${recalled} Only units made ${range} are affected, and the listing doesn't say when this one was made.`;
   return `${recalled} Only some batches are affected, and the listing doesn't give the batch number.`;
 }
@@ -117,6 +136,15 @@ export function listsPhrase(sources: readonly Source[]) {
   return lists.length ? lists.join(" and ") : "Official recall lists";
 }
 
+// "2,935 from France and 11,498 from the EU", for the sources that are loaded.
+export function sourceSplitPhrase(bySource: Partial<Record<Source, number>>) {
+  const parts = [
+    bySource.rappelconso && `${bySource.rappelconso.toLocaleString("en-GB")} from France`,
+    bySource.safetygate && `${bySource.safetygate.toLocaleString("en-GB")} from the EU`,
+  ].filter(Boolean);
+  return parts.join(" and ");
+}
+
 export function sourcesLabel(sources: readonly string[]) {
   const names = [sources.includes("rappelconso") && "French", sources.includes("safetygate") && "EU"].filter(Boolean);
   return names.length ? names.join(" and ") : "official";
@@ -133,7 +161,7 @@ export function labelTargets(limits: RecallLimits) {
   if (limits.refs.length) targets.push(`Code ${limits.refs.slice(0, 3).join(" or ")}`);
   if (limits.batches.length) targets.push("batch number");
   else if (limits.from || limits.to) targets.push("production date");
-  return targets.join(" · ");
+  return targets.join(" · ") || "Barcode or reference code";
 }
 
 // Messages to the seller, in French, following the approved CheckLabel wording.
@@ -155,8 +183,9 @@ const SOURCE_LABELS: Record<EvidenceSource, string> = {
   official_data: "official data",
 };
 
-export function sourceLabel(source: EvidenceSource) {
-  return SOURCE_LABELS[source];
+// A check started from a recall page has no listing: its brand and model are the recall the owner picked.
+export function sourceLabel(source: EvidenceSource, fromRecall = false) {
+  return fromRecall && source === "listing_text" ? "recall you picked" : SOURCE_LABELS[source];
 }
 
 const MADE_FROM: Partial<Record<EvidenceSource, string>> = {

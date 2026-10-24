@@ -41,7 +41,10 @@ export async function loadCheck(id: string) {
   ]);
 
   const model = [extracted.model, extracted.modelVariant].filter(Boolean).join(" ");
-  const listingTitle = input.page?.title ?? input.text?.split("\n")[0]?.trim() ?? "Listing photos";
+  const fromRecall = Boolean(input.fromRecall);
+  const listingTitle = fromRecall && recall
+    ? capitalize(recall.productName)
+    : (input.page?.title ?? input.text?.split("\n")[0]?.trim() ?? "Listing photos");
   const searchedFor = [extracted.brand, model].filter(Boolean).join(" ") || null;
 
   return {
@@ -50,6 +53,7 @@ export async function loadCheck(id: string) {
     flagged: check.flagged,
     checkedAt: CHECKED_AT.format(check.createdAt),
     listingTitle,
+    fromRecall,
     listingPhoto,
     extracted,
     evidence,

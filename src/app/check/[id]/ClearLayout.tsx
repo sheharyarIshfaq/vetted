@@ -38,7 +38,13 @@ export function ClearLayout({ check }: { check: LoadedCheck }) {
       <VerdictPanel
         verdict="clear"
         eyebrow={eyebrow("clear", null)}
-        title={headline("clear", extracted.category)}
+        title={
+          check.fromRecall
+            ? evidence.relation === "other_dates"
+              ? "Yours is outside the recalled units."
+              : "Your label doesn't match this recall."
+            : headline("clear", extracted.category)
+        }
         body={
           <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3.5 px-5 py-5 sm:px-6">
             <Tile label="Searched">{stats.sources.map((source) => SOURCE_NAMES[source]).join(" + ") || "Official recall lists"}</Tile>
@@ -58,11 +64,13 @@ export function ClearLayout({ check }: { check: LoadedCheck }) {
             {note}
           </p>
         ))}
-        <p className="m-0">{searched}</p>
+        <p className="m-0">
+          {check.fromRecall ? "That's based on what your label shows. If in doubt, read the official notice." : searched}
+        </p>
       </VerdictPanel>
 
       {check.label && <LabelRead read={check.label.read} photo={check.labelPhoto} />}
-      {evidence.items.length > 0 && <EvidenceList items={evidence.items} />}
+      {evidence.items.length > 0 && <EvidenceList items={evidence.items} fromRecall={check.fromRecall} />}
 
       <section
         aria-label="Watch this item"

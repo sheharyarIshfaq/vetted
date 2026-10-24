@@ -2,16 +2,32 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { RemoteImage } from "@/components/check/RemoteImage";
 import { capitalize, riskWord, shortDay, titleCase } from "@/lib/check/copy";
+import type { Recall } from "@/db/schema";
 import { recallsPublishedSince } from "@/lib/db/recalls";
 import { sinceDate } from "@/lib/ingest/dates";
+import { recallHref } from "@/lib/recalls";
 
 const SOURCE_NAMES = { rappelconso: "RappelConso", safetygate: "EU Safety Gate" } as const;
+
+const CARDS = 4;
+
+// Up to half the cards from each source, the rest filled from whichever has more, newest first.
+async function latestFromBoth(since: string) {
+  const [france, eu] = await Promise.all([
+    recallsPublishedSince(since, CARDS, "rappelconso"),
+    recallsPublishedSince(since, CARDS, "safetygate"),
+  ]);
+  const half = CARDS / 2;
+  const picked: Recall[] = [...france.slice(0, half), ...eu.slice(0, half)];
+  const rest = [...france.slice(half), ...eu.slice(half)].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+  return [...picked, ...rest.slice(0, CARDS - picked.length)].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+}
 
 // This week's recalls, or the latest ones when none were published in the last seven days.
 export async function RecentRecalls() {
   await connection();
-  const thisWeek = await recallsPublishedSince(sinceDate("7d"), 4);
-  const recalls = thisWeek.length ? thisWeek : await recallsPublishedSince("1900-01-01", 4);
+  const thisWeek = await latestFromBoth(sinceDate("7d"));
+  const recalls = thisWeek.length ? thisWeek : await latestFromBoth("1900-01-01");
   if (recalls.length === 0) return null;
 
   return (
@@ -29,10 +45,8 @@ export async function RecentRecalls() {
           const meta = [SOURCE_NAMES[recall.source as keyof typeof SOURCE_NAMES], shortDay(recall.publishedAt), riskWord(recall.risk)];
           return (
             <li key={recall.id}>
-              <a
-                href={recall.url}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href={recallHref(recall.id)}
                 className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-surface text-ink no-underline hover:border-field hover:text-ink"
               >
                 {recall.images[0] ? (
@@ -44,7 +58,7 @@ export async function RecentRecalls() {
                   <div className="font-bold">{brand ? `${name} · ${brand}` : name}</div>
                   <div className="text-[13px] text-muted">{meta.filter(Boolean).join(" · ")}</div>
                 </div>
-              </a>
+              </Link>
             </li>
           );
         })}

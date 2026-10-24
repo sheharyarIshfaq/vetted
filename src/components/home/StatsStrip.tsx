@@ -1,7 +1,13 @@
+import { connection } from "next/server";
 import { Suspense } from "react";
-import { countRecalls } from "@/lib/db/recalls";
+import { listsPhrase, sourceSplitPhrase } from "@/lib/check/copy";
+import { countRecallsSince, recallStats } from "@/lib/db/recalls";
+import { sinceDate } from "@/lib/ingest/dates";
 
-const CHILD_CATEGORY = "bébés-enfants (hors alimentaire)";
+const UPDATED_AT = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "Europe/Paris" });
+
+const EU_REPORT_URL =
+  "https://commission.europa.eu/news-and-media/news/increased-action-against-dangerous-products-eu-2025-2026-03-09_en";
 
 function Stat({ value, children }: { value: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -12,8 +18,41 @@ function Stat({ value, children }: { value: React.ReactNode; children: React.Rea
   );
 }
 
-async function ChildRecallCount() {
-  return (await countRecalls(CHILD_CATEGORY)).toLocaleString("en-GB");
+function SourceLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="text-[#9AA59F] underline hover:text-white">
+      {children}
+    </a>
+  );
+}
+
+const Pending = () => <span className="text-[#C9D1CC]">…</span>;
+
+async function LiveStats() {
+  await connection();
+  const [stats, thisWeek] = await Promise.all([recallStats(), countRecallsSince(sinceDate("7d"))]);
+  if (stats.total === 0) return null;
+  return (
+    <>
+      <Stat value={stats.total.toLocaleString("en-GB")}>
+        official recalls Tiko checks against: {sourceSplitPhrase(stats.bySource)}
+      </Stat>
+      <Stat value={thisWeek.toLocaleString("en-GB")}>new recalls published in the last 7 days</Stat>
+    </>
+  );
+}
+
+async function LiveSources() {
+  await connection();
+  const stats = await recallStats();
+  if (stats.total === 0) return null;
+  const updated = stats.updatedAt ? `, updated ${UPDATED_AT.format(stats.updatedAt)}` : "";
+  return (
+    <>
+      Recall counts: {listsPhrase(stats.sources)}
+      {updated}.{" "}
+    </>
+  );
 }
 
 export function StatsStrip() {
@@ -27,28 +66,23 @@ export function StatsStrip() {
           </p>
         </div>
         <div className="grid min-w-0 flex-[1_1_520px] grid-cols-1 gap-4 sm:grid-cols-3">
-          <Stat value="321">Leboncoin results for a child bike seat recalled four days earlier (23 Oct 2026)</Stat>
-          <Stat
-            value={
-              <Suspense fallback={<span className="text-[#C9D1CC]">…</span>}>
-                <ChildRecallCount />
-              </Suspense>
+          <Suspense
+            fallback={
+              <>
+                <Stat value={<Pending />}>official recalls Tiko checks against</Stat>
+                <Stat value={<Pending />}>new recalls published in the last 7 days</Stat>
+              </>
             }
           >
-            baby and child product entries in France&apos;s recall list
-          </Stat>
+            <LiveStats />
+          </Suspense>
           <Stat value="4,671">EU Safety Gate alerts in 2025, a record year</Stat>
         </div>
         <p className="m-0 w-full text-xs text-[#9AA59F]">
-          Source:{" "}
-          <a
-            href="https://commission.europa.eu/news-and-media/news/increased-action-against-dangerous-products-eu-2025-2026-03-09_en"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[#9AA59F] underline hover:text-white"
-          >
-            European Commission, March 2026
-          </a>
+          <Suspense fallback={null}>
+            <LiveSources />
+          </Suspense>
+          4,671: <SourceLink href={EU_REPORT_URL}>European Commission, March 2026</SourceLink>.
         </p>
       </div>
     </section>
