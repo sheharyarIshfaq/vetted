@@ -118,4 +118,21 @@ describe("panelSummary", () => {
     const unbranded = panelSummary({ verdict: "clear", recall: null, extracted: extracted({ category: "High chair" }), listingTitle: "Chaise haute", searched });
     expect(unbranded.line).toContain("recalls for this high chair and found no match");
   });
+
+  it("says when the recall is for another part of the named model", () => {
+    const panel = panelSummary({
+      verdict: "clear",
+      recall: { ...bebeConfort, productName: "Siège auto bébé des sunlite duo" },
+      evidence: [
+        { fact: "Not this recall: the recall is for a car seat, this is a stroller", matched: false, source: "listing_text" },
+        { fact: "The recall covers the car seat of the Sunlite; if this stroller comes with one, check that car seat's label", matched: false, source: "official_data" },
+      ],
+      extracted: extracted({ brand: "Bébé Confort", model: "Sunlite" }),
+      listingTitle: "Poussette Sunlite",
+      searched,
+    });
+    expect(panel.line).toBe(
+      "A recall for Siège auto bébé des sunlite duo came close. The recall covers the car seat of the Sunlite; if this stroller comes with one, check that car seat's label.",
+    );
+  });
 });

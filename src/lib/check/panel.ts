@@ -1,5 +1,5 @@
 import type { Recall } from "../../db/schema";
-import { recallLimits, type Evidence, type Verdict } from "../verdict";
+import { PART_OF_MODEL, recallLimits, type Evidence, type Verdict } from "../verdict";
 import { capitalize, dayName, itemName, monthNumber, riskWord, sellerMessage, sourcesLabel } from "./copy";
 import { batchInEnglish, remedyInEnglish } from "../official-text";
 import type { ExtractedItem } from "./extract";
@@ -80,9 +80,11 @@ export function panelSummary(input: PanelInput): PanelSummary {
     const target = itemName(extracted) ?? (category ? `this ${category}` : "this listing");
     const searchedLine = `Tiko searched ${searched.total.toLocaleString("en-GB")} ${sourcesLabel(searched.sources)} recalls for ${target} and found no match. That doesn't prove it's safe.`;
     const why = input.evidence?.find((item) => !item.matched && item.fact.startsWith("Not this recall: "));
+    const part = input.evidence?.find((item) => item.fact.startsWith(PART_OF_MODEL));
+    const close = part ? part.fact : why ? capitalize(why.fact.slice("Not this recall: ".length)) : null;
     return {
       title,
-      line: recall && why ? `A recall for ${capitalize(recall.productName)} came close. ${capitalize(why.fact.slice("Not this recall: ".length))}.` : searchedLine,
+      line: recall && close ? `A recall for ${capitalize(recall.productName)} came close. ${close}.` : searchedLine,
       risk: null,
       source: recall && why ? sourceOf(recall) : null,
       lookFor: [],

@@ -347,6 +347,8 @@ function namedPart(item: ItemFacts, recall: CandidateRecall) {
   return kept.length ? kept.join(" ") : item.model;
 }
 
+export const PART_OF_MODEL = "The recall covers the";
+
 // "a car seat", "an e-scooter", "another electrical product".
 function typeWithArticle(type: string | null) {
   if (!type) return "another kind of product";
@@ -466,6 +468,14 @@ export function decideVerdict({
     evidence.push(...identityEvidence(item, recall, { brandMatch, modelNameMatch, refMatch, modelMatch, variantInDoubt }));
     if (otherType) {
       evidence.push({ fact: `The recall is for ${typeWithArticle(recallType)}, this is ${typeWithArticle(itemType)}`, matched: false, source: "listing_text" });
+      // The model is named, only for another part of it: a pack's car seat when this is the pack's stroller.
+      if (brandMatch && modelNameMatch && isSpecificType(recallType) && isSpecificType(itemType)) {
+        evidence.push({
+          fact: `${PART_OF_MODEL} ${recallType} of the ${namedPart(item, recall)}; if this ${itemType} comes with one, check that ${recallType}'s label`,
+          matched: false,
+          source: "official_data",
+        });
+      }
     }
   }
   if (sampleBatchMatch) {
