@@ -12,6 +12,7 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx --env-file-if-exists=.env.local scripts/migrate.ts",
+    "db:studio": "node --env-file-if-exists=.env.local node_modules/drizzle-kit/bin.cjs studio",
     "check:openai": "tsx --env-file-if-exists=.env.local scripts/check-openai.ts",
     "ingest": "tsx --env-file-if-exists=.env.local scripts/ingest.ts"
   },
