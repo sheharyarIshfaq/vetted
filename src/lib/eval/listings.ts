@@ -21,6 +21,7 @@ export const listingSchema = z.object({
   photos: z.array(z.string()),
   expected: expectedSchema.nullable(),
   expectedRecallId: z.string().nullable(),
+  excluded: z.boolean().optional(), // kept in the set but skipped by the eval
   notes: z.string().optional(),
 });
 

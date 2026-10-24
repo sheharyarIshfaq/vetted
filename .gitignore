@@ -15,6 +15,7 @@ docs/
 reference/
 README.handoff.md
 content/eval/photos/
+content/eval/listings.json
 CLAUDE.local.md
 .mcp.json
 next-env.d.ts
