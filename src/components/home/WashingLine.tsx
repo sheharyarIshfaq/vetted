@@ -27,8 +27,8 @@ function lineY(t: number) {
 
 export function WashingLine() {
   return (
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0 hidden md:block">
-      <svg width="100%" height="240" viewBox="0 0 1440 240" preserveAspectRatio="none" className="absolute top-0 left-0">
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0 hidden md:block [@media(max-height:620px)]:hidden">
+      <svg width="100%" viewBox="0 0 1440 240" preserveAspectRatio="none" className="absolute top-0 left-0 h-[calc(240px*var(--fit))]">
         <path d="M-20 64 Q 720 184 1460 64" fill="none" stroke="var(--kraft-text)" strokeWidth="2" />
       </svg>
       {TAGS.map((tag) => {
@@ -37,12 +37,12 @@ export function WashingLine() {
           <div
             key={tag.t}
             className="absolute flex w-0 flex-col items-center"
-            style={{ left: `${tag.t * 100}%`, top: Math.round(lineY(tag.t) - 1) }}
+            style={{ left: `${tag.t * 100}%`, top: `calc(${Math.round(lineY(tag.t) - 1)}px * var(--fit))` }}
           >
-            <div className="w-[1.5px] bg-kraft-text" style={{ height: tag.len }} />
+            <div className="w-[1.5px] bg-kraft-text" style={{ height: `calc(${tag.len}px * var(--fit))` }} />
             <div
               className="relative -mt-0.5 origin-top drop-shadow-[0_6px_8px_rgba(70,52,30,0.18)]"
-              style={{ transform: `rotate(${tag.rot}deg)` }}
+              style={{ transform: `rotate(${tag.rot}deg) scale(var(--type))` }}
             >
               <div
                 className={`flex items-end justify-center pb-2.5 font-mono font-semibold [clip-path:polygon(50%_0,100%_20%,100%_100%,0_100%,0_20%)] ${

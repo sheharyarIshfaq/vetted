@@ -81,6 +81,39 @@
     radial-gradient(40rem 26rem at 90% 95%, #eadfc9 0%, rgb(234 223 201 / 0) 70%);
 }
 
+/* The hero fills one screen from md up: on shorter screens the washing line, type and spacing shrink by --fit */
+.hero {
+  --fit: 1;
+  --type: calc(0.45 + 0.55 * var(--fit));
+  --hero-top: calc(276px * var(--fit));
+}
+
+@media (max-height: 900px) {
+  .hero {
+    --fit: 0.82;
+  }
+}
+
+@media (max-height: 800px) {
+  .hero {
+    --fit: 0.7;
+  }
+}
+
+@media (max-height: 700px) {
+  .hero {
+    --fit: 0.6;
+  }
+}
+
+/* Too short for the line: it is hidden and the content starts under the header */
+@media (max-height: 620px) {
+  .hero {
+    --fit: 0.5;
+    --hero-top: 100px;
+  }
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
