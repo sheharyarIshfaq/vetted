@@ -1,5 +1,5 @@
 import type { Recall } from "../../db/schema";
-import { PART_OF_MODEL, recallLimits, type Evidence, type Verdict } from "../verdict";
+import { modelInDoubt, PART_OF_MODEL, recallLimits, type Evidence, type Verdict } from "../verdict";
 import { capitalize, dayName, itemName, monthNumber, riskWord, sellerMessageEnglish, sourcesLabel } from "./copy";
 import { batchInEnglish, remedyInEnglish } from "../official-text";
 import type { ExtractedItem } from "./extract";
@@ -106,7 +106,7 @@ export function panelSummary(input: PanelInput): PanelSummary {
     whatToDo: verdict === "recalled" ? (recall.whatToDo ?? "").split("\n").map((line) => line.trim()).filter(Boolean).map(remedyInEnglish).map(capitalize) : [],
     sellerMessage:
       verdict === "check_label"
-        ? sellerMessageEnglish("check_label", itemName(extracted) ?? listingTitle, recallLimits({ ...extracted, title: listingTitle }, recall), recall.url)
+        ? sellerMessageEnglish("check_label", itemName(extracted) ?? listingTitle, recallLimits({ ...extracted, title: listingTitle }, recall), recall.url, modelInDoubt(input.evidence ?? []))
         : null,
   };
 }

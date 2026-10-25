@@ -16,6 +16,7 @@ import {
   riskWord,
   searchedSummary,
   sellerMessage,
+  sellerMessageEnglish,
   shortDay,
   nameCase,
   titleCase,
@@ -111,6 +112,21 @@ describe("label targets and seller messages", () => {
     expect(sellerMessage("recalled", "Smile III", smileIII, "https://rappel.conso.gouv.fr/fiche-rappel/22625/interne")).toContain(
       "https://rappel.conso.gouv.fr/fiche-rappel/22625/interne",
     );
+  });
+});
+
+describe("seller message when the model is in doubt", () => {
+  it("asks for the exact model instead of a date or batch, in French and English", () => {
+    const french = sellerMessage("check_label", "Belkin BoostCharge 10K+", batchesOnly, "https://x", true);
+    expect(french).toBe(
+      "Bonjour, votre Belkin BoostCharge 10K+ m'intéresse. Un modèle de cette marque fait l'objet d'un rappel officiel. Pourriez-vous m'envoyer une photo de l'étiquette où l'on voit le modèle exact ? Merci !",
+    );
+    expect(french).not.toContain("lot");
+    const english = sellerMessageEnglish("check_label", "Tilgreen hoverboard", buddy, "https://x", true);
+    expect(english).toBe(
+      "Hello, I'm interested in your Tilgreen hoverboard. A model from this brand has an official recall. Could you send me a photo of the label showing the exact model? Thanks!",
+    );
+    expect(english).not.toMatch(/batch|production date/);
   });
 });
 

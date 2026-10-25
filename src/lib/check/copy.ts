@@ -164,9 +164,13 @@ export function labelTargets(limits: RecallLimits) {
 }
 
 // Messages to the seller, in French, following the approved CheckLabel wording.
-export function sellerMessage(verdict: Verdict, productLabel: string, limits: RecallLimits, noticeUrl: string) {
+// When the open question is which model it is, the label has to show the model, not a date or batch.
+export function sellerMessage(verdict: Verdict, productLabel: string, limits: RecallLimits, noticeUrl: string, whichModel = false) {
   if (verdict === "recalled") {
     return `Bonjour, votre ${productLabel} m'intéresse, mais ce modèle fait l'objet d'un rappel officiel : ${noticeUrl}. Pourriez-vous vérifier ce rappel avant la vente ? Merci !`;
+  }
+  if (whichModel) {
+    return `Bonjour, votre ${productLabel} m'intéresse. Un modèle de cette marque fait l'objet d'un rappel officiel. Pourriez-vous m'envoyer une photo de l'étiquette où l'on voit le modèle exact ? Merci !`;
   }
   if (!limits.batches.length && (limits.from || limits.to)) {
     return `Bonjour, votre ${productLabel} m'intéresse. Ce modèle fait l'objet d'un rappel pour certaines dates de fabrication. Pourriez-vous m'envoyer une photo de l'étiquette avec la date de fabrication ? Merci !`;
@@ -175,9 +179,12 @@ export function sellerMessage(verdict: Verdict, productLabel: string, limits: Re
 }
 
 // The same request in English, for buyers who read the panel in English.
-export function sellerMessageEnglish(verdict: Verdict, productLabel: string, limits: RecallLimits, noticeUrl: string) {
+export function sellerMessageEnglish(verdict: Verdict, productLabel: string, limits: RecallLimits, noticeUrl: string, whichModel = false) {
   if (verdict === "recalled") {
     return `Hello, I'm interested in your ${productLabel}, but this model has an official recall: ${noticeUrl}. Could you check it before selling? Thanks!`;
+  }
+  if (whichModel) {
+    return `Hello, I'm interested in your ${productLabel}. A model from this brand has an official recall. Could you send me a photo of the label showing the exact model? Thanks!`;
   }
   if (!limits.batches.length && (limits.from || limits.to)) {
     return `Hello, I'm interested in your ${productLabel}. Some production dates of this model are recalled. Could you send me a photo of the label showing the production date? Thanks!`;

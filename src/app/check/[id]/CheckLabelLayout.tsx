@@ -9,7 +9,7 @@ import { VerdictPanel } from "@/components/check/VerdictPanel";
 import { WhatToDo } from "@/components/check/WhatToDo";
 import { checkLabelSummary, eyebrow, headline, labelTargets, sellerMessage } from "@/lib/check/copy";
 import type { Recall } from "@/db/schema";
-import type { Evidence, RecallLimits } from "@/lib/verdict";
+import { modelInDoubt, type Evidence, type RecallLimits } from "@/lib/verdict";
 import { Breadcrumb } from "./Breadcrumb";
 import type { LoadedCheck } from "./load-check";
 
@@ -124,10 +124,10 @@ export function CheckLabelLayout({ check }: Props) {
             <h2 className="m-0 text-xl font-semibold tracking-[-0.02em]">No photo yet? Ask the seller</h2>
             <div className="font-mono text-xs tracking-[0.1em] text-muted uppercase">Ready to paste, in French</div>
             <p lang="fr" className="m-0 rounded-2xl bg-paper p-4 text-[15px] leading-[1.55]">
-              {sellerMessage("check_label", check.sellerLabel, limits, recall.url)}
+              {sellerMessage("check_label", check.sellerLabel, limits, recall.url, modelInDoubt(check.evidence.items))}
             </p>
             <div className="self-start">
-              <CopyMessageButton label="Copy message" variant="primary" message={sellerMessage("check_label", check.sellerLabel, limits, recall.url)} />
+              <CopyMessageButton label="Copy message" variant="primary" message={sellerMessage("check_label", check.sellerLabel, limits, recall.url, modelInDoubt(check.evidence.items))} />
             </div>
             <a href={recall.url} target="_blank" rel="noopener noreferrer" className="text-[15px] font-semibold">
               Read the official notice

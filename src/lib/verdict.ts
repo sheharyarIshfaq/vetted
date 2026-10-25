@@ -349,6 +349,15 @@ function namedPart(item: ItemFacts, recall: CandidateRecall) {
 
 export const PART_OF_MODEL = "The recall covers the";
 
+// The facts that leave open which model or version the item is, rather than when it was made or its batch.
+const WHICH_ONE = "the listing doesn't say which";
+const EXACT_MODEL = "Ask the seller for the exact model";
+const BRAND_ON_LABEL = "Check the brand on the label";
+
+export function modelInDoubt(evidence: Evidence[]) {
+  return evidence.some((entry) => !entry.matched && [WHICH_ONE, EXACT_MODEL, BRAND_ON_LABEL].some((phrase) => entry.fact.includes(phrase)));
+}
+
 // "a car seat", "an e-scooter", "another electrical product".
 function typeWithArticle(type: string | null) {
   if (!type) return "another kind of product";
@@ -517,7 +526,7 @@ export function decideVerdict({
     const notNamed = `Model ${[item.model, item.modelVariant].filter(Boolean).join(" ")} is not named in the recall`;
     evidence.splice(0, evidence.length, ...evidence.filter((fact) => fact.fact !== notNamed));
     evidence.push({
-      fact: `The recall names the ${trims.join(", ")}; the listing doesn't say which ${item.model} this is`,
+      fact: `The recall names the ${trims.join(", ")}; ${WHICH_ONE} ${item.model} this is`,
       matched: false,
       source: "official_data",
     });
@@ -527,7 +536,7 @@ export function decideVerdict({
   const distinctiveName = (modelNameMatch && !specConflict && distinctiveModel(item)) || (refMatch && item.references.some(distinctiveCode));
   if (!identified && item.brandNorm === null && recall.brand !== null && candidate.onlyBrandNamingModel && distinctiveName && !otherType && photo.sameProduct !== "no") {
     evidence.push({
-      fact: `No brand given, and only a ${recall.brand} recall names the ${item.model ?? item.references.find((ref) => codeIn(refs, [ref]))}. Check the brand on the label`,
+      fact: `No brand given, and only a ${recall.brand} recall names the ${item.model ?? item.references.find((ref) => codeIn(refs, [ref]))}. ${BRAND_ON_LABEL}`,
       matched: false,
       source: "official_data",
     });
@@ -548,8 +557,8 @@ export function decideVerdict({
   ) {
     evidence.push({
       fact: recallNamesNoModel
-        ? `This brand has a recalled ${recallType} and the notice names no model. Ask the seller for the exact model`
-        : `This brand has a recalled ${recallType}. Ask the seller for the exact model`,
+        ? `This brand has a recalled ${recallType} and the notice names no model. ${EXACT_MODEL}`
+        : `This brand has a recalled ${recallType}. ${EXACT_MODEL}`,
       matched: false,
       source: "official_data",
     });
@@ -565,7 +574,7 @@ export function decideVerdict({
   const doubt = photo.sameProduct === "no" || variantInDoubt || specsUnknown || Boolean(recall.unitLimit);
   if (specsUnknown) {
     evidence.push({
-      fact: `The recall is for the ${specs.missing.join(" ")} version; the listing doesn't say which version this is`,
+      fact: `The recall is for the ${specs.missing.join(" ")} version; ${WHICH_ONE} version this is`,
       matched: false,
       source: "official_data",
     });

@@ -3,6 +3,7 @@ import {
   decideBest,
   decideVerdict,
   isInRange,
+  modelInDoubt,
   namesRecallModel,
   normalizeModel,
   type Candidate,
@@ -796,6 +797,15 @@ describe("decideVerdict · electronics and mobility (long product names)", () =>
     expect(result.evidence).toContainEqual({ fact: "Model BoostCharge is named in the recall", matched: true, source: "listing_text" });
     const tenK = decideVerdict({ item: { ...listing, title: "Batterie externe Belkin BoostCharge 10000 mAh" }, candidate: candidate(belkin, 0.6), photo: noPhoto });
     expect(tenK.verdict).toBe("clear");
+  });
+
+  it("flags facts that leave the model open, and not a missing date", () => {
+    const trims = { fact: "The recall names the boostcharge pro; the listing doesn't say which BoostCharge this is", matched: false, source: "official_data" as const };
+    const brand = { fact: "This brand has a recalled hoverboard. Ask the seller for the exact model", matched: false, source: "official_data" as const };
+    const date = { fact: "Production date unknown; the recall covers units made from January 2022", matched: false, source: "official_data" as const };
+    expect(modelInDoubt([trims])).toBe(true);
+    expect(modelInDoubt([brand])).toBe(true);
+    expect(modelInDoubt([date])).toBe(false);
   });
 
   it("names the model before the brackets, and treats the bracketed code as a reference", () => {

@@ -1,5 +1,5 @@
 import type { Recall } from "../../db/schema";
-import { PART_OF_MODEL, recallLimits } from "../verdict";
+import { modelInDoubt, PART_OF_MODEL, recallLimits } from "../verdict";
 import { capitalize, itemName, monthNumber, sellerMessage } from "./copy";
 import { MAX_CODES, SOURCE_NAMES, type PanelInput, type PanelSummary } from "./panel";
 
@@ -77,6 +77,6 @@ export function panelSummaryFr(input: PanelInput): PanelSummary {
       labelPlace(recall),
     ].filter((line): line is string => line !== null),
     whatToDo: verdict === "recalled" ? (recall.whatToDo ?? "").split("\n").map((line) => line.trim()).filter(Boolean).map(capitalize) : [],
-    sellerMessage: verdict === "check_label" ? sellerMessage("check_label", name ?? listingTitle, limits, recall.url) : null,
+    sellerMessage: verdict === "check_label" ? sellerMessage("check_label", name ?? listingTitle, limits, recall.url, modelInDoubt(input.evidence ?? [])) : null,
   };
 }
