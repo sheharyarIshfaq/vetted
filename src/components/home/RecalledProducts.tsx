@@ -51,8 +51,8 @@ export function RecalledProducts() {
   return (
     <section className="mx-auto flex max-w-[1240px] flex-col gap-6 px-4 pt-12 pb-16 sm:px-7 sm:pt-[72px] sm:pb-24">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h2 className="m-0 max-w-[30ch] text-[1.6rem] leading-[1.1] font-semibold tracking-[-0.04em] sm:text-[2rem]">
-          All four were for sale on Leboncoin on 24 October. All four are on an official danger list.
+        <h2 className="m-0 max-w-[34ch] text-[1.6rem] leading-[1.1] font-semibold tracking-[-0.04em] text-balance sm:text-[2rem]">
+          All four were for sale on Leboncoin on 24 October. All four are on an official danger list.
         </h2>
         <span className="font-mono text-xs text-muted">Photos: official recall notices</span>
       </div>

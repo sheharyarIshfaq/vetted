@@ -34,7 +34,7 @@ const ANSWERS: { variant: TagVariant; title: string; text: string }[] = [
   },
 ];
 
-const HEADING = "m-0 text-[2.2rem] leading-[1.02] font-semibold tracking-[-0.05em] sm:text-5xl";
+const HEADING = "m-0 text-[2.2rem] leading-[1.02] font-semibold tracking-[-0.05em] text-balance sm:text-5xl";
 const CARD = "flex flex-col rounded-[20px] border border-line bg-surface p-[26px]";
 
 export function HowItWorks() {
