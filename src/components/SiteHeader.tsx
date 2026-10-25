@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/#recall", label: "What's a recall?" },
   { href: "/#how", label: "How it works" },
   { href: "/#faq", label: "Questions" },
+  { href: "/try", label: "Try it" },
   { href: "/platforms", label: "For platforms" },
 ];
 
@@ -53,20 +54,20 @@ export function SiteHeader() {
           <VettedTag variant="brand" width={30} decorative />
           vetted
         </Link>
-        <nav aria-label="Main" className="hidden gap-x-[18px] text-[15px] md:flex">
+        <nav aria-label="Main" className="hidden gap-x-[18px] text-[15px] lg:flex">
           {LINKS.map((link) => (
             <Link key={link.href} href={link.href} className={linkStyle}>
               {link.label}
             </Link>
           ))}
         </nav>
-        <AddToChrome className={`${chromeStyle} hidden md:inline-flex`}>Add to Chrome</AddToChrome>
+        <AddToChrome className={`${chromeStyle} hidden lg:inline-flex`}>Add to Chrome</AddToChrome>
         <button
           type="button"
           aria-expanded={open}
           aria-controls="mobile-menu"
           onClick={() => setOpen((value) => !value)}
-          className="flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-field bg-surface px-4 text-sm font-medium text-ink md:hidden"
+          className="flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-field bg-surface px-4 text-sm font-medium text-ink lg:hidden"
         >
           <span aria-hidden="true" className="flex w-3.5 flex-col gap-[3px]">
             <span className={`h-[1.5px] bg-ink transition-transform ${open ? "translate-y-[4.5px] rotate-45" : ""}`} />
@@ -77,7 +78,7 @@ export function SiteHeader() {
         </button>
       </div>
       {open && (
-        <nav id="mobile-menu" aria-label="Main" className="absolute inset-x-0 top-full flex flex-col gap-1 border-b border-divider bg-paper px-4 pt-1 pb-5 text-[17px] shadow-[0_18px_30px_-24px_rgba(70,52,30,0.5)] md:hidden">
+        <nav id="mobile-menu" aria-label="Main" className="absolute inset-x-0 top-full flex flex-col gap-1 border-b border-divider bg-paper px-4 pt-1 pb-5 text-[17px] shadow-[0_18px_30px_-24px_rgba(70,52,30,0.5)] lg:hidden">
           {LINKS.map((link) => (
             <Link key={link.href} href={link.href} onClick={() => setOpen(false)} className={`${linkStyle} border-b border-divider`}>
               {link.label}
