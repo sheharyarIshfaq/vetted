@@ -47,7 +47,7 @@ export function WhatIsARecall() {
         </ol>
         <div className="grid w-full grid-cols-[repeat(auto-fit,minmax(14rem,1fr))] gap-8 border-t border-[#D5DBD0] pt-6">
           <Stat value="321">recalled bike seats listed 4 days after the recall</Stat>
-          <Stat value="18">scooters for sale in one search, every unit recalled</Stat>
+          <Stat value="10">Acer ES Series 5 scooters for sale on Leboncoin, every unit recalled</Stat>
           <Stat
             value={
               <Suspense fallback="…">
@@ -58,7 +58,7 @@ export function WhatIsARecall() {
             official recalls Vetted checks
           </Stat>
         </div>
-        <span className="font-mono text-xs text-[#5B6A61]">Leboncoin searches, 23 and 24 Oct 2026 · RappelConso and EU Safety Gate</span>
+        <span className="font-mono text-xs text-[#5B6A61]">Leboncoin searches, 23 and 25 Oct 2026 · RappelConso and EU Safety Gate</span>
       </div>
     </section>
   );
