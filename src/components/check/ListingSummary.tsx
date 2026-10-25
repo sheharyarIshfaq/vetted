@@ -1,4 +1,4 @@
-import { madeLabel, titleCase } from "@/lib/check/copy";
+import { capitalize, madeLabel } from "@/lib/check/copy";
 import type { StoredExtracted } from "@/lib/check/run";
 import { RemoteImage } from "./RemoteImage";
 
@@ -25,7 +25,7 @@ export function ListingSummary({ title, photo, extracted, fromRecall = false }: 
         </div>
         <div className="flex flex-col border-t border-line">
           <div className="pt-3 pb-1 font-mono text-xs tracking-[0.1em] text-muted uppercase">{fromRecall ? "From the recall and your label" : "What Vetted read"}</div>
-          {extracted.category && <Row label="Category" value={titleCase(extracted.category)} />}
+          {extracted.category && <Row label="Category" value={capitalize(extracted.category)} />}
           {extracted.brand && <Row label="Brand" value={extracted.brand} />}
           {model && <Row label="Model" value={model} />}
           {extracted.references.length > 0 && <Row label="Reference" value={extracted.references.join(", ")} mono />}
