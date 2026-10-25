@@ -19,23 +19,23 @@ const CURL = `curl -X POST https://vetted.sheharyarishfaq.com/api/v1/listings/ch
     "url": "https://www.leboncoin.fr/ad/sport_plein_air/3247445342"
   }'`;
 
-// The endpoint's answer to the request above, as returned.
+// The live endpoint's answer to the request above, as returned on 25 Oct 2026.
 const RESPONSE = `{
   "listing_id": "3247445342",
   "verdict": "recalled",
   "recall": {
     "id": "rc:21110",
     "source": "rappelconso",
-    "brand": "acer",
-    "model": "trottinette électrique es series 5 (aes015)",
+    "brand": "Acer",
+    "model": "ES Series 5 (AES015)",
     "risk": "injury",
     "published_at": "2026-01-31",
     "notice_url": "https://rappel.conso.gouv.fr/fiche-rappel/21110/interne"
   },
-  "reason": "This item matches the recalled units.",
+  "reason": "Acer recalled the ES Series 5 (AES015) because a screw may not have been tightened enough during production and could come loose during normal use. Every unit is affected.",
   "suggested_action": "hold_listing",
   "seller_message": null,
-  "check_url": "https://vetted.sheharyarishfaq.com/check/7eb8c46c-5ed8-4302-8aaa-46aec281b597"
+  "check_url": "https://vetted.sheharyarishfaq.com/check/38b80c27-e19a-4dfc-9167-80e4f8867906"
 }`;
 
 const STEPS = [
