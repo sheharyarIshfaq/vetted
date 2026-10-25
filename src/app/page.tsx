@@ -11,7 +11,7 @@ import { WhatIsARecall } from "@/components/home/WhatIsARecall";
 function Hero() {
   return (
     // Pulled up under the transparent header, so the washing line runs behind it.
-    <section className="hero relative -mt-[120px] overflow-hidden border-b border-divider bg-paper md:-mt-[86px] md:flex md:min-h-svh md:flex-col">
+    <section className="hero relative -mt-16 overflow-hidden border-b border-divider bg-paper md:-mt-[86px] md:flex md:min-h-svh md:flex-col">
       <div aria-hidden="true" className="hero-glow absolute inset-0" />
       <svg aria-hidden="true" width="100%" height="100%" className="absolute inset-0 opacity-30 mix-blend-multiply">
         <filter id="hero-grain">
@@ -21,7 +21,7 @@ function Hero() {
         <rect width="100%" height="100%" filter="url(#hero-grain)" />
       </svg>
       <WashingLine />
-      <div className="relative mx-auto flex max-w-[1100px] flex-col items-center gap-[22px] px-4 pt-[156px] pb-16 text-center sm:px-7 md:w-full md:flex-1 md:justify-center md:gap-[calc(22px*var(--fit))] md:pt-(--hero-top) md:pb-[calc(56px*var(--fit))]">
+      <div className="relative mx-auto flex max-w-[1100px] flex-col items-center gap-6 px-4 pt-[104px] pb-14 text-center sm:px-7 md:w-full md:flex-1 md:justify-center md:gap-[calc(30px*var(--fit))] md:pt-(--hero-top) md:pb-[calc(56px*var(--fit))]">
         <div className="flex items-center gap-3 font-mono text-[13px] text-[#6A4E1E]">
           <TanTag />
           <span>Second-hand. Not second-guessed.</span>
@@ -29,13 +29,13 @@ function Hero() {
         </div>
         <h1 className="m-0 flex flex-col items-center">
           <span className="text-[2.6rem] leading-[0.95] font-bold tracking-[-0.06em] text-balance sm:text-[4rem] md:text-[calc(4rem*var(--type))] lg:text-[calc(5.6rem*var(--type))]">
-            Is that second-hand item
+            Is that second‑hand item
           </span>
           <span className="font-serif text-[3.1rem] leading-none font-normal tracking-[-0.03em] text-brand italic sm:text-[4.8rem] md:text-[calc(4.8rem*var(--type))] lg:text-[calc(6.6rem*var(--type))]">
             safe to buy?
           </span>
         </h1>
-        <p className="m-0 max-w-[38rem] text-lg leading-[1.6] text-ink-2 sm:text-xl md:text-[calc(1.25rem*var(--type))]">
+        <p className="m-0 max-w-[46rem] text-lg leading-[1.6] text-ink-2 sm:text-xl md:text-[calc(1.25rem*var(--type))]">
           Some products get pulled from sale because they&apos;re dangerous, but they keep being resold. Paste a Leboncoin or Vinted
           listing and Vetted checks it against the official lists of dangerous products. Free, in about 5 seconds.
         </p>

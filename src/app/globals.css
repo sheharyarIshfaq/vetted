@@ -42,6 +42,17 @@
     }
   }
 
+  /* Anchored sections land below the sticky header */
+  html {
+    scroll-padding-top: 4rem;
+  }
+
+  @media (min-width: 48rem) {
+    html {
+      scroll-padding-top: 5.375rem;
+    }
+  }
+
   body {
     background: var(--surface);
     color: var(--ink);
@@ -85,7 +96,9 @@
 .hero {
   --fit: 1;
   --type: calc(0.45 + 0.55 * var(--fit));
-  --hero-top: calc(276px * var(--fit));
+  /* A shrunken line would rise into the header, so it drops by what it lost */
+  --line-drop: calc(64px * (1 - var(--fit)));
+  --hero-top: calc(276px * var(--fit) + var(--line-drop));
 }
 
 @media (max-height: 900px) {
@@ -96,13 +109,19 @@
 
 @media (max-height: 800px) {
   .hero {
-    --fit: 0.7;
+    --fit: 0.66;
   }
 }
 
-@media (max-height: 700px) {
+@media (max-height: 740px) {
   .hero {
-    --fit: 0.6;
+    --fit: 0.58;
+  }
+}
+
+@media (max-height: 680px) {
+  .hero {
+    --fit: 0.5;
   }
 }
 

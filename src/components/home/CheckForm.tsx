@@ -107,8 +107,8 @@ export function CheckForm() {
   }
 
   return (
-    <div className="flex w-full max-w-[42rem] flex-col gap-2 text-left">
-      <form onSubmit={submit} aria-busy={running !== null} className="flex flex-col gap-2">
+    <div className="flex w-full max-w-[42rem] flex-col gap-3.5 text-left">
+      <form onSubmit={submit} aria-busy={running !== null} className="flex flex-col gap-2.5">
         <label htmlFor="listing" className="text-[13px] text-ink-2">
           Listing title and description, or a Vinted link
         </label>

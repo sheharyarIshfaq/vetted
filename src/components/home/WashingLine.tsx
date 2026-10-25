@@ -27,7 +27,7 @@ function lineY(t: number) {
 
 export function WashingLine() {
   return (
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0 hidden md:block [@media(max-height:620px)]:hidden">
+    <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-(--line-drop) bottom-0 hidden md:block [@media(max-height:620px)]:hidden">
       <svg width="100%" viewBox="0 0 1440 240" preserveAspectRatio="none" className="absolute top-0 left-0 h-[calc(240px*var(--fit))]">
         <path d="M-20 64 Q 720 184 1460 64" fill="none" stroke="var(--kraft-text)" strokeWidth="2" />
       </svg>
