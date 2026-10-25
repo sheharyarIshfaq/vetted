@@ -1,13 +1,16 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // Sends the saved listing text through the same check as the home page form, then opens its result.
 export function RunCheck({ text, label }: { text: string; label: string }) {
   const router = useRouter();
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Back from the result shows this page as it was left; the button must be ready again.
+  useEffect(() => () => setRunning(false), []);
 
   async function run() {
     setRunning(true);
