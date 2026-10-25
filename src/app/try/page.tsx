@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AddToChrome } from "@/components/AddToChrome";
 import { RemoteImage } from "@/components/check/RemoteImage";
+import { VettedTag } from "@/components/VettedTag";
 import { VERDICT_PILL } from "@/components/home/products";
 import { Accent, ButtonLink, buttonStyles, Eyebrow } from "@/components/ui";
 import type { Verdict } from "@/lib/verdict";
 import { RunCheck } from "./RunCheck";
-import { SAMPLES } from "./samples";
+import { SAMPLES, TECH } from "./samples";
 
 export const metadata: Metadata = {
   title: "Try it on real listings · Vetted",
@@ -96,6 +97,42 @@ export default function TryPage() {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section aria-labelledby="tech-title" className={SECTION}>
+        <div className="flex flex-col gap-3">
+          <Eyebrow>Tech and gadgets</Eyebrow>
+          <h2 id="tech-title" className={HEADING}>
+            Headphones, chargers, <Accent>power banks.</Accent>
+          </h2>
+          <p className="m-0 max-w-[44rem] text-base leading-[1.6] text-ink-2">
+            The things people buy second-hand most often, including fakes of big brands. Each check sends just the product name,
+            the way you&apos;d type it.
+          </p>
+        </div>
+        <ul className="m-0 grid list-none grid-cols-[repeat(auto-fit,minmax(min(15rem,100%),1fr))] gap-4 p-0">
+          {TECH.map((sample) => (
+            <li key={sample.key} className={CARD}>
+              {sample.image ? (
+                <RemoteImage src={sample.image} alt={`${sample.name}, from the official recall notice`} className="h-[170px] w-full rounded-xl bg-surface object-contain" />
+              ) : (
+                <div className="flex h-[170px] items-center justify-center rounded-xl bg-safe-soft">
+                  <VettedTag variant="clear" width={72} decorative />
+                </div>
+              )}
+              <span className="text-[17px] font-semibold tracking-[-0.01em]">{sample.name}</span>
+              <span className={`self-start rounded-full px-2.5 py-[5px] font-mono text-[11px] uppercase ${VERDICT_PILL[sample.verdict]}`}>
+                {VERDICT_NAMES[sample.verdict]}
+              </span>
+              <span className="text-[15px] leading-[1.5] text-ink-2">{sample.line}</span>
+              <span className="font-mono text-xs break-words text-muted">Checks: “{sample.text}”</span>
+              <div className="mt-auto pt-1">
+                <RunCheck text={sample.text} label={sample.name} />
+              </div>
+            </li>
+          ))}
+        </ul>
+        <p className="m-0 text-xs text-muted">Photos: official recall notices (RappelConso, EU Safety Gate).</p>
       </section>
 
       <section aria-labelledby="ext-title" className={SECTION}>

@@ -42,3 +42,90 @@ export const SAMPLES: Sample[] = [
     text: "Poussette bébéconfort Sunlite\nJe vends cette poussette compacte Bébé Confort modèle Sunlite, idéale pour les déplacements urbains.\nPOUSSETTE BÉBÉ & ENFANT : transportez confortablement votre tout-petit de la naissance jusqu'à 22 kg grâce à la position allongée qui se transforme en siège confortable avec repose-pieds et au repose-jambes réglables.\nPLIAGE AUTOMATIQUE : grâce à sa conception intelligente, la poussette bébé Sunlite se plie sans effort d'une simple pression d'un bouton, ce qui permet de la ranger ou de la transpo…\n\nVoir plus",
   },
 ];
+
+// Tech people buy second-hand, checked by name: the text is what someone would type, not a saved listing.
+// Each line is the recall's own risk; the counterfeits are recalled as counterfeits.
+export type TechSample = { key: string; name: string; verdict: Verdict; image: string | null; line: string; text: string };
+
+export const TECH: TechSample[] = [
+  {
+    key: "catassu",
+    name: "CATASSU LPT660 wireless headphones",
+    verdict: "recalled",
+    image: "https://ec.europa.eu/safety-gate-alerts/public/api/notification/image/11238269",
+    line: "Chemical and environmental risk.",
+    text: "Casque sans fil CATASSU LPT660",
+  },
+  {
+    key: "webski",
+    name: "Webski WB340 wireless earbuds",
+    verdict: "recalled",
+    image: "https://ec.europa.eu/safety-gate-alerts/public/api/notification/image/11227567",
+    line: "Environmental risk.",
+    text: "Écouteurs sans fil Webski WB340",
+  },
+  {
+    key: "belkin20k",
+    name: "Belkin BoostCharge 20K power bank",
+    verdict: "recalled",
+    image: "https://rappel.conso.gouv.fr/image/5b9335c9-aa3f-49e5-9e09-1fbe23c883bc.jpg",
+    line: "Can overheat: fire risk.",
+    text: "Batterie externe Belkin BoostCharge USB-C PD 20K BPB002",
+  },
+  {
+    key: "belkinwatch",
+    name: "Belkin BoostCharge Pro 10K for Apple Watch",
+    verdict: "recalled",
+    image: "https://rappel.conso.gouv.fr/image/db0f1978-b9ec-4391-b683-d04a9701ffb7.jpg",
+    line: "Can overheat: fire risk.",
+    text: "Batterie externe Belkin BoostCharge Pro 10K pour Apple Watch BPD005",
+  },
+  {
+    key: "ikea",
+    name: "IKEA Varmfront power bank",
+    verdict: "recalled",
+    image: "https://ec.europa.eu/safety-gate-alerts/public/api/notification/image/10933985",
+    line: "Burn and fire risk.",
+    text: "Batterie externe IKEA Varmfront 10400 mAh",
+  },
+  {
+    key: "applefake",
+    name: "Fake Apple 20W USB-C charger (A1696)",
+    verdict: "recalled",
+    image: "https://ec.europa.eu/safety-gate-alerts/public/api/notification/image/10971642",
+    line: "Counterfeit. Electric shock and fire risk.",
+    text: "Chargeur Apple USB-C 20W A1696",
+  },
+  {
+    key: "samsung",
+    name: "Samsung EP-TA0EWE fast charger",
+    verdict: "recalled",
+    image: "https://ec.europa.eu/safety-gate-alerts/public/api/notification/image/11011324",
+    line: "Electric shock risk.",
+    text: "Chargeur Samsung EP-TA0EWE",
+  },
+  {
+    key: "dysonfake",
+    name: "Fake Dyson hair dryer (HD08)",
+    verdict: "recalled",
+    image: "https://ec.europa.eu/safety-gate-alerts/public/api/notification/image/10999955",
+    line: "Counterfeit. Fire risk.",
+    text: "Sèche-cheveux Dyson HD08",
+  },
+  {
+    key: "tilgreen",
+    name: "Tilgreen hoverboard",
+    verdict: "check_label",
+    image: "/home/tilgreen.jpg",
+    line: "Only the Tilboard model is recalled: electric shock and fire risk.",
+    text: "Hoverboard Tilgreen",
+  },
+  {
+    key: "airpods",
+    name: "Apple AirPods Pro 2",
+    verdict: "clear",
+    image: null,
+    line: "No recall matches. Vetted shows what it searched.",
+    text: "Apple AirPods Pro 2 boîtier MagSafe",
+  },
+];
