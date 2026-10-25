@@ -4,11 +4,16 @@ Vetted checks a second-hand listing (Leboncoin, Vinted and similar) against offi
 (RappelConso) and the EU (Safety Gate), and gives one of three answers: **recalled**, **check the label**, or
 **no recall found**. Every answer links to the official notice.
 
+![The Vetted home page](.github/home.png)
+
 - Live site: https://vetted.sheharyarishfaq.com
 - Chrome extension: [download the zip](https://vetted.sheharyarishfaq.com/vetted-extension.zip), then follow the
   [install steps](https://vetted.sheharyarishfaq.com/how-it-works#extension). It shows the same check next to the
   Leboncoin or Vinted listing you're viewing.
-- For marketplaces: a JSON endpoint and a CSV bulk check, on [/platforms](https://vetted.sheharyarishfaq.com/platforms).
+- Try it: [/try](https://vetted.sheharyarishfaq.com/try) has one-click checks on real recalled products, from scooters
+  and baby gear to headphones, chargers and power banks.
+- For marketplaces: a demo JSON endpoint (`POST /api/v1/listings/check`, which returns the verdict and a suggested action)
+  and a CSV bulk check, on [/platforms](https://vetted.sheharyarishfaq.com/platforms).
 
 ![A check on a recalled Acer ES Series 5 scooter listing](.github/check.png)
 
@@ -28,6 +33,14 @@ AI reads, rules decide.
 "No recall found" never means "safe". The answer says what was searched and shows the closest recall when one
 came close. When only some units are recalled, Vetted writes the message to send the seller asking for a photo of
 the label, in French and English.
+
+## Try it
+
+Most second-hand items have no recall, so "no recall found" is the usual answer. The [/try](https://vetted.sheharyarishfaq.com/try)
+page lists real recalled products to check: listings saved from Leboncoin, tech items checked by name (including
+counterfeit chargers and hair dryers), and Leboncoin and Vinted searches to open with the extension.
+
+![Recalled headphones, earbuds and power banks on the try page](.github/try.png)
 
 ## Data sources
 
