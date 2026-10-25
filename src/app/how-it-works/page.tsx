@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { ThreeAnswers } from "@/components/home/HowItWorks";
 import { Lists } from "@/components/home/sources";
 import { recallStats } from "@/lib/db/recalls";
+import { InstallSteps } from "./InstallSteps";
 
 export const metadata: Metadata = { title: "How it works · Vetted" };
 
@@ -117,20 +118,7 @@ export default function HowItWorksPage() {
         </section>
       </div>
 
-      <section
-        id="extension"
-        aria-labelledby="extension-title"
-        className="flex scroll-mt-6 flex-col gap-2.5 rounded-[20px] border border-line bg-surface p-[22px]"
-      >
-        <h2 id="extension-title" className="m-0 text-[22px] font-semibold">
-          The Chrome extension
-        </h2>
-        <p className="m-0 max-w-[720px] text-[15px] leading-normal text-ink-2">
-          The extension shows the same check next to the Leboncoin or Vinted listing you&apos;re viewing. It reads only that page,
-          never other listings or your account.
-        </p>
-        <p className="m-0 text-sm text-muted">It isn&apos;t in the Chrome Web Store yet.</p>
-      </section>
+      <InstallSteps />
     </div>
     <ThreeAnswers />
     </>
