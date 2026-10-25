@@ -7,8 +7,8 @@ const DAY = 24 * HOUR;
 // The site and the extension share one allowance per address; a batch counts as many checks.
 const LIMITS = {
   check: [
-    { max: 10, windowMs: MINUTE },
-    { max: 100, windowMs: DAY },
+    { max: 40, windowMs: MINUTE },
+    { max: 400, windowMs: DAY },
   ],
   batch: [
     { max: 3, windowMs: HOUR },
