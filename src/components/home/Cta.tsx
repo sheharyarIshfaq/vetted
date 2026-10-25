@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Accent, ButtonLink } from "../ui";
+import { AddToChrome } from "../AddToChrome";
+import { Accent, ButtonLink, buttonStyles } from "../ui";
 
 export function Cta() {
   return (
@@ -11,9 +12,7 @@ export function Cta() {
         <p className="m-0 text-lg text-sage-text">Check it first. It takes five seconds and it&apos;s free.</p>
         <div className="flex flex-wrap justify-center gap-2.5">
           <ButtonLink href="#listing">Check a listing</ButtonLink>
-          <ButtonLink href="#extension" variant="secondary">
-            Add to Chrome
-          </ButtonLink>
+          <AddToChrome className={buttonStyles.secondary}>Add to Chrome</AddToChrome>
         </div>
         <span className="mt-2 text-sm text-sage-text">
           Run a marketplace or a charity shop? <Link href="/platforms">Check your listings in bulk</Link>.

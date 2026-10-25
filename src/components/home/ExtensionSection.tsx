@@ -1,5 +1,6 @@
 import { VettedTag } from "@/components/VettedTag";
-import { Accent, ButtonLink, Eyebrow } from "../ui";
+import { AddToChrome } from "../AddToChrome";
+import { Accent, buttonStyles, Eyebrow } from "../ui";
 
 // A drawing of the extension on a listing: the tag on the photo and the panel beside it.
 function BrowserMock() {
@@ -58,7 +59,7 @@ export function ExtensionSection() {
             full answer.
           </p>
           <div className="flex flex-wrap gap-2.5">
-            <ButtonLink href="/how-it-works#extension">Add to Chrome, free</ButtonLink>
+            <AddToChrome className={buttonStyles.primary}>Add to Chrome, free</AddToChrome>
           </div>
         </div>
         <BrowserMock />

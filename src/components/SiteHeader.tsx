@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { AddToChrome } from "./AddToChrome";
 import { VettedTag } from "./VettedTag";
 
 const LINKS = [
@@ -59,9 +60,7 @@ export function SiteHeader() {
             </Link>
           ))}
         </nav>
-        <Link href="/#extension" className={`${chromeStyle} hidden md:inline-flex`}>
-          Add to Chrome
-        </Link>
+        <AddToChrome className={`${chromeStyle} hidden md:inline-flex`}>Add to Chrome</AddToChrome>
         <button
           type="button"
           aria-expanded={open}
@@ -84,9 +83,9 @@ export function SiteHeader() {
               {link.label}
             </Link>
           ))}
-          <Link href="/#extension" onClick={() => setOpen(false)} className={`${chromeStyle} mt-3 flex`}>
+          <AddToChrome onClick={() => setOpen(false)} className={`${chromeStyle} mt-3 flex`}>
             Add to Chrome
-          </Link>
+          </AddToChrome>
         </nav>
       )}
     </header>
