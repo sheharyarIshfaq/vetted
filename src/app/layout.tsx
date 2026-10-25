@@ -22,10 +22,16 @@ const instrumentSerif = Instrument_Serif({
   style: "italic",
 });
 
+const TITLE = "Vetted · Is that second-hand item safe to buy?";
+const DESCRIPTION =
+  "Vetted checks second-hand listings against the official recall lists of France and the EU, and tells you in seconds if a product was recalled.";
+
 export const metadata: Metadata = {
-  title: "Vetted · Is that second-hand item safe to buy?",
-  description:
-    "Vetted checks second-hand listings against the official recall lists of France and the EU, and tells you in seconds if a product was recalled.",
+  // Shared links resolve against the live site.
+  metadataBase: new URL("https://vetted.sheharyarishfaq.com"),
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: { type: "website", siteName: "Vetted", url: "/", title: TITLE, description: DESCRIPTION },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
