@@ -47,7 +47,7 @@ function BrowserMock() {
 export function ExtensionSection() {
   return (
     <section id="extension" className="scroll-mt-4 bg-surface">
-      <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-11 px-4 py-[88px] sm:px-7">
+      <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-11 px-4 py-16 sm:px-7 sm:py-[88px]">
         <div className="flex min-w-0 flex-[1_1_360px] flex-col gap-[18px]">
           <Eyebrow>Chrome extension</Eyebrow>
           <h2 className="m-0 text-[2.2rem] leading-[1.02] font-semibold tracking-[-0.05em] sm:text-[2.8rem]">

@@ -23,7 +23,7 @@ function Stat({ value, children }: { value: React.ReactNode; children: React.Rea
 export function WhatIsARecall() {
   return (
     <section id="recall" className="scroll-mt-4 bg-sage">
-      <div className="mx-auto flex max-w-[1000px] flex-col items-center gap-14 px-4 py-20 text-center sm:px-7 sm:py-[120px]">
+      <div className="mx-auto flex max-w-[1000px] flex-col items-center gap-10 px-4 py-16 text-center sm:gap-14 sm:px-7 sm:py-[120px]">
         <div className="flex flex-col items-center gap-5">
           <h2 className="m-0 text-[2.6rem] leading-none font-semibold tracking-[-0.05em] sm:text-[3.4rem]">
             What&apos;s a <Accent>recall?</Accent>

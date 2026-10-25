@@ -15,7 +15,7 @@ async function LiveTabs() {
 
 export function SeeItWork() {
   return (
-    <section className="mx-auto max-w-[1200px] px-4 pt-24 pb-[88px] sm:px-7">
+    <section className="mx-auto max-w-[1200px] px-4 pt-16 pb-16 sm:px-7 sm:pt-24 sm:pb-[88px]">
       <div className="mb-7 flex flex-col items-center gap-3.5 text-center">
         <Eyebrow>See it work</Eyebrow>
         <h2 className="m-0 text-[2.1rem] leading-[1.05] font-semibold tracking-[-0.045em] sm:text-[2.8rem]">Three real listings, three answers.</h2>

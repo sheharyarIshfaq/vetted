@@ -25,7 +25,7 @@ const QUESTIONS = [
 
 export function Faq() {
   return (
-    <section id="faq" className="mx-auto flex max-w-[900px] scroll-mt-4 flex-col gap-7 px-4 py-24 sm:px-7">
+    <section id="faq" className="mx-auto flex max-w-[900px] scroll-mt-4 flex-col gap-7 px-4 py-16 sm:px-7 sm:py-24">
       <h2 className="m-0 text-center text-[2.1rem] leading-[1.05] font-semibold tracking-[-0.045em] sm:text-[2.6rem]">Questions people ask</h2>
       <div className="flex flex-col border-t border-line">
         {QUESTIONS.map((item) => (

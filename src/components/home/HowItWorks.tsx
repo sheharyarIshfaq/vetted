@@ -39,7 +39,7 @@ const CARD = "flex flex-col rounded-[20px] border border-line bg-surface p-[26px
 
 export function HowItWorks() {
   return (
-    <section id="how" className="mx-auto flex max-w-[1200px] scroll-mt-4 flex-col gap-9 px-4 pt-24 pb-16 sm:px-7">
+    <section id="how" className="mx-auto flex max-w-[1200px] scroll-mt-4 flex-col gap-9 px-4 pt-16 pb-12 sm:px-7 sm:pt-24 sm:pb-16">
       <div className="flex max-w-[40rem] flex-col gap-3">
         <Eyebrow>How it works</Eyebrow>
         <h2 className={HEADING}>
@@ -61,7 +61,7 @@ export function HowItWorks() {
 
 export function ThreeAnswers() {
   return (
-    <section id="answers" className="mx-auto flex max-w-[1200px] scroll-mt-4 flex-col gap-8 px-4 pt-8 pb-24 sm:px-7">
+    <section id="answers" className="mx-auto flex max-w-[1200px] scroll-mt-4 flex-col gap-8 px-4 pt-8 pb-16 sm:px-7 sm:pb-24">
       <div className="flex max-w-[40rem] flex-col gap-3">
         <Eyebrow>The three answers</Eyebrow>
         <h2 className={HEADING}>
