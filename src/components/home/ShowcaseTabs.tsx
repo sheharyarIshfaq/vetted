@@ -55,7 +55,7 @@ function Photo({ showcase, image }: { showcase: Showcase; image: string | null }
   return image ? <RemoteImage key={showcase.recallId} src={image} alt={showcase.alt} className="h-[260px] w-full object-contain sm:h-[300px]" /> : null;
 }
 
-export function ShowcaseTabs({ notices }: { notices: Notices }) {
+export function ShowcaseTabs({ notices, searched }: { notices: Notices; searched: Record<string, string> }) {
   const [pick, setPick] = useState(0);
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
   const showcase = SHOWCASES[pick];
@@ -122,7 +122,7 @@ export function ShowcaseTabs({ notices }: { notices: Notices }) {
             VETTED SAYS · {showcase.tag}
           </span>
           <span className="text-[1.8rem] leading-[1.05] font-semibold tracking-[-0.04em] sm:text-[2.1rem]">{showcase.headline}</span>
-          <span className="text-base leading-[1.6] text-ink-2">{showcase.reason}</span>
+          <span className="text-base leading-[1.6] text-ink-2">{(showcase.searchedFor && searched[showcase.searchedFor]) || showcase.reason}</span>
           <ul className="m-0 flex list-none flex-col gap-[9px] p-0">
             {showcase.facts.map((fact) => (
               <li key={fact.text} className="flex items-start gap-2.5 text-[15px] leading-[1.45]">

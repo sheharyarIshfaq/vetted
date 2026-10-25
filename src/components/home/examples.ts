@@ -20,13 +20,14 @@ export type Showcase = {
   tag: string;
   headline: string;
   reason: string;
+  // Set on a no-recall example: its reason is the check's own "searched" sentence, with the live count.
+  searchedFor?: string;
   facts: Fact[];
   todo: string;
   source: string;
 };
 
-// "See it work": three real listings and what the live check says about each. The Belkin listing reads as
-// check-the-label against the BoostCharge Pro 10K recall, so its copy follows that, not a no-recall answer.
+// "See it work": three real listings and what the live check says about each, copied from their check results.
 export const SHOWCASES: Showcase[] = [
   {
     label: "Electric scooter",
@@ -65,21 +66,24 @@ export const SHOWCASES: Showcase[] = [
     source: "Official notice · RappelConso · 19 Oct 2026",
   },
   {
-    label: "Power bank",
-    recallId: "rc:16233",
+    label: "Stroller",
+    recallId: "rc:22017",
     fallback: null,
-    alt: "Belkin BoostCharge Pro 10K power bank, the recalled version",
-    caption: "Shown: the recalled BoostCharge Pro 10K, from the official notice",
-    title: "Batterie externe Belkin BoostCharge Power Bank 10K+",
-    verdict: "check_label",
-    tag: "CHECK THE LABEL",
-    headline: "Ask the seller for the label.",
-    reason: "Belkin recalled the BoostCharge Pro 10K power bank for a fire risk. The listing doesn't say whether this one is the Pro.",
+    alt: "Bébé Confort Sunlite car seat, from the official notice",
+    caption: "Shown: the recalled Sunlite car seat, a different product",
+    title: "Poussette Bébé Confort Sunlite, très bon état",
+    verdict: "clear",
+    tag: "NO RECALL FOUND",
+    headline: "No recall matches this stroller.",
+    reason: "Vetted searched the French and EU recall lists for Bébé Confort Sunlite and found no match. That doesn't prove an item is safe, so still check its condition before buying.",
+    searchedFor: "Bébé Confort Sunlite",
     facts: [
-      { mark: "ok", text: "Brand is named in the notice" },
-      { mark: "warn", text: "The notice names the BoostCharge Pro; the listing doesn't say which version this is" },
+      { mark: "no", text: "Not this recall: the recall is for a car seat, this is a stroller" },
+      { mark: "ok", text: "Brand Bébé Confort matches the recall" },
+      { mark: "ok", text: "Model Sunlite is named in the recall" },
+      { mark: "warn", text: "The recall covers the car seat of the Sunlite; if this stroller comes with one, check that car seat's label" },
     ],
-    todo: "Ask the seller for a photo of the label showing the exact model.",
-    source: "Official notice · RappelConso · 15 Nov 2024",
+    todo: "Check its condition as you normally would.",
+    source: "Closest notice · RappelConso · 14 Apr 2026",
   },
 ];
