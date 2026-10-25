@@ -1,15 +1,17 @@
 import { describe, expect, it } from "vitest";
 import type { Recall } from "../../db/schema";
 import type { PanelSummary } from "./panel";
-import { PLATFORM_ACTIONS, platformResponse } from "./platform";
+import { displayModel, PLATFORM_ACTIONS, platformResponse } from "./platform";
 
 const hamax = {
   id: "rc:23843",
   source: "rappelconso",
   url: "https://rappel.conso.gouv.fr/fiche-rappel/23843/interne",
   publishedAt: "2026-10-19",
-  brand: "Hamax",
+  brand: "hamax",
+  productName: "porte-bébé hamax buddy",
   models: ["buddy"],
+  reason: "risque d'étouffement",
   risk: "étouffement",
 } as unknown as Recall;
 
@@ -24,7 +26,16 @@ const panel: PanelSummary = {
 };
 const panelFr: PanelSummary = { ...panel, sellerMessage: "Bonjour, pourriez-vous envoyer une photo de l'étiquette ?" };
 
-const base = { listingId: "ad-42", recall: hamax, panel, panelFr, checkUrl: "https://vetted.example/check/1" };
+const base = {
+  listingId: "ad-42",
+  recall: hamax,
+  extracted: { model: "Buddy", modelVariant: null, productionDate: null, batch: null },
+  limits: { from: "2022-01-01", to: "2026-08-06", batches: [], refs: [], model: null },
+  reasonEn: "A label can come loose and a child could choke on it.",
+  panel,
+  panelFr,
+  checkUrl: "https://vetted.example/check/1",
+};
 
 describe("platformResponse", () => {
   it("maps each verdict to one action", () => {
@@ -41,22 +52,48 @@ describe("platformResponse", () => {
         id: "rc:23843",
         source: "rappelconso",
         brand: "Hamax",
-        model: "buddy",
+        model: "Buddy",
         risk: "choking",
         published_at: "2026-10-19",
         notice_url: "https://rappel.conso.gouv.fr/fiche-rappel/23843/interne",
       },
-      reason: "Only some units of this model are recalled. On the label: Recalled if made between 01/2022 and 08/2026.",
+      reason:
+        "Hamax recalled the Buddy because a label can come loose and a child could choke on it. Only units made between January 2022 and August 2026 are affected, and the listing doesn't say when this one was made.",
       suggested_action: "ask_seller_for_label",
       seller_message: { fr: panelFr.sellerMessage, en: panel.sellerMessage },
       check_url: "https://vetted.example/check/1",
     });
   });
 
-  it("recalled: no seller message", () => {
-    const response = platformResponse({ ...base, verdict: "recalled", panel: { ...panel, line: "This item matches the recalled units." } });
-    expect(response).toMatchObject({ verdict: "recalled", reason: "This item matches the recalled units.", seller_message: null });
-    expect(response.recall?.id).toBe("rc:23843");
+  it("recalled: the official reason and which units, and no seller message", () => {
+    const acer = {
+      ...hamax,
+      id: "rc:21110",
+      brand: "acer",
+      productName: "trottinette électrique acer es series 5 (aes015)",
+      models: ["trottinette électrique es series 5 (aes015)"],
+    } as unknown as Recall;
+    const response = platformResponse({
+      ...base,
+      verdict: "recalled",
+      recall: acer,
+      extracted: { ...base.extracted, model: "ES Series 5" },
+      limits: { from: null, to: null, batches: [], refs: [], model: null },
+      reasonEn: "A screw may not have been tightened enough during production and could come loose during normal use.",
+    });
+    expect(response).toMatchObject({
+      verdict: "recalled",
+      recall: { id: "rc:21110", brand: "Acer", model: "ES Series 5 (AES015)" },
+      reason:
+        "Acer recalled the ES Series 5 (AES015) because a screw may not have been tightened enough during production and could come loose during normal use. Every unit is affected.",
+      seller_message: null,
+    });
+  });
+
+  it("names the recall's model in the listing's casing, else title case", () => {
+    expect(displayModel({ productName: "porte-bébé hamax buddy", brand: "hamax", models: ["buddy"] }, null)).toBe("Buddy");
+    expect(displayModel({ productName: "hoverboard tilboard", brand: "tilgreen", models: ["tilboard"] }, "TilBoard")).toBe("TilBoard");
+    expect(displayModel({ productName: "Machine de karaoké", brand: "Fede", models: [] }, "K36")).toBeNull();
   });
 
   it("no_recall_found: never reports the closest recall as the recall", () => {

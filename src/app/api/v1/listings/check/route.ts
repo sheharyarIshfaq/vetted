@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { checkListing } from "@/lib/check/listing";
 import { platformResponse } from "@/lib/check/platform";
+import { reasonInEnglish } from "@/lib/check/reason-en";
 import { CheckInputError } from "@/lib/check/run";
+import { recallLimits } from "@/lib/verdict";
 import { limitReached } from "../../../rate-limits";
 
 // The demo endpoint for marketplaces: one listing in, a verdict and an action out. No key yet.
@@ -45,11 +47,16 @@ export async function POST(request: Request) {
       { title, description: description ?? "", imageUrls: image_urls ?? [], pageUrl: url },
       log,
     );
+    const flagged = result.verdict !== "clear" && recall !== null;
+    const reasonEn = flagged && recall.reason ? await reasonInEnglish(recall.reason) : null;
     return Response.json(
       platformResponse({
         listingId: listing_id === undefined ? null : String(listing_id),
         verdict: result.verdict,
         recall,
+        extracted: result.extracted,
+        limits: recall ? recallLimits({ ...result.extracted, title }, recall) : null,
+        reasonEn,
         panel,
         panelFr,
         checkUrl: `${siteOrigin(request)}/check/${result.id}`,
