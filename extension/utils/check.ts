@@ -22,7 +22,7 @@ export type CheckResult = {
 
 export type Lang = "fr" | "en";
 
-// Both supported sites are French, so the panel starts in French; the switch in its header changes it.
+// Both supported sites are French, so the panel starts in French until the reader picks a language in its header.
 export function defaultLang(hostname: string): Lang {
   return hostname.endsWith(".fr") ? "fr" : "en";
 }

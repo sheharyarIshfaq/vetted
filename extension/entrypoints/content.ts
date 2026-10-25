@@ -68,6 +68,7 @@ const style = document.createElement("style");
 style.textContent = PANEL_CSS;
 shadow.append(style);
 
+const LANG_KEY = "lang";
 let lang: Lang = defaultLang(location.hostname);
 let state: PanelState | null = null;
 let tagListeners: AbortController | null = null;
@@ -85,6 +86,7 @@ function show(next: PanelState) {
     renderPanel(next, lang, {
       onLang: () => {
         lang = lang === "fr" ? "en" : "fr";
+        void browser.storage.local.set({ [LANG_KEY]: lang });
         if (state) show(state);
       },
       onClose: minimise,
@@ -123,8 +125,23 @@ function hangTag(result: Extract<PanelState, { kind: "result" }>) {
 // Only the latest run may draw: a slow answer for a listing the user has left is dropped.
 let latestRun = 0;
 
+// French until the reader picks a language in the panel; from then on, their pick on every listing.
+async function loadLang() {
+  const { [LANG_KEY]: saved } = await browser.storage.local.get(LANG_KEY);
+  if (saved === "fr" || saved === "en") lang = saved;
+}
+
+// A pick in one tab redraws the panel in the others.
+browser.storage.onChanged.addListener((changes, area) => {
+  const picked = changes[LANG_KEY]?.newValue;
+  if (area !== "local" || (picked !== "fr" && picked !== "en") || picked === lang) return;
+  lang = picked;
+  if (state) show(state);
+});
+
 async function runCheck(): Promise<CheckResponse> {
   const run = ++latestRun;
+  await loadLang();
   show({ kind: "loading", withPhotos: listingImages().length > 0 });
   const page = await waitForPage();
   let outcome: CheckResponse;
