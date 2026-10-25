@@ -72,10 +72,20 @@ export function RecalledLayout({ check }: Props) {
               })}
             </p>
             {recall.reason && (
-              <p lang="fr" className="mt-2 mb-0 text-[15px]">
-                <span lang="en" className="text-muted">Official reason: </span>
-                {capitalize(recall.reason)}
-              </p>
+              <div className="mt-2 text-[15px]">
+                <p className="m-0">
+                  <span className="text-muted">Official reason: </span>
+                  {check.reasonEn ?? <span lang="fr">{capitalize(recall.reason)}</span>}
+                </p>
+                {check.reasonEn && (
+                  <details className="text-sm">
+                    <summary className="cursor-pointer py-2.5 text-muted">Original text</summary>
+                    <p lang="fr" className="m-0 text-ink-2">
+                      {capitalize(recall.reason)}
+                    </p>
+                  </details>
+                )}
+              </div>
             )}
           </VerdictPanel>
         </div>

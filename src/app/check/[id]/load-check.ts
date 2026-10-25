@@ -1,6 +1,7 @@
 import { titleOf, type StoredEvidence, type StoredExtracted, type StoredInput } from "@/lib/check/run";
 import { capitalize, itemName, titleCase } from "@/lib/check/copy";
 import type { StoredLabel } from "@/lib/check/label";
+import { reasonInEnglish } from "@/lib/check/reason-en";
 import { getCheck } from "@/lib/db/checks";
 import { getRecall, recallStats } from "@/lib/db/recalls";
 import { presignedGetUrl } from "@/lib/storage";
@@ -40,6 +41,8 @@ export async function loadCheck(id: string) {
     label ? presignedGetUrl(label.photoKey) : null,
   ]);
 
+  // Only the recalled answer quotes the official reason.
+  const reasonEn = check.verdict === "recalled" && recall?.reason ? await reasonInEnglish(recall.reason) : null;
   const model = [extracted.model, extracted.modelVariant].filter(Boolean).join(" ");
   const fromRecall = Boolean(input.fromRecall);
   const listingTitle = fromRecall && recall
@@ -64,6 +67,7 @@ export async function loadCheck(id: string) {
     label,
     labelPhoto,
     recall: recall ?? null,
+    reasonEn,
     secondRecall: secondRecall ?? null,
     limits: recall ? recallLimits({ ...extracted, title: titleOf(input.page, input.text) }, recall) : null,
     stats: { ...stats, updatedAt: stats.updatedAt ? UPDATED_AT.format(stats.updatedAt).replace(",", "") : null },

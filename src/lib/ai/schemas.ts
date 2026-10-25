@@ -97,3 +97,7 @@ export const unitLimitSchema = z.object({
 });
 
 export type UnitLimitOutput = z.infer<typeof unitLimitSchema>;
+
+export const reasonTranslationSchema = z.object({
+  english: z.string(),
+});

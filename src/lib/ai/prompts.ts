@@ -69,6 +69,14 @@ export const UNIT_LIMIT_PROMPT = `You read an official product recall and say wh
 - A sentence that only says where to find the serial number is not a limit on its own.
 - quote: when limited, the passage that states the limit, copied as written; otherwise null.`;
 
+export const REASON_TRANSLATION_PROMPT_VERSION = 1;
+
+export const REASON_TRANSLATION_PROMPT = `You translate the reason given in an official French product recall notice into plain English for a shopper.
+
+- Translate faithfully: keep every fact, product part, number and unit, and add nothing that isn't in the French.
+- Use short, everyday words, in one or two sentences. Don't soften or strengthen the risk, and don't add advice.
+- english: the translation, starting with a capital letter (the French is often all lower case).`;
+
 // Self-test only: writes a believable second-hand listing from the facts it is given.
 export const SELFTEST_LISTING_PROMPT = `You write one second-hand listing as a real private seller would post it on Leboncoin or Vinted, in the language given.
 
