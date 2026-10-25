@@ -1,9 +1,6 @@
 import { z } from "zod";
-import { downloadImage } from "@/lib/check/images";
-import { panelSummary } from "@/lib/check/panel";
-import { panelSummaryFr } from "@/lib/check/panel-fr";
-import { cachedCheck, checkCacheKey, CheckInputError, runCheck } from "@/lib/check/run";
-import { getRecall, recallStats } from "@/lib/db/recalls";
+import { checkListing } from "@/lib/check/listing";
+import { CheckInputError } from "@/lib/check/run";
 import { limitReached } from "../../rate-limits";
 
 const pinnedExtensionOrigin = "chrome-extension://blbmfaapgjjfdolfklhjgckmpcghggem";
@@ -42,12 +39,6 @@ export function OPTIONS(request: Request) {
 
 const log = (message: string) => process.stdout.write(`${message}\n`);
 
-async function checkPage(text: string, imageUrls: string[], pageUrl: string, cacheKey: string) {
-  const downloadedPhotos = await Promise.all(imageUrls.map((url) => downloadImage(url, { referer: pageUrl, log })));
-  const photos = downloadedPhotos.filter((photo) => photo !== null);
-  return runCheck({ text, photos, unreadPhotos: downloadedPhotos.length - photos.length, cacheKey }, log);
-}
-
 export async function POST(request: Request) {
   const origin = request.headers.get("origin");
   const headers = corsHeaders(origin);
@@ -68,30 +59,16 @@ export async function POST(request: Request) {
   }
 
   try {
-    const imageUrls = parsed.data.imageUrls.slice(0, 3);
-    const text = [parsed.data.title, parsed.data.description].filter(Boolean).join("\n").slice(0, 5000);
-    const cacheKey = checkCacheKey([parsed.data.pageUrl, text, ...imageUrls]);
-    const result = (await cachedCheck(cacheKey)) ?? (await checkPage(text, imageUrls, parsed.data.pageUrl, cacheKey));
-    const [recall, stats] = await Promise.all([
-      result.recall ? getRecall(result.recall.id) : undefined,
-      recallStats(),
-    ]);
-    const panelInput = {
-      verdict: result.verdict,
-      recall: recall ?? null,
-      evidence: result.evidence,
-      extracted: result.extracted,
-      listingTitle: parsed.data.title,
-      searched: { total: stats.total, sources: stats.sources },
-    };
+    const { title, description, imageUrls, pageUrl } = parsed.data;
+    const { result, panel, panelFr } = await checkListing({ title, description, imageUrls, pageUrl }, log);
     return Response.json(
       {
         id: result.id,
         verdict: result.verdict,
         evidence: result.evidence,
         recall: result.recall,
-        panel: panelSummary(panelInput),
-        panelFr: panelSummaryFr(panelInput),
+        panel,
+        panelFr,
       },
       { headers },
     );
