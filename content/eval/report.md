@@ -28,7 +28,7 @@ Run on 2026-10-24. 74 labelled listings scored; 4 excluded, 2 not labelled.
 - Flag precision: 100% (8 of 8 flags name the expected recall)
 - Flag recall: 53% (8 of 15 expected flags found)
 
-Flags are recalled and check_label verdicts. Rows are the expected verdict, columns what Tiko said.
+Flags are recalled and check_label verdicts. Rows are the expected verdict, columns what Vetted said.
 
 | expected \ got | recalled | check_label | clear | failed |
 |---|---:|---:|---:|---:|

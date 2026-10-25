@@ -37,7 +37,7 @@ const SOURCE = `(() => {
     description: text(['[data-qa-id="adview_description_container"]', '[data-testid="item-description"]', '[itemprop="description"]']),
     images: [...new Set(photos.length ? photos : [meta("og:image")])].filter((url) => typeof url === "string" && url.startsWith("https://")).slice(0, 12),
   };
-  window.open("__ORIGIN__/dev/collector/receive#" + encodeURIComponent(JSON.stringify(payload)), "tiko-collect", "width=480,height=560");
+  window.open("__ORIGIN__/dev/collector/receive#" + encodeURIComponent(JSON.stringify(payload)), "vetted-collect", "width=480,height=560");
 })();`;
 
 export function bookmarklet(origin: string) {

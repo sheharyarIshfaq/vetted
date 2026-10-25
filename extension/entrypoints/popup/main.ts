@@ -103,7 +103,7 @@ function footer(text: string, action: string, onClick: () => void) {
 
 // On a listing: the verdict the page's own check gave, and a way to run it again.
 async function listingView() {
-  const saved: unknown = await browser.runtime.sendMessage({ type: "TIKO_GET_RESULT", tabId: tab!.id }).catch(() => null);
+  const saved: unknown = await browser.runtime.sendMessage({ type: "VETTED_GET_RESULT", tabId: tab!.id }).catch(() => null);
   const check = isSavedCheck(saved) && saved.pageUrl === tab!.url ? saved : null;
   const host = new URL(tab!.url!).hostname.replace(/^www\./, "");
   const nodes: Node[] = [header(host)];
@@ -113,7 +113,7 @@ async function listingView() {
     again.textContent = "Checking…";
     error.hidden = true;
     try {
-      const outcome = toCheckResponse(await browser.tabs.sendMessage(tab!.id!, { type: "TIKO_CHECK_PAGE" }), "Vetted couldn't check this page. Try again.");
+      const outcome = toCheckResponse(await browser.tabs.sendMessage(tab!.id!, { type: "VETTED_CHECK_PAGE" }), "Vetted couldn't check this page. Try again.");
       if (outcome.ok) return void render(listingView);
       error.textContent = outcome.error;
     } catch {
@@ -168,7 +168,7 @@ function pasteView() {
     textarea,
     submit,
     error,
-    button("link", "See real recalled listings to try", () => openTab(`${__TIKO_API_BASE_URL__}/try`)),
+    button("link", "See real recalled listings to try", () => openTab(`${__VETTED_API_BASE_URL__}/try`)),
   );
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -182,7 +182,7 @@ function pasteView() {
     error.hidden = true;
     const body = new FormData();
     body.append("text", textarea.value.trim());
-    const response = await fetch(`${__TIKO_API_BASE_URL__}/api/check`, { method: "POST", body }).catch(() => null);
+    const response = await fetch(`${__VETTED_API_BASE_URL__}/api/check`, { method: "POST", body }).catch(() => null);
     const result = (await response?.json().catch(() => null)) as { id?: string; error?: string } | null;
     if (response?.ok && result?.id) return openTab(resultUrl({ id: result.id }));
     error.textContent = result?.error ?? "Vetted can't be reached right now. Check your connection and try again.";

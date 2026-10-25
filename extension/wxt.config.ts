@@ -1,7 +1,7 @@
 import { defineConfig } from "wxt";
 
 // Builds talk to the live site; `pnpm ext:dev` points them at the local server.
-const apiBase = process.env.TIKO_API_BASE_URL || "https://vetted.sheharyarishfaq.com";
+const apiBase = process.env.VETTED_API_BASE_URL || "https://vetted.sheharyarishfaq.com";
 const apiOrigin = new URL(apiBase).origin;
 
 export default defineConfig({
@@ -16,7 +16,7 @@ export default defineConfig({
   },
   vite: () => ({
     define: {
-      __TIKO_API_BASE_URL__: JSON.stringify(apiBase.replace(/\/$/, "")),
+      __VETTED_API_BASE_URL__: JSON.stringify(apiBase.replace(/\/$/, "")),
     },
   }),
 });

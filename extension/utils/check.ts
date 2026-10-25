@@ -169,5 +169,5 @@ export function toCheckResponse(value: unknown, fallback: string): CheckResponse
 }
 
 export function resultUrl(result: { id: string }) {
-  return `${__TIKO_API_BASE_URL__}/check/${encodeURIComponent(result.id)}`;
+  return `${__VETTED_API_BASE_URL__}/check/${encodeURIComponent(result.id)}`;
 }

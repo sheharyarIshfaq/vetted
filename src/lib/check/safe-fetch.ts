@@ -2,7 +2,7 @@ import { lookup } from "node:dns/promises";
 import { BlockList, isIP } from "node:net";
 
 const MAX_REDIRECTS = 3;
-const USER_AGENT = "tiko-recall-check/0.1";
+const USER_AGENT = "vetted-recall-check/0.1";
 
 export class FetchBlockedError extends Error {}
 

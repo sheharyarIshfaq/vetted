@@ -149,7 +149,7 @@ async function runCheck(): Promise<CheckResponse> {
     outcome = { ok: false, error: "Vetted couldn't read this listing. Try again once the page has loaded." };
   } else {
     try {
-      outcome = toCheckResponse(await browser.runtime.sendMessage({ type: "TIKO_RUN_CHECK", payload: page }), "The check failed. Please try again.");
+      outcome = toCheckResponse(await browser.runtime.sendMessage({ type: "VETTED_RUN_CHECK", payload: page }), "The check failed. Please try again.");
     } catch {
       outcome = { ok: false, error: "Vetted stopped responding. Reload the page and try again." };
     }
@@ -160,7 +160,7 @@ async function runCheck(): Promise<CheckResponse> {
 }
 
 browser.runtime.onMessage.addListener((message) => {
-  if (message?.type === "TIKO_CHECK_PAGE") return runCheck();
+  if (message?.type === "VETTED_CHECK_PAGE") return runCheck();
 });
 
 // Both sites change listings without a page load, so a new URL starts a new check.

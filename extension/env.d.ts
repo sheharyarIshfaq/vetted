@@ -1,1 +1,1 @@
-declare const __TIKO_API_BASE_URL__: string;
+declare const __VETTED_API_BASE_URL__: string;

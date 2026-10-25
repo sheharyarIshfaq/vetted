@@ -1,5 +1,5 @@
 {
-  "name": "tiko",
+  "name": "vetted",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -21,7 +21,7 @@
     "selftest": "tsx --env-file-if-exists=.env.local scripts/selftest.ts",
     "bench": "tsx --env-file-if-exists=.env.local scripts/bench.ts",
     "ext:build": "pnpm --dir extension build && node scripts/zip-extension.mjs",
-    "ext:dev": "TIKO_API_BASE_URL=http://localhost:3123 pnpm --dir extension dev"
+    "ext:dev": "VETTED_API_BASE_URL=http://localhost:3123 pnpm --dir extension dev"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1156.0",

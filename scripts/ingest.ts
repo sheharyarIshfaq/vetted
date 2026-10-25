@@ -19,7 +19,7 @@ const { values } = parseArgs({
 
 const log = (message: string) => process.stdout.write(`${message}\n`);
 const contact = ingestEnv().INGEST_CONTACT;
-const userAgent = `tiko-recall-check/0.1${contact ? ` (${contact})` : ""}`;
+const userAgent = `vetted-recall-check/0.1${contact ? ` (${contact})` : ""}`;
 
 async function confirm(plan: IngestPlan) {
   log(

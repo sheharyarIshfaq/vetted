@@ -34,7 +34,7 @@ function icon(verdict: Verdict, size: number): ImageData {
 async function check(payload: ListingPayload): Promise<CheckResponse> {
   let response: Response;
   try {
-    response = await fetch(`${__TIKO_API_BASE_URL__}/api/extension/check`, {
+    response = await fetch(`${__VETTED_API_BASE_URL__}/api/extension/check`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -50,7 +50,7 @@ async function check(payload: ListingPayload): Promise<CheckResponse> {
 
 export default defineBackground(() => {
   browser.runtime.onMessage.addListener(async (message, sender) => {
-    if (message?.type === "TIKO_RUN_CHECK") {
+    if (message?.type === "VETTED_RUN_CHECK") {
       const payload = message.payload as ListingPayload;
       const outcome = await check(payload);
       const tabId = sender.tab?.id;
@@ -66,7 +66,7 @@ export default defineBackground(() => {
       return outcome;
     }
 
-    if (message?.type === "TIKO_GET_RESULT") {
+    if (message?.type === "VETTED_GET_RESULT") {
       const key = `result:${message.tabId}`;
       return (await browser.storage.local.get(key))[key] ?? null;
     }
