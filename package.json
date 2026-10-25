@@ -20,8 +20,8 @@
     "recalls:embed": "tsx --env-file-if-exists=.env.local scripts/embed-recalls.ts",
     "selftest": "tsx --env-file-if-exists=.env.local scripts/selftest.ts",
     "bench": "tsx --env-file-if-exists=.env.local scripts/bench.ts",
-    "ext:build": "pnpm --dir extension build",
-    "ext:dev": "pnpm --dir extension dev"
+    "ext:build": "pnpm --dir extension build && node scripts/zip-extension.mjs",
+    "ext:dev": "TIKO_API_BASE_URL=http://localhost:3123 pnpm --dir extension dev"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1156.0",
