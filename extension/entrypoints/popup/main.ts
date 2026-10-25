@@ -168,6 +168,7 @@ function pasteView() {
     textarea,
     submit,
     error,
+    button("link", "See real recalled listings to try", () => openTab(`${__TIKO_API_BASE_URL__}/try`)),
   );
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
