@@ -35,6 +35,8 @@ export const PRODUCTS = [
     tag: "ONE MODEL · CHECK THE LABEL",
     verdict: "check_label",
     fallback: "/home/tilgreen.jpg",
+    // The notice's own image is a strip of several photos; this is one of them, cropped.
+    cropped: true,
   },
 ] as const;
 

@@ -29,7 +29,7 @@ async function Cards() {
       <li key={product.recallId}>
         {recall ? (
           <Link href={recallHref(recall.id)} className="group block h-full rounded-[20px] text-ink no-underline hover:text-ink">
-            <Card product={product} image={recall.images[0] ?? null} />
+            <Card product={product} image={"cropped" in product ? null : (recall.images[0] ?? null)} />
           </Link>
         ) : (
           <Card product={product} image={null} />
