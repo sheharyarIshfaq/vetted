@@ -6,7 +6,7 @@ import { getRecall } from "../db/recalls";
 import { withinDailyBudget } from "../ai/spend";
 import { uploadObject } from "../storage";
 import { normalizeBrand } from "../text";
-import { decideBest, type Evidence, type ItemFacts, type Verdict } from "../verdict";
+import { decideBest, RULES_VERSION, type Evidence, type ItemFacts, type Verdict } from "../verdict";
 import { findCandidates, type Route } from "./candidates";
 import { comparePhotos, type PhotoResult } from "./compare";
 import { extractListing, type ExtractedItem } from "./extract";
@@ -39,7 +39,8 @@ const CACHE_FOR_MS = 24 * 60 * 60 * 1000;
 const sha256 = (data: string | Uint8Array) => createHash("sha256").update(data).digest("hex");
 
 export function checkCacheKey(parts: (string | Uint8Array | null | undefined)[]) {
-  return sha256(parts.map((part) => (part instanceof Uint8Array ? sha256(part) : (part ?? "").trim())).join("\n"));
+  const hashed = parts.map((part) => (part instanceof Uint8Array ? sha256(part) : (part ?? "").trim()));
+  return sha256([`rules ${RULES_VERSION}`, ...hashed].join("\n"));
 }
 
 // The same listing checked again within a day gets the earlier result, saved as a check of its own

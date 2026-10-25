@@ -100,6 +100,9 @@ export function normalizeModel(value: string) {
 
 export const normalizeCode = normalizeModel;
 
+// Part of every saved check's key: raise it when a rule changes, so a listing checked earlier the same day gets the new rules.
+export const RULES_VERSION = 2;
+
 // Pack, colour and filler words: "breeze trio mineral grey" is the Breeze.
 const FILLER = new Set([
   "trio", "duo", "pack", "set", "kit", "edition", "travel", "system", "the", "and", "with", "de", "des", "du", "la", "le",
