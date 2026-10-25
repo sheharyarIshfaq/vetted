@@ -205,6 +205,9 @@ export function CheckForm() {
               </button>
             ))}
           </div>
+          <span className="text-center text-[13px] text-muted">
+            Not sure what to try? <Link href="/try">See real recalled listings</Link>
+          </span>
         </>
       )}
 
