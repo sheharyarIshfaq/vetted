@@ -140,6 +140,9 @@ export function InstallSteps() {
           To update later, download the new zip, replace the vetted-extension folder, and click the reload arrow on the Vetted card in
           chrome://extensions.
         </p>
+        <p className="m-0">
+          Not sure which listing to open? <Link href="/try">Try it on real recalled listings</Link>.
+        </p>
       </div>
     </section>
   );
