@@ -12,6 +12,9 @@ export function SiteFooter() {
           <Link href="/recalls" className="text-muted hover:text-ink">
             Recent recalls
           </Link>
+          <Link href="/privacy" className="text-muted hover:text-ink">
+            Privacy
+          </Link>
           <span>Built in Paris · #parisdevdayhack</span>
         </span>
       </div>
