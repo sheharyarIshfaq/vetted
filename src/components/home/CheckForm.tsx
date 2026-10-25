@@ -66,6 +66,9 @@ export function CheckForm() {
   const [error, setError] = useState<CheckError | null>(null);
   const textarea = useRef<HTMLTextAreaElement>(null);
 
+  // Back from a result shows this page as it was left, so the check that led there must not still be running.
+  useEffect(() => () => setRunning(null), []);
+
   // The box grows with what's pasted, up to a limit after which it scrolls.
   useEffect(() => {
     const box = textarea.current;
