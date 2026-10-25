@@ -1,6 +1,7 @@
 import type { Recall } from "../../db/schema";
 import { modelInDoubt, PART_OF_MODEL, recallLimits } from "../verdict";
 import { capitalize, itemName, monthNumber, sellerMessage } from "./copy";
+import { riskTerms } from "../official-text";
 import { MAX_CODES, SOURCE_NAMES, type PanelInput, type PanelSummary } from "./panel";
 
 // The extension panel in French, the default on Leboncoin and Vinted. Remedies, batches and the risk are the
@@ -67,7 +68,7 @@ export function panelSummaryFr(input: PanelInput): PanelSummary {
       verdict === "recalled"
         ? "Cet article correspond aux unités rappelées."
         : "Seules certaines unités de ce modèle sont rappelées.",
-    risk: recall.risk && recall.risk.length <= 60 ? `Risque : ${recall.risk.toLowerCase()}` : null,
+    risk: recall.risk ? `Risque : ${riskTerms(recall.risk).join(", ")}` : null,
     source: sourceOf(recall),
     lookFor: [
       madePhrase(limits.from, limits.to),

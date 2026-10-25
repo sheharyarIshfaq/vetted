@@ -156,4 +156,13 @@ describe("panelSummaryFr", () => {
       "Vetted a cherché « Safety 1st » parmi 14 433 rappels français et européens sans trouver de correspondance. Cela ne prouve pas que le produit est sûr.",
     );
   });
+
+  it("shows a Safety Gate risk in both languages, never only in French", () => {
+    const karaoke = { ...hamax, source: "safetygate", risk: "Environnement" } as Recall;
+    const input = { verdict: "recalled" as const, recall: karaoke, extracted: extracted({ brand: "Karaoke", model: "K36" }), listingTitle: "Micro karaoké K36", searched };
+    expect(panelSummary(input).risk).toBe("Risk: environmental");
+    expect(panelSummaryFr(input).risk).toBe("Risque : environnement");
+    const unknown = { ...karaoke, risk: "Pseudomonas, Risque chimique" } as Recall;
+    expect(panelSummary({ ...input, recall: unknown }).risk).toBe("Risk: pseudomonas, chemical");
+  });
 });

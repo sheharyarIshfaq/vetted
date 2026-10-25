@@ -15,6 +15,72 @@ export function remedyInEnglish(line: string) {
   return REMEDIES[normalizeText(line)] ?? line;
 }
 
+// Every risk the two sources use, in the panel's short English. Keys are lower case, as published.
+const RISKS: Record<string, string> = {
+  "risque chimique": "chemical",
+  chimique: "chemical",
+  "autres contaminants chimiques": "other chemical contaminants",
+  étouffement: "choking",
+  blessures: "injury",
+  "dommages internes": "internal injury",
+  "choc électrique": "electric shock",
+  environnement: "environmental",
+  "risque environnemental": "environmental",
+  incendie: "fire",
+  explosion: "explosion",
+  brûlures: "burn",
+  etranglement: "strangulation",
+  étranglement: "strangulation",
+  strangulation: "strangulation",
+  "risque sanitaire/autre": "health risk",
+  "autre risque": "other risk",
+  sécurité: "safety",
+  "arrêt respiratoire": "breathing stopping",
+  suffocation: "suffocation",
+  asphyxie: "asphyxiation",
+  intoxication: "poisoning",
+  "dommages à la vue": "eye damage",
+  "dommage à la vue": "eye damage",
+  "lésions auditives": "hearing damage",
+  "lésion auditive": "hearing damage",
+  coincement: "entrapment",
+  piégeage: "entrapment",
+  coupures: "cuts",
+  noyade: "drowning",
+  radiation: "radiation",
+  "perturbation électromagnétique": "electromagnetic interference",
+  "risque microbiologique": "microbiological",
+  "autres contaminants biologiques": "other biological contaminants",
+  "listeria monocytogenes (agent responsable de la listériose)": "listeria",
+  "salmonella spp (agent responsable de la salmonellose)": "salmonella",
+  "dépassement de seuils de sécurité": "over the safety limits",
+  "additifs et arômes dépassement des seuils de sécurité": "additives or flavourings over the safety limits",
+  "dépassement des limites autorisées de pesticides": "pesticides over the legal limits",
+  "eléments traces métalliques (métaux lourds : plomb, mercure, cadmium...)": "heavy metals (lead, mercury, cadmium…)",
+  "présence de substance interdite": "banned substance",
+  "substances allergisantes non déclarées": "undeclared allergens",
+  "anomalie d'étiquetage": "labelling error",
+  "inertes (verre, métal, plastique, papier, textile…)": "foreign bodies (glass, metal, plastic, paper, textile…)",
+  "défaut de fabrication, défaut d'étanchéité (ex: micro fuites, thermoscellage défectueux) ou anomalies de conditionnement":
+    "manufacturing, sealing or packaging fault",
+  "reizung und verätzung ggfs. der augen": "irritation and chemical burns, possibly of the eyes",
+};
+
+// Safety Gate lists risks as "Risque chimique, Environnement", RappelConso as "étouffement|risque chimique".
+// A comma inside a risk ("plomb, mercure") is not followed by a capital, so it doesn't split.
+export function riskTerms(risk: string) {
+  const terms = risk
+    .split(/\s*\|\s*|,\s+(?=\p{Lu})/u)
+    .map((term) => term.trim().toLowerCase())
+    .filter(Boolean);
+  return [...new Set(terms)];
+}
+
+// Each risk in English; one without an English label is shown as published rather than dropped.
+export function risksInEnglish(risk: string) {
+  return [...new Set(riskTerms(risk).map((term) => RISKS[term] ?? term))];
+}
+
 // "inférieur ou égal à 2105" -> "up to 2105", "de 180100001 à 180100045" -> "180100001 to 180100045".
 export function batchInEnglish(value: string) {
   const text = value.trim();

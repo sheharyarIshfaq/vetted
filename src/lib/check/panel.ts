@@ -1,7 +1,7 @@
 import type { Recall } from "../../db/schema";
 import { modelInDoubt, PART_OF_MODEL, recallLimits, type Evidence, type Verdict } from "../verdict";
-import { capitalize, dayName, itemName, monthNumber, riskWord, sellerMessageEnglish, sourcesLabel } from "./copy";
-import { batchInEnglish, remedyInEnglish } from "../official-text";
+import { capitalize, dayName, itemName, monthNumber, sellerMessageEnglish, sourcesLabel } from "./copy";
+import { batchInEnglish, remedyInEnglish, risksInEnglish } from "../official-text";
 import type { ExtractedItem } from "./extract";
 
 export const SOURCE_NAMES: Record<string, string> = { rappelconso: "RappelConso", safetygate: "EU Safety Gate" };
@@ -93,14 +93,13 @@ export function panelSummary(input: PanelInput): PanelSummary {
     };
   }
 
-  const risk = riskWord(recall.risk);
   return {
     title,
     line:
       verdict === "recalled"
         ? "This item matches the recalled units."
         : "Only some units of this model are recalled.",
-    risk: risk ? `Risk: ${risk}` : null,
+    risk: recall.risk ? `Risk: ${risksInEnglish(recall.risk).join(", ")}` : null,
     source: sourceOf(recall),
     lookFor: lookFor(input, recall),
     whatToDo: verdict === "recalled" ? (recall.whatToDo ?? "").split("\n").map((line) => line.trim()).filter(Boolean).map(remedyInEnglish).map(capitalize) : [],

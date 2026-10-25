@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { batchInEnglish, remediesPhrase, remedyInEnglish } from "./official-text";
+import { batchInEnglish, remediesPhrase, remedyInEnglish, riskTerms, risksInEnglish } from "./official-text";
 
 describe("official text in English", () => {
   it("translates the fixed RappelConso steps and leaves others as published", () => {
@@ -25,5 +25,20 @@ describe("official text in English", () => {
     );
     expect(remediesPhrase("ne plus utiliser le produit\nRenvoyer le siège au fabricant")).toBeNull();
     expect(remediesPhrase(null)).toBeNull();
+  });
+});
+
+describe("risks", () => {
+  it("splits both sources' lists, but not a comma inside one risk", () => {
+    expect(riskTerms("Risque chimique, Environnement")).toEqual(["risque chimique", "environnement"]);
+    expect(riskTerms("étouffement|risque chimique")).toEqual(["étouffement", "risque chimique"]);
+    expect(riskTerms("eléments traces métalliques (métaux lourds : plomb, mercure, cadmium...)")).toHaveLength(1);
+  });
+
+  it("labels every risk in English and keeps an unknown one as published", () => {
+    expect(risksInEnglish("Environnement")).toEqual(["environmental"]);
+    expect(risksInEnglish("Brûlures, Choc électrique, Incendie")).toEqual(["burn", "electric shock", "fire"]);
+    expect(risksInEnglish("risque environnemental|environnement")).toEqual(["environmental"]);
+    expect(risksInEnglish("Pseudomonas")).toEqual(["pseudomonas"]);
   });
 });
