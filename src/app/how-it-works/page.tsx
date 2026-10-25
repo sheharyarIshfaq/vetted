@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { ThreeAnswers } from "@/components/home/HowItWorks";
 import { Lists } from "@/components/home/sources";
@@ -53,6 +54,7 @@ const SOURCES = [
 ] as const;
 
 async function Sources() {
+  await connection();
   const stats = await recallStats();
   const loaded = SOURCES.filter((entry) => stats.sources.includes(entry.source));
   return (

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { RemoteImage } from "@/components/check/RemoteImage";
 import { Lists } from "@/components/home/sources";
@@ -172,6 +173,7 @@ async function Results({ searchParams }: { searchParams: PageProps<"/recalls">["
 }
 
 async function Updated() {
+  await connection();
   const { updatedAt } = await recallStats();
   return updatedAt ? `Updated ${UPDATED_AT.format(updatedAt).replace(",", "")}` : null;
 }
