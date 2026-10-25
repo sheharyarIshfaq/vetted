@@ -1217,3 +1217,23 @@ describe("decideBest · a recall naming no model", () => {
     expect(result.evidence.map((fact) => fact.fact)).toContain("This brand has a recalled hair appliance and the notice names no model. Ask the seller for the exact model");
   });
 });
+
+describe("an electric toy against an electrical recall", () => {
+  const fedeKaraoke: CandidateRecall = {
+    ...boonPivot,
+    id: "sg:SR/02759/26",
+    source: "safetygate",
+    brand: "Fede",
+    brandNorm: "fede",
+    productName: "Machine de karaoké",
+    productType: "other electrical",
+    models: [],
+    refs: ["K36"],
+  };
+
+  it("still flags a children's karaoke machine read as a toy", () => {
+    const listing = item({ brand: "Fede", brandNorm: "fede", model: "K36", references: ["K36"], productType: "toy", title: "Fede Micro Karaoke Enfants avec Micro sans Fil Neuf" });
+    const result = decideVerdict({ item: listing, candidate: candidate(fedeKaraoke, 0.3), photo: noPhoto });
+    expect(result.verdict).not.toBe("clear");
+  });
+});

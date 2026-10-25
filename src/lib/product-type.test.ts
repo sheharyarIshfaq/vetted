@@ -58,6 +58,12 @@ describe("typesConflict", () => {
     expect(typesConflict("other electrical", "stroller")).toBe(true);
   });
 
+  it("lets a plain toy be an electrical product, but not a soft toy", () => {
+    expect(typesConflict("toy", "other electrical")).toBe(false);
+    expect(typesConflict("other electrical", "ride-on toy")).toBe(false);
+    expect(typesConflict("soft toy", "other electrical")).toBe(true);
+  });
+
   it("never separates a vehicle from its variants, or an unknown type", () => {
     expect(typesConflict("e-bike", "motor vehicle")).toBe(false);
     expect(typesConflict("e-scooter", "moped")).toBe(false);

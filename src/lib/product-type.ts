@@ -69,6 +69,7 @@ const FAMILY = new Map(Object.entries(FAMILIES).flatMap(([family, types]) => typ
 const ELECTRICAL = new Set(["power bank", "charger", "cable", "phone", "headphones", "speaker", "lamp", "lighting chain", "heater",
   "hair appliance", "kitchen appliance", "vacuum cleaner", "electric toothbrush", "extension lead", "battery", "smoke detector",
   "television", "e-cigarette", "other electrical"]);
+const PLUGGABLE_TOYS = new Set(["toy", "ride-on toy"]);
 
 // Types a brand makes many unrelated products of: "this brand has a recalled toy" says nothing about this toy.
 const BROAD = new Set([
@@ -88,5 +89,7 @@ export function typesConflict(a: string | null, b: string | null) {
   const family = FAMILY.get(a) ?? GROUPS.get(a);
   if (family !== undefined && family === (FAMILY.get(b) ?? GROUPS.get(b))) return false;
   if ((a === "other electrical" && ELECTRICAL.has(b)) || (b === "other electrical" && ELECTRICAL.has(a))) return false;
+  // A plain "toy" can be electric: a children's karaoke machine is filed under electrical appliances.
+  if ((a === "other electrical" && PLUGGABLE_TOYS.has(b)) || (b === "other electrical" && PLUGGABLE_TOYS.has(a))) return false;
   return true;
 }
