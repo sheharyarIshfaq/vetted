@@ -80,9 +80,9 @@ export function BatchCheck() {
     <section id="batch" aria-labelledby="queue-title" className="scroll-mt-6 overflow-hidden rounded-[20px] border border-line bg-surface">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
         <div className="flex flex-col gap-0.5">
-          <h2 id="queue-title" className="m-0 text-lg font-semibold">
+          <h3 id="queue-title" className="m-0 text-lg font-semibold">
             Review queue
-          </h2>
+          </h3>
           <div role="status" className="text-[13px] text-muted">
             {file
               ? `${file} · ${running ? `checking, ${results.length} of ${total || "…"} done` : `${results.length} items checked`}`
