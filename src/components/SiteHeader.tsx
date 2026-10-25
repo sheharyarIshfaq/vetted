@@ -9,7 +9,7 @@ const LINKS = [
   { href: "/#recall", label: "What's a recall?" },
   { href: "/#how", label: "How it works" },
   { href: "/#faq", label: "Questions" },
-  { href: "/platforms", label: "For marketplaces" },
+  { href: "/platforms", label: "For platforms" },
 ];
 
 const linkStyle = "flex min-h-11 shrink-0 items-center px-2 text-ink no-underline hover:text-brand";
